@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ActionCollection version="2" name="Scripts">
+  <Actions category="Scripts">
+    <text>Buli Brush Switch</text>
+
+    <Action name="bulibrushswitch_settings">
+      <icon></icon>
+      <text>Settings</text>
+      <whatsThis></whatsThis>
+      <toolTip></toolTip>
+      <iconText></iconText>
+      <activationFlags>0</activationFlags>
+      <activationConditions>0</activationConditions>
+      <shortcut>{shortcut_bulibrushswitch_settings}</shortcut>
+      <isCheckable>false</isCheckable>
+      <statusTip></statusTip>
+    </Action>
+
+    <Action name="bulibrushswitch_activate_default">
+      <icon></icon>
+      <text>Activate default brush</text>
+      <whatsThis></whatsThis>
+      <toolTip></toolTip>
+      <iconText></iconText>
+      <activationFlags>0</activationFlags>
+      <activationConditions>0</activationConditions>
+      <shortcut>{shortcut_bulibrushswitch_activate_default}</shortcut>
+      <isCheckable>false</isCheckable>
+      <statusTip></statusTip>
+    </Action>
+
+    <Action name="bulibrushswitch_deactivate">
+      <icon></icon>
+      <text>Deactivate current brush</text>
+      <whatsThis></whatsThis>
+      <toolTip></toolTip>
+      <iconText></iconText>
+      <activationFlags>0</activationFlags>
+      <activationConditions>0</activationConditions>
+      <shortcut>{shortcut_bulibrushswitch_deactivate}</shortcut>
+      <isCheckable>false</isCheckable>
+      <statusTip></statusTip>
+    </Action>
+
+    <Action name="bulibrushswitch_show_brushes_list">
+      <icon></icon>
+      <text>Show popup brushes list</text>
+      <whatsThis></whatsThis>
+      <toolTip></toolTip>
+      <iconText></iconText>
+      <activationFlags>0</activationFlags>
+      <activationConditions>0</activationConditions>
+      <shortcut>{shortcut_bulibrushswitch_show_brushes_list}</shortcut>
+      <isCheckable>false</isCheckable>
+      <statusTip></statusTip>
+    </Action>
+
+    <!--- (user brush definition:start) -->
+
+    <!--- (user brush definition:end) -->
+
+  </Actions>
+</ActionCollection>
