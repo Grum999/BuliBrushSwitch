@@ -170,7 +170,7 @@ To **unselect** a brush from plugin list:
 
 ### What's new?
 
-_[2021-11-25] Version 0.1.0b_ *[Show detailed release content](https://github.com/Grum999/BuliBrushSwitch/blob/main/releases-notes/RELEASE-0.1.0b.md)*
+_[2021-12-01] Version 0.1.0b_ *[Show detailed release content](https://github.com/Grum999/BuliBrushSwitch/blob/main/releases-notes/RELEASE-0.1.0b.md)*
 - First implemented/released version!
 
 
