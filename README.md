@@ -42,7 +42,7 @@ Shortcuts for brushes can be managed directly from plugin or from default Krita'
 ## Download, Install & Execute
 
 ### Download
-+ **[ZIP ARCHIVE - v0.1.0b](https://github.com/Grum999/BuliBrushSwitch/releases/download/0.1.0b/bulibrushswitch.zip)**
++ **[ZIP ARCHIVE - v0.1.1b](https://github.com/Grum999/BuliBrushSwitch/releases/download/0.1.1b/bulibrushswitch.zip)**
 + **[SOURCE](https://github.com/Grum999/BuliBrushSwitch)**
 
 
@@ -169,6 +169,11 @@ To **unselect** a brush from plugin list:
 ## Plugin's life
 
 ### What's new?
+
+_[2021-12-02] Version 0.1.1b_ *[Show detailed release content](https://github.com/Grum999/BuliBrushSwitch/blob/main/releases-notes/RELEASE-0.1.1b.md)*
+- Add missing `.action` file on installation
+- Fix invalid default brush definition from settings when no configuration files exists
+- On Windows, fix main Brushes list window staying over Brush setting window
 
 _[2021-12-01] Version 0.1.0b_ *[Show detailed release content](https://github.com/Grum999/BuliBrushSwitch/blob/main/releases-notes/RELEASE-0.1.0b.md)*
 - First implemented/released version!
