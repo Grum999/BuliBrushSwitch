@@ -104,7 +104,7 @@ class BBSMainWindow(EDialog):
 
         self.setModal(False)
         self.setWindowTitle(i18n(f'{bbsName} v{bbsVersion}'))
-        self.setWindowFlags(Qt.Dialog|Qt.WindowTitleHint|Qt.WindowStaysOnTopHint)
+        self.setWindowFlags(Qt.Dialog|Qt.WindowTitleHint)
 
         self.__saveViewConfig()
         self.__initialiseUi()

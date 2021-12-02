@@ -240,7 +240,9 @@ class BBSSettings(Settings):
                         "name": "a) Eraser Circle",
                         "opacity": 1.0,
                         "position": 0,
-                        "size": 50.0
+                        "size": 50.0,
+                        "eraserMode": True,
+                        "uuid": '1367df61-b0e2-4304-9b51-ff04c102659e'
                     }
             elif brushName.name()=='a) Eraser Small':
                 brushDict={
@@ -253,7 +255,9 @@ class BBSSettings(Settings):
                         "name": "a) Eraser Small",
                         "opacity": 1.0,
                         "position": 0,
-                        "size": 25.0
+                        "size": 25.0,
+                        "eraserMode": True,
+                        "uuid": '1367df61-b0e2-4304-9b51-ff04c102659e'
                     }
             elif brushName.name()=='a) Eraser Soft':
                 brushDict={
@@ -266,7 +270,9 @@ class BBSSettings(Settings):
                         "name": "a) Eraser Soft",
                         "opacity": 1.0,
                         "position": 0,
-                        "size": 60.0
+                        "size": 60.0,
+                        "eraserMode": True,
+                        "uuid": '1367df61-b0e2-4304-9b51-ff04c102659e'
                     }
             else:
                 # in this case, it's a little bit more difficult because we don't
@@ -290,7 +296,9 @@ class BBSSettings(Settings):
                         "name": brushName.name(),
                         "opacity": 1.0,
                         "position": 0,
-                        "size": 60.0
+                        "size": 60.0,
+                        "eraserMode": False,
+                        "uuid": '1367df61-b0e2-4304-9b51-ff04c102659e'
                     }
 
             brushes.append(brushDict)

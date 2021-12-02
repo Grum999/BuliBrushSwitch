@@ -402,11 +402,11 @@ class BBSBrush(QObject):
             self.__updated('color')
 
     def eraserMode(self):
-        """Return brush position in list"""
+        """Return eraser mode"""
         return self.__eraserMode
 
     def setEraserMode(self, eraserMode):
-        """Set brush color"""
+        """Set eraser mode"""
         if isinstance(eraserMode, bool) and self.__eraserMode!=eraserMode and not self.__ignoreEraserMode:
             self.__eraserMode=eraserMode
             self.__updated('eraserMode')
