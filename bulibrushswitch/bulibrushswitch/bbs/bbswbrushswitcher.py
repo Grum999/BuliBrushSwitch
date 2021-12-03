@@ -249,7 +249,11 @@ class BBSWBrushSwitcher(QWidget):
 
     def __displayPopupUi(self):
         """Display popup user interface"""
-        self.__actionPopupUi.showRelativeTo(self)
+        action=Krita.instance().action('view_show_canvas_only')
+        if action and action.isChecked():
+            self.__actionPopupUi.showRelativeTo(QCursor.pos())
+        else:
+            self.__actionPopupUi.showRelativeTo(self)
 
     def __disconnectResourceSignal(self):
         """Disconnect resource signal to __presetChanged() method"""
@@ -574,9 +578,36 @@ class BBSWBrushSwitcherUi(QFrame):
 
         self.hide()
 
-    def showRelativeTo(self, widget):
+    def showRelativeTo(self, origin):
         """Show ui using given `widget` as reference for position"""
-        screenPosition=widget.mapToGlobal(QPoint(0,widget.height()))
+        if isinstance(origin, QWidget):
+            # display under button
+            screenPosition=origin.mapToGlobal(QPoint(0,origin.height()))
+            checkPosition=QPoint(screenPosition)
+        else:
+            # display under cursor
+            screenPosition=origin
+            checkPosition=QPoint(origin)
+            screenPosition.setX(screenPosition.x() - self.width()//2)
+            screenPosition.setY(screenPosition.y() - self.height()//2)
+
+        # need to ensure popup is not "outside" visible screen
+        for screen in QGuiApplication.screens():
+            screenRect=screen.availableGeometry()
+            if screenRect.contains(checkPosition):
+                # we're on the right screen
+                # need to check if window if displayed properly in screen
+                relativePosition=screenPosition - screenRect.topLeft()
+
+                if screenPosition.x()<screenRect.left():
+                    screenPosition.setX(screenRect.left())
+                elif screenPosition.x() + self.width() > screenRect.right():
+                    screenPosition.setX(screenRect.right() - self.width())
+
+                if screenPosition.y()<screenRect.top():
+                    screenPosition.setY(screenRect.top())
+                elif screenPosition.y() + self.height() > screenRect.bottom():
+                    screenPosition.setY(screenRect.bottom() - self.height())
 
         self.move(screenPosition)
         self.setVisible(True)
