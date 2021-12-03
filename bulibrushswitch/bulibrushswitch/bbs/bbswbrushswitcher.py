@@ -312,9 +312,16 @@ class BBSWBrushSwitcher(QWidget):
                 pass
 
             if self.__selectedBrush.color():
-                self.__selectedBrush.fromCurrentKritaBrush(saveColor=True)
+                saveColor=True
             else:
-                self.__selectedBrush.fromCurrentKritaBrush(saveColor=False)
+                saveColor=False
+
+            if self.__selectedBrush.defaultPaintTool():
+                saveTool=True
+            else:
+                saveTool=False
+
+            self.__selectedBrush.fromCurrentKritaBrush(saveColor=saveColor, saveTool=saveTool)
 
             BBSSettings.setBrushes(self.__brushes)
 

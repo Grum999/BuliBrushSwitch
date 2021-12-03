@@ -242,6 +242,7 @@ class BBSSettings(Settings):
                         "position": 0,
                         "size": 50.0,
                         "eraserMode": True,
+                        "defaultPaintTool": None,
                         "uuid": '1367df61-b0e2-4304-9b51-ff04c102659e'
                     }
             elif brushName.name()=='a) Eraser Small':
@@ -257,6 +258,7 @@ class BBSSettings(Settings):
                         "position": 0,
                         "size": 25.0,
                         "eraserMode": True,
+                        "defaultPaintTool": None,
                         "uuid": '1367df61-b0e2-4304-9b51-ff04c102659e'
                     }
             elif brushName.name()=='a) Eraser Soft':
@@ -272,6 +274,7 @@ class BBSSettings(Settings):
                         "position": 0,
                         "size": 60.0,
                         "eraserMode": True,
+                        "defaultPaintTool": None,
                         "uuid": '1367df61-b0e2-4304-9b51-ff04c102659e'
                     }
             else:
@@ -298,6 +301,7 @@ class BBSSettings(Settings):
                         "position": 0,
                         "size": 60.0,
                         "eraserMode": False,
+                        "defaultPaintTool": None,
                         "uuid": '1367df61-b0e2-4304-9b51-ff04c102659e'
                     }
 

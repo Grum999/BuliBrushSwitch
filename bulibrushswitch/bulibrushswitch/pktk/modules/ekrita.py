@@ -49,7 +49,11 @@ from PyQt5.QtGui import (
         QPixmap,
         qRgb
     )
-from PyQt5.QtWidgets import (QWidget, QListView)
+from PyQt5.QtWidgets import (
+        QWidget,
+        QToolButton,
+        QListView
+    )
 
 from PyQt5.Qt import (QObject, QMdiArea, QAbstractScrollArea)
 
@@ -195,6 +199,7 @@ class EKritaBrushPreset:
         return EKritaBrushPreset.__presetChooserWidget
 
 
+
 class EKritaShortcuts:
     """Manage shortcuts"""
 
@@ -216,6 +221,55 @@ class EKritaShortcuts:
 
 
 
+class EKritaPaintTools:
+    """Quick access to paint tools"""
+
+    __TOOLS={
+            'KritaShape/KisToolBrush':      "Freehand Brush Tool",
+            'KritaShape/KisToolLine':       "Line Tool",
+            'KritaShape/KisToolRectangle':  "Rectangle Tool",
+            'KritaShape/KisToolEllipse':    "Ellipse Tool",
+            'KisToolPolygon':               "Polygon Tool: Shift-mouseclick ends the polygon.",
+            'KisToolPolyline':              "Polyline Tool: Shift-mouseclick ends the polyline.",
+            'KritaShape/KisToolPath':       "Bezier Curve Tool: Shift-mouseclick ends the curve.",
+            'KisToolPencil':                "Freehand Path Tool",
+            'KritaShape/KisToolDyna':       "Dynamic Brush Tool",
+            'KritaShape/KisToolMultiBrush': "Multibrush Tool"
+        }
+
+    @staticmethod
+    def idList():
+        """Return list of tools identifiers"""
+        return list(EKritaPaintTools.__TOOLS)
+
+    @staticmethod
+    def name(id):
+        """Return (translated) name for paint tools
+
+        None value return 'None' string
+
+        Otherwise Raise an error is tools is not found
+        """
+        if id is None:
+            return i18n('None')
+        elif id in EKritaPaintTools.__TOOLS:
+            return re.sub('\s*:.*', '', i18n(EKritaPaintTools.__TOOLS[id]))
+        else:
+            raise EInvalidValue("Given `id` is not valid")
+
+    @staticmethod
+    def current():
+        """return id of current paint tool, if any active
+
+        Otherwise return None
+        """
+        window=Krita.instance().activeWindow()
+        if window:
+            for id in EKritaPaintTools.__TOOLS:
+                toolButton=window.qwindow().findChild(QToolButton, id)
+                if toolButton and toolButton.isChecked():
+                    return id
+        return None
 
 
 

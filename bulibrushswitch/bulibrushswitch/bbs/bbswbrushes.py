@@ -42,7 +42,7 @@ from bulibrushswitch.pktk.modules.uitheme import UITheme
 from bulibrushswitch.pktk.modules.iconsizes import IconSizes
 from bulibrushswitch.pktk.modules.strutils import stripHtml
 from bulibrushswitch.pktk.modules.imgutils import (warningAreaBrush, qImageToPngQByteArray, bullet, buildIcon)
-from bulibrushswitch.pktk.modules.ekrita import (EKritaBrushPreset, EKritaShortcuts)
+from bulibrushswitch.pktk.modules.ekrita import (EKritaBrushPreset, EKritaShortcuts, EKritaPaintTools)
 from bulibrushswitch.pktk.widgets.wtextedit import (WTextEdit, WTextEditDialog, WTextEditBtBarOption)
 from bulibrushswitch.pktk.widgets.wcolorbutton import WColorButton
 from bulibrushswitch.pktk.widgets.wkeysequenceinput import WKeySequenceInput
@@ -66,6 +66,7 @@ class BBSBrush(QObject):
     KEY_COLOR='color'
     KEY_UUID='uuid'
     KEY_SHORTCUT='shortcut'
+    KEY_DEFAULTPAINTTOOL='defaultPaintTool'
 
     def __init__(self, brush=None):
         super(BBSBrush, self).__init__(None)
@@ -82,6 +83,7 @@ class BBSBrush(QObject):
         self.__position=-1
         self.__color=None
         self.__shortcut=QKeySequence()
+        self.__defaultPaintTool=None
 
         self.__uuid=QUuid.createUuid().toString()
         self.__fingerPrint=''
@@ -142,7 +144,7 @@ class BBSBrush(QObject):
         elif self.__emitUpdated==0:
             self.__updated('*')
 
-    def fromCurrentKritaBrush(self, view=None, saveColor=False):
+    def fromCurrentKritaBrush(self, view=None, saveColor=False, saveTool=False):
         """Set brush properties from given view
 
         If no view is provided, use current active view
@@ -174,6 +176,13 @@ class BBSBrush(QObject):
             self.__color=view.foregroundColor().colorForCanvas(view.canvas())
         else:
             self.__color=None
+
+        if saveTool:
+            current=EKritaPaintTools.current()
+            if current:
+                self.__defaultPaintTool=current
+        else:
+            self.__defaultPaintTool=None
 
         if self.__ignoreEraserMode:
             self.__eraserMode=(self.__blendingMode=='erase')
@@ -209,6 +218,11 @@ class BBSBrush(QObject):
         if self.__color!=None:
             view.setForeGroundColor(ManagedColor.fromQColor(self.__color, view.canvas()))
 
+        if not self.__defaultPaintTool is None:
+            action=Krita.instance().action(self.__defaultPaintTool)
+            if action:
+                action.trigger()
+
         # in all case restore eraser mode
         # - if __ignoreEraserMode is True, then force __eraserMode value because
         #   it's already set to the right value for given brush (True for eraser brush, False otherwise)
@@ -240,6 +254,7 @@ class BBSBrush(QObject):
                 BBSBrush.KEY_COLOR: color,
                 BBSBrush.KEY_UUID: self.__uuid,
                 BBSBrush.KEY_SHORTCUT: self.__shortcut.toString(),
+                BBSBrush.KEY_DEFAULTPAINTTOOL: self.__defaultPaintTool
             }
 
         return returned
@@ -264,6 +279,10 @@ class BBSBrush(QObject):
             self.setIgnoreEraserMode(value[BBSBrush.KEY_IGNOREERASERMODE])
             self.setColor(value[BBSBrush.KEY_COLOR])
             self.setEraserMode(value[BBSBrush.KEY_ERASERMODE])
+
+            if BBSBrush.KEY_DEFAULTPAINTTOOL in value:
+                self.setDefaultPaintTool(value[BBSBrush.KEY_DEFAULTPAINTTOOL])
+
             if EKritaBrushPreset.found(self.__name):
                 brushPreset=EKritaBrushPreset.getPreset(self.__name)
                 if brushPreset:
@@ -428,6 +447,19 @@ class BBSBrush(QObject):
         if isinstance(shortcut, QKeySequence) and self.__shortcut!=shortcut:
             self.__shortcut=shortcut
             self.__updated('shortcut')
+
+    def defaultPaintTool(self):
+        """Return brush default Paint Tool"""
+        return self.__defaultPaintTool
+
+    def setDefaultPaintTool(self, defaultPaintTool):
+        """Set brush default Paint Tool
+
+        Default Paint Tool is activated when brush is selected
+        """
+        if defaultPaintTool is None or defaultPaintTool in EKritaPaintTools.idList():
+            self.__defaultPaintTool=defaultPaintTool
+            self.__updated('defaultPaintTool')
 
     def id(self):
         """Return unique id"""
@@ -1023,6 +1055,11 @@ class BBSBrushesModelDelegate(QStyledItemDelegate):
         else:
             shortcutText=''
 
+        if not brush.defaultPaintTool() is None:
+            defaultPaintTool=f' <tr><td align="left"><b>{i18n("Default paint tool")}</b></td><td align="right">{EKritaPaintTools.name(brush.defaultPaintTool())}</td><td></td></tr>'
+        else:
+            defaultPaintTool=''
+
         if brush.blendingMode()=='erase':
             htmlText=(f'<small><i><table>'
                       f' <tr><td align="left"><b>{i18n("Keep user modifications")}</b></td><td align="right">{yesno(brush.keepUserModifications())}</td></tr>'
@@ -1037,6 +1074,7 @@ class BBSBrushesModelDelegate(QStyledItemDelegate):
                 useSpecificColor=yesno(True)
 
             htmlText=(f'<small><i><table>'
+                      f' {defaultPaintTool}'
                       f' <tr><td align="left"><b>{i18n("Keep user modifications")}</b></td><td align="right">{yesno(brush.keepUserModifications())}</td><td></td></tr>'
                       f' <tr><td align="left"><b>{i18n("Ignore eraser mode")}:</b></td>    <td align="right">{yesno(brush.ignoreEraserMode())}</td><td></td></tr>'
                       f' <tr><td align="left"><b>{i18n("Use specific color")}:</b></td>    <td align="right">{useSpecificColor}</td><td>{imageNfo}</td></tr>'
@@ -1185,6 +1223,8 @@ class BBSBrushesEditor(WTextEditDialog):
         kseShortcut=None
         lblShortcutAlreadyUsed=None
         dlgBox=None
+        cbDefaultPaintTool=None
+        cbDefaultPaintTools=None
 
         def shorcutModification(keySequence):
             """Shortcut value is currently modified"""
@@ -1258,6 +1298,8 @@ class BBSBrushesEditor(WTextEditDialog):
             nonlocal btUseSpecificColor
             nonlocal kseShortcut
             nonlocal lblShortcutAlreadyUsed
+            nonlocal cbDefaultPaintTool
+            nonlocal cbDefaultPaintTools
 
             layout=QGridLayout()
 
@@ -1312,19 +1354,38 @@ class BBSBrushesEditor(WTextEditDialog):
             lShortcut.addWidget(QLabel(i18n('Shortcut')))
             lShortcut.addWidget(kseShortcut)
 
+            cbDefaultPaintTool=QCheckBox(i18n('Use a default paint tool'))
+            cbDefaultPaintTool.setToolTip(i18n("Defined paint tool is automatically activated when brush is selected"))
+            cbDefaultPaintTools=QComboBox()
+            cbDefaultPaintTools.setToolTip(i18n("Defined paint tool is automatically activated when brush is selected"))
+            toolIdList=EKritaPaintTools.idList()
+            for index, toolId in enumerate(toolIdList):
+                cbDefaultPaintTools.addItem(EKritaPaintTools.name(toolId), toolId)
+                if toolId==brush.defaultPaintTool():
+                    cbDefaultPaintTools.setCurrentIndex(index)
+            cbDefaultPaintTool.toggled.connect(cbDefaultPaintTools.setEnabled)
+            cbDefaultPaintTool.setChecked(brush.defaultPaintTool() in toolIdList)
+            cbDefaultPaintTools.setEnabled(cbDefaultPaintTool.isChecked())
+
             # define grid layout
             layout.setColumnStretch(0, 50)
             layout.setColumnStretch(1, 50)
 
-            # add widget - row 1
-            layout.addWidget(cbKeepUserModifications, 0, 0)
-            layout.addLayout(lShortcut, 0, 1)
-            # add widget - row2
-            layout.addWidget(cbIgnoreEraserMode, 1, 0)
-            layout.addWidget(lblShortcutAlreadyUsed, 1, 1, -1, 1)
+            row=0
+            layout.addWidget(cbDefaultPaintTool, row, 0)
+            layout.addWidget(cbDefaultPaintTools, row, 1)
+
+            row+=1
+            layout.addWidget(cbKeepUserModifications, row, 0)
+            layout.addLayout(lShortcut, row, 1)
+
+            row+=1
+            layout.addWidget(cbIgnoreEraserMode, row, 0)
+            layout.addWidget(lblShortcutAlreadyUsed, row, 1, -1, 1)
 
             if not cbUseSpecificColor is None:
-                layout.addLayout(lUseSpecificColor, 2, 0)
+                row+=1
+                layout.addLayout(lUseSpecificColor, row, 0)
 
             return layout
 
@@ -1356,8 +1417,12 @@ class BBSBrushesEditor(WTextEditDialog):
                     BBSBrush.KEY_KEEPUSERMODIFICATIONS: cbKeepUserModifications.isChecked(),
                     BBSBrush.KEY_IGNOREERASERMODE: True,
                     BBSBrush.KEY_SHORTCUT: kseShortcut.keySequence(),
-                    BBSBrush.KEY_COLOR: None
+                    BBSBrush.KEY_COLOR: None,
+                    BBSBrush.KEY_DEFAULTPAINTTOOL: None
                 }
+
+            if cbDefaultPaintTool.isChecked():
+                returned[BBSBrush.KEY_DEFAULTPAINTTOOL]=cbDefaultPaintTools.currentData()
 
             if not cbIgnoreEraserMode is None:
                 returned[BBSBrush.KEY_IGNOREERASERMODE]=cbIgnoreEraserMode.isChecked()
