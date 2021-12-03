@@ -154,6 +154,11 @@ class BBSBrush(QObject):
         elif not isinstance(view, View):
             return False
 
+        if (view.visible()==False
+            or view.document() is None):
+            return False
+
+
         self.beginUpdate()
 
         brush=view.currentBrushPreset()

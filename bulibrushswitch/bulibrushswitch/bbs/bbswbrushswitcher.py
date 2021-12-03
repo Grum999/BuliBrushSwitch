@@ -387,7 +387,9 @@ class BBSWBrushSwitcher(QWidget):
                 # memorize current Krita brush to finally restore when plugin brush is "deactivated"
                 self.__kritaBrush=BBSBrush()
                 self.__kritaBrush.setIgnoreEraserMode(False)
-                self.__kritaBrush.fromCurrentKritaBrush(saveColor=True)
+                if not self.__kritaBrush.fromCurrentKritaBrush(saveColor=True, saveTool=True):
+                    self.__kritaBrush=None
+                    return
             else:
                 # already using brush activated from plugin
                 # temporary disable signal management
