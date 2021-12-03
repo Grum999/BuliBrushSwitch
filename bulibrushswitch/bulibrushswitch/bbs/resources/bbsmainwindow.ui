@@ -487,8 +487,10 @@
                 <string>...</string>
                </property>
                <property name="icon">
-                <iconset theme="edit-clear-all">
-                 <normaloff>../../../../../../../../../../../../.designer/backup</normaloff>../../../../../../../../../../../../.designer/backup</iconset>
+                <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
+                 <normaloff>:/pktk/images/normal/clear</normaloff>
+                 <disabledoff>:/pktk/images/disabled/clear</disabledoff>
+                 <disabledon>:/pktk/images/disabled/clear</disabledon>:/pktk/images/normal/clear</iconset>
                </property>
                <property name="autoRaise">
                 <bool>true</bool>
