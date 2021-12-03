@@ -221,7 +221,6 @@ class BBSWBrushSwitcher(QWidget):
         if brush:
             brush.setShortcut(action.shortcut())
 
-
     def __reloadBrushes(self):
         """Brushes configurations has been modified; reload"""
         self.__selectedBrushMode=BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_DEFAULT_SELECTIONMODE)
@@ -511,6 +510,42 @@ class BBSWBrushSwitcherUi(QFrame):
         """Thumbnail size has been changed from brushes slider"""
         # update treeview
         self.__tvBrushes.setIconSizeIndex(newSize)
+
+    def keyPressEvent(self, event):
+        """Check if need to close window"""
+        if event.type() == QEvent.KeyPress:
+            action=Krita.instance().action('bulibrushswitch_show_brushes_list')
+
+            if action and action.shortcut().toString()!='':
+                # a shortcut has been defined to popup list
+                key = event.key()
+
+                if key in (Qt.Key_unknown, Qt.Key_Control, Qt.Key_Shift, Qt.Key_Alt, Qt.Key_Meta):
+                    newKeySequence=self.setKeySequence(QKeySequence(key))
+                else:
+                    # combination of keys
+                    modifiers = event.modifiers()
+                    # if the keyText is empty than it's a special key like F1, F5, ...
+                    keyText = event.text()
+
+                    if modifiers & Qt.ShiftModifier:
+                        key+=Qt.SHIFT
+                    if modifiers & Qt.ControlModifier:
+                        key+=Qt.CTRL
+                    if modifiers & Qt.AltModifier:
+                        key+=Qt.ALT
+                    if modifiers & Qt.MetaModifier:
+                        key+=Qt.META
+
+                    newKeySequence=QKeySequence(key)
+
+
+                if newKeySequence.matches(action.shortcut())==QKeySequence.ExactMatch:
+                    event.accept()
+                    self.close()
+                    return
+
+        super(BBSWBrushSwitcherUi, self).keyPressEvent(event)
 
     def showEvent(self, event):
         """Widget is visible"""
