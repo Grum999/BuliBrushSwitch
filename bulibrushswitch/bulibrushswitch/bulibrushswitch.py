@@ -107,7 +107,7 @@ class BuliBrushSwitch(Extension):
         self.__action=None
         self.__notifier=Krita.instance().notifier()
 
-
+    @pyqtSlot()
     def __windowCreated(self):
         """Main window has been created"""
         # consider that newly created window is active window (because no more information
@@ -115,10 +115,11 @@ class BuliBrushSwitch(Extension):
         window=Krita.instance().activeWindow()
         installedWindow=BBSWBrushSwitcher.installToWindow(window, PLUGIN_MENU_ENTRY, PLUGIN_VERSION)
 
+    @pyqtSlot()
     def __kritaIsClosing(self):
         """Save configuration before closing"""
         if BBSSettings.modified():
-            BBSSettings.saveConfig()
+            BBSSettings.save()
 
     def setup(self):
         """Is executed at Krita's startup"""
@@ -127,8 +128,12 @@ class BuliBrushSwitch(Extension):
 
         UITheme.load()
 
+        self.__notifier.setActive(True)
         self.__notifier.windowCreated.connect(self.__windowCreated)
-        self.__notifier.applicationClosing.connect(self.__kritaIsClosing)
+
+        #self.__notifier.applicationClosing.connect(self.__kritaIsClosing)
+        # doesn't work, use QApplication signal instead
+        QApplication.instance().aboutToQuit.connect(self.__kritaIsClosing)
 
     def createActions(self, window):
         """Create default actions for plugin"""
