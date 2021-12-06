@@ -100,6 +100,14 @@ class BBSBrush(QObject):
         self.__brushNfoOptions=''
         self.__brushNfoComments=''
 
+        # this allows to keep current Krita's brush value
+        # if None => nothing memorized
+        #            otherwise it's a BBSBrush
+        self.__kritaBrush=None
+        # a flag to determinate if Krita brush is currently in restoring state
+        self.__kritaBrushIsRestoring=False
+
+
         if isinstance(brush, BBSBrush):
             # clone brush
             self.importData(brush.exportData())
@@ -240,6 +248,12 @@ class BBSBrush(QObject):
             return False
 
         view.setCurrentBrushPreset(EKritaBrushPreset.getPreset(self.__name))
+
+        if self.__kritaBrush is None and self.__kritaBrushIsRestoring==False:
+            # currently nothing has been memorized
+            # memorize current brush
+            self.__kritaBrush=BBSBrush()
+            self.__kritaBrush.fromCurrentKritaBrush(view, False, False)
 
         view.setBrushSize(self.__size)
         view.setPaintingFlow(self.__flow)
@@ -553,6 +567,17 @@ class BBSBrush(QObject):
     def found(self):
         """Return True if brush preset exists in krita otherwise False"""
         return EKritaBrushPreset.found(self.__name)
+
+    def kritaBrush(self):
+        """Return Krita's brush if any, otherwise None"""
+        return self.__kritaBrush
+
+    def restoreKritaBrush(self):
+        """Restore Return Krita's brush if any, otherwise does nothing"""
+        if self.__kritaBrush:
+            self.__kritaBrushIsRestoring=True
+            self.__kritaBrush.toCurrentKritaBrush()
+            self.__kritaBrushIsRestoring=False
 
 
 class BBSBrushes(QObject):

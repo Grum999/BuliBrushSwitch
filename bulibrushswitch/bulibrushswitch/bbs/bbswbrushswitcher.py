@@ -421,6 +421,10 @@ class BBSWBrushSwitcher(QWidget):
             selectedBrush=None
             selectedBrushName=None
 
+        if self.__selectedBrush:
+            # restore original Krita's brush properties if available
+            self.__selectedBrush.restoreKritaBrush()
+
         if selectedBrush is None:
             # "deactivate" current brush
             # no need anymore to be aware for brushes change
