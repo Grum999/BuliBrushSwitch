@@ -68,6 +68,11 @@ class BBSBrush(QObject):
     KEY_SHORTCUT='shortcut'
     KEY_DEFAULTPAINTTOOL='defaultPaintTool'
 
+    INFO_COMPACT =                  0b00000001
+    INFO_WITH_BRUSH_ICON =          0b00000010
+    INFO_WITH_BRUSH_DETAILS =       0b00000100
+    INFO_WITH_BRUSH_OPTIONS =       0b00001000
+
     def __init__(self, brush=None):
         super(BBSBrush, self).__init__(None)
         self.__name=''
@@ -89,9 +94,11 @@ class BBSBrush(QObject):
         self.__fingerPrint=''
         self.__emitUpdated=0
 
-        self.__brushNfoFullImg=''
+        self.__brushNfoImg=''
         self.__brushNfoFull=''
         self.__brushNfoShort=''
+        self.__brushNfoOptions=''
+        self.__brushNfoComments=''
 
         if isinstance(brush, BBSBrush):
             # clone brush
@@ -102,33 +109,57 @@ class BBSBrush(QObject):
 
     def __updated(self, property):
         """Emit updated signal when a property has been changed"""
+        def yesno(value):
+            if value:
+                return i18n('Yes')
+            else:
+                return i18n('No')
+
         if self.__emitUpdated==0:
-            self.__brushNfoFull=(f'<b>{self.__name.replace("_", " ")}</b>'
-                                 f'<small><i><table>'
-                                 f' <tr><td align="left"><b>{i18n("Blending mode")}:</b></td><td align="right">{self.__blendingMode}</td></tr>'
-                                 f' <tr><td align="left"><b>{i18n("Size")}:</b></td>         <td align="right">{self.__size:0.2f}px</td></tr>'
-                                 f' <tr><td align="left"><b>{i18n("Opacity")}:</b></td>      <td align="right">{100*self.__opacity:0.2f}%</td></tr>'
-                                 f' <tr><td align="left"><b>{i18n("Flow")}:</b></td>         <td align="right">{100*self.__flow:0.2f}%</td></tr>'
-                                 f'</table></i></small>'
+            self.__brushNfoFull=(f' <tr><td align="left"><b>{i18n("Blending mode")}:</b></td><td align="right">{self.__blendingMode}</td><td></td></tr>'
+                                 f' <tr><td align="left"><b>{i18n("Size")}:</b></td>         <td align="right">{self.__size:0.2f}px</td><td></td></tr>'
+                                 f' <tr><td align="left"><b>{i18n("Opacity")}:</b></td>      <td align="right">{100*self.__opacity:0.2f}%</td><td></td></tr>'
+                                 f' <tr><td align="left"><b>{i18n("Flow")}:</b></td>         <td align="right">{100*self.__flow:0.2f}%</td><td></td></tr>'
                             )
 
-            self.__brushNfoShort=(f'<b>{self.__name.replace("_", " ")}</b>'
-                                  f'<small><br><i>{self.__size:0.2f}px - {self.__blendingMode}</i></small>'
-                                )
+            self.__brushNfoShort=f' <tr><td align="left">{self.__size:0.2f}px - {self.__blendingMode}</td><td></td><td></td></tr>'
 
             if self.__image:
-                imageNfo=f'<img src="data:image/png;base64,{bytes(qImageToPngQByteArray(self.__image).toBase64(QByteArray.Base64Encoding)).decode()}">'
-
-                self.__brushNfoFullImg=(f'<table><tr><td>{imageNfo}</td><td><b>{self.__name.replace("_", " ")}</b>'
-                                     f'<small><i><table>'
-                                     f' <tr><td align="left"><b>{i18n("Blending mode")}:</b></td><td align="right">{self.__blendingMode}</td></tr>'
-                                     f' <tr><td align="left"><b>{i18n("Size")}:</b></td>         <td align="right">{self.__size:0.2f}px</td></tr>'
-                                     f' <tr><td align="left"><b>{i18n("Opacity")}:</b></td>      <td align="right">{100*self.__opacity:0.2f}%</td></tr>'
-                                     f' <tr><td align="left"><b>{i18n("Flow")}:</b></td>         <td align="right">{100*self.__flow:0.2f}%</td></tr>'
-                                     f'</table></i></small> </tr></table>'
-                                )
+                self.__brushNfoImg=f'<img src="data:image/png;base64,{bytes(qImageToPngQByteArray(self.__image).toBase64(QByteArray.Base64Encoding)).decode()}">'
             else:
-                self.__brushNfoFullImg=self.__brushNfoFull
+                self.__brushNfoImg=''
+
+
+            if not self.__shortcut.isEmpty():
+                shortcutText=f' <tr><td align="left"><b>{i18n("Shortcut")}</b></td><td align="right">{self.__shortcut.toString()}</td><td></td></tr>'
+            else:
+                shortcutText=''
+
+            if not self.__defaultPaintTool is None:
+                defaultPaintTool=f' <tr><td align="left"><b>{i18n("Default paint tool")}</b></td><td align="right">{EKritaPaintTools.name(self.__defaultPaintTool)}</td><td></td></tr>'
+            else:
+                defaultPaintTool=''
+
+            if self.__blendingMode=='erase':
+                self.__brushNfoOptions=(f' <tr><td align="left"><b>{i18n("Keep user modifications")}</b></td><td align="right">{yesno(self.__blendingMode)}</td><td></td></tr>'
+                                        f' {shortcutText}')
+            else:
+                if self.__color is None:
+                    useSpecificColor=yesno(False)
+                    imageNfo=''
+                else:
+                    imageNfo=f'&nbsp;<img src="data:image/png;base64,{bytes(qImageToPngQByteArray(bullet(16,self.__color,"roundSquare").toImage()).toBase64(QByteArray.Base64Encoding)).decode()}">'
+                    useSpecificColor=yesno(True)
+
+                self.__brushNfoOptions=(f' {defaultPaintTool}'
+                                        f' <tr><td align="left"><b>{i18n("Keep user modifications")}</b></td><td align="right">{yesno(self.__keepUserModifications)}</td><td></td></tr>'
+                                        f' <tr><td align="left"><b>{i18n("Ignore eraser mode")}:</b></td>    <td align="right">{yesno(self.__ignoreEraserMode)}</td><td></td></tr>'
+                                        f' <tr><td align="left"><b>{i18n("Use specific color")}:</b></td>    <td align="right">{useSpecificColor}</td><td>{imageNfo}</td></tr>'
+                                        f' {shortcutText}')
+
+            self.__brushNfoComments=self.__comments
+            if self.__brushNfoComments!='':
+                self.__brushNfoComments=re.sub("<(/)?body", r"<\1div", re.sub("<!doctype[^>]>|<meta[^>]+>|</?html>|</?head>", "", self.__brushNfoComments, flags=re.I), flags=re.I)
 
             self.updated.emit(self, property)
 
@@ -487,15 +518,39 @@ class BBSBrush(QObject):
 
         return self.__fingerPrint
 
-    def information(self, full=True, withImage=False):
+    def information(self, displayOption=0):
         """Return synthetised brush information (HTML)"""
-        if full:
-            if withImage:
-                return self.__brushNfoFullImg
+        returned=''
+        if displayOption&BBSBrush.INFO_WITH_BRUSH_OPTIONS:
+            returned=self.__brushNfoOptions
+
+            if not(displayOption&BBSBrush.INFO_COMPACT) and self.__brushNfoComments!='':
+                hr=''
+                if returned!='':
+                    hr="<tr><td colspan=3><hr></td></tr>"
+                returned=f"<tr><td colspan=3>{self.__brushNfoComments}</td></tr>{hr}{returned}"
+
+        if displayOption&BBSBrush.INFO_WITH_BRUSH_DETAILS:
+            hr=''
+            if returned!='':
+                hr="<tr><td colspan=3><hr></td></tr>"
+
+            if displayOption&BBSBrush.INFO_COMPACT:
+                returned=f'<small><i><table>{self.__brushNfoShort}{hr}{returned}</table></i></small>'
             else:
-                return self.__brushNfoFull
+                returned=f'<small><i><table>{self.__brushNfoFull}{hr}{returned}</table></i></small>'
+
+            returned=f'<b>{self.__name.replace("_", " ")}</b>{returned}'
         else:
-            return self.__brushNfoShort
+            returned=f'<small><i><table>{returned}</table></i></small>'
+
+        if displayOption&BBSBrush.INFO_WITH_BRUSH_ICON and self.__brushNfoImg!='':
+            returned=f'<table><tr><td>{self.__brushNfoImg}</td><td>{returned}</td></tr></table>'
+
+
+        print(returned)
+
+        return returned
 
     def found(self):
         """Return True if brush preset exists in krita otherwise False"""
@@ -821,6 +876,9 @@ class BBSBrushesModel(QAbstractTableModel):
             if item:
                 if not item.found():
                     return i18n(f"Brush <i><b>{item.name()}</b></i> is not installed and/or activated on this Krita installation")
+                else:
+                    return item.information(BBSBrush.INFO_WITH_BRUSH_DETAILS|BBSBrush.INFO_WITH_BRUSH_OPTIONS)
+
         elif role == Qt.DisplayRole:
             id=self.__items[row]
             item = self.__brushes.get(id)
@@ -861,8 +919,8 @@ class BBSBrushesModel(QAbstractTableModel):
         return returned
 
 
-class BBSWBrushes(QTreeView):
-    """Tree view brushes (editing mode)"""
+class BBSWBrushesTv(QTreeView):
+    """Tree view brushes"""
     focused = Signal()
     keyPressed = Signal(int)
     iconSizeIndexChanged = Signal(int, QSize)
@@ -870,13 +928,12 @@ class BBSWBrushes(QTreeView):
     __COLNUM_FULLNFO_MINSIZE = 7
 
     def __init__(self, parent=None):
-        super(BBSWBrushes, self).__init__(parent)
-        self.setAutoScroll(False)
+        super(BBSWBrushesTv, self).__init__(parent)
+        self.setAutoScroll(True)
         self.setAlternatingRowColors(True)
 
         self.__parent=parent
         self.__model = None
-        self.__proxyModel = None
         self.__selectedBeforeReset=[]
         self.__fontSize=self.font().pointSizeF()
         if self.__fontSize==-1:
@@ -933,7 +990,7 @@ class BBSWBrushes(QTreeView):
 
     def setColumnHidden(self, column, hide):
         """Reimplement column hidden"""
-        super(BBSWBrushes, self).setColumnHidden(column, hide)
+        super(BBSWBrushesTv, self).setColumnHidden(column, hide)
         self.__delegate.setCSize(0)
 
     def wheelEvent(self, event):
@@ -949,7 +1006,7 @@ class BBSWBrushes(QTreeView):
             if sizeChanged:
                 self.setIconSizeIndex()
         else:
-            super(BBSWBrushes, self).wheelEvent(event)
+            super(BBSWBrushesTv, self).wheelEvent(event)
 
     def iconSizeIndex(self):
         """Return current icon size index"""
@@ -970,9 +1027,6 @@ class BBSWBrushes(QTreeView):
     def setBrushes(self, brushes):
         """Initialise treeview header & model"""
         self.__model = BBSBrushesModel(brushes)
-
-        #self.__proxyModel = QSortFilterProxyModel(self)
-        #self.__proxyModel.setSourceModel(self.__model)
 
         self.setModel(self.__model)
 
@@ -1027,6 +1081,94 @@ class BBSWBrushes(QTreeView):
             self.update()
 
 
+class BBSWBrushesLv(QListView):
+    """List view brushes"""
+    focused = Signal()
+    keyPressed = Signal(int)
+    iconSizeIndexChanged = Signal(int, QSize)
+
+    def __init__(self, parent=None):
+        super(BBSWBrushesLv, self).__init__(parent)
+        self.setAutoScroll(True)
+        self.setViewMode(QListView.IconMode)
+
+        self.__parent=parent
+        self.__model = None
+        self.__selectedBeforeReset=[]
+        self.__fontSize=self.font().pointSizeF()
+        if self.__fontSize==-1:
+            self.__fontSize=-self.font().pixelSize()
+
+        self.__iconSize = IconSizes([32, 64, 96, 128, 192])
+        self.setIconSizeIndex(3)
+
+    def __modelAboutToBeReset(self):
+        """model is about to be reset"""
+        self.__selectedBeforeReset=self.selectedItems()
+
+    def __modelReset(self):
+        """model has been reset"""
+        for selectedItem in self.__selectedBeforeReset:
+            self.selectItem(selectedItem)
+
+        self.__selectedBeforeReset=[]
+
+    def wheelEvent(self, event):
+        """Mange zoom level through mouse wheel"""
+        if event.modifiers() & Qt.ControlModifier:
+            if event.angleDelta().y() > 0:
+                # Zoom in
+                sizeChanged = self.__iconSize.next()
+            else:
+                # zoom out
+                sizeChanged = self.__iconSize.prev()
+
+            if sizeChanged:
+                self.setIconSizeIndex()
+        else:
+            super(BBSWBrushesLv, self).wheelEvent(event)
+
+    def iconSizeIndex(self):
+        """Return current icon size index"""
+        return self.__iconSize.index()
+
+    def setIconSizeIndex(self, index=None):
+        """Set icon size from index value"""
+        if index is None or self.__iconSize.setIndex(index):
+            # new size defined
+            self.setIconSize(self.__iconSize.value(True))
+            self.iconSizeIndexChanged.emit(self.__iconSize.index(), self.__iconSize.value(True))
+
+    def setBrushes(self, brushes):
+        """Initialise treeview header & model"""
+        self.__model = BBSBrushesModel(brushes)
+
+        self.setModel(self.__model)
+
+        self.__model.modelAboutToBeReset.connect(self.__modelAboutToBeReset)
+        self.__model.modelReset.connect(self.__modelReset)
+
+    def selectItem(self, item):
+        """Select given item"""
+        if isinstance(item, BBSBrush):
+            itemSelection=self.__model.itemSelection(item)
+            self.selectionModel().select(itemSelection, QItemSelectionModel.ClearAndSelect)
+
+    def selectedItems(self):
+        """Return a list of selected brushes items"""
+        returned=[]
+        if self.selectionModel():
+            for item in self.selectionModel().selectedIndexes():
+                brush=item.data(BBSBrushesModel.ROLE_BRUSH)
+                if not brush is None:
+                    returned.append(brush)
+        return returned
+
+    def nbSelectedItems(self):
+        """Return number of selected items"""
+        return len(self.selectedItems())
+
+
 class BBSBrushesModelDelegate(QStyledItemDelegate):
     """Extend QStyledItemDelegate class to build improved rendering items"""
     def __init__(self, parent=None):
@@ -1037,57 +1179,21 @@ class BBSBrushesModelDelegate(QStyledItemDelegate):
 
     def __getBrushInformation(self, brush):
         """Return text for brush information"""
+        compactSize=0
+        if self.__compactSize:
+            compactSize=BBSBrush.INFO_COMPACT
         textDocument=QTextDocument()
-        textDocument.setHtml(brush.information(not self.__compactSize))
+        textDocument.setHtml(brush.information(BBSBrush.INFO_WITH_BRUSH_DETAILS|compactSize))
         return textDocument
 
     def __getOptionsInformation(self, brush):
         """Return text for brush options (comments + option)"""
-        def yesno(value):
-            if value:
-                return i18n('Yes')
-            else:
-                return i18n('No')
+        compactSize=0
+        if self.__compactSize:
+            compactSize=BBSBrush.INFO_COMPACT
+
         textDocument=QTextDocument()
-
-        if not brush.shortcut().isEmpty():
-            shortcutText=f' <tr><td align="left"><b>{i18n("Shortcut")}</b></td><td align="right">{brush.shortcut().toString()}</td></tr>'
-        else:
-            shortcutText=''
-
-        if not brush.defaultPaintTool() is None:
-            defaultPaintTool=f' <tr><td align="left"><b>{i18n("Default paint tool")}</b></td><td align="right">{EKritaPaintTools.name(brush.defaultPaintTool())}</td><td></td></tr>'
-        else:
-            defaultPaintTool=''
-
-        if brush.blendingMode()=='erase':
-            htmlText=(f'<small><i><table>'
-                      f' <tr><td align="left"><b>{i18n("Keep user modifications")}</b></td><td align="right">{yesno(brush.keepUserModifications())}</td></tr>'
-                      f' {shortcutText}'
-                      f'</table></i></small>')
-        else:
-            if brush.color() is None:
-                useSpecificColor=yesno(False)
-                imageNfo=''
-            else:
-                imageNfo=f'&nbsp;<img src="data:image/png;base64,{bytes(qImageToPngQByteArray(bullet(16,brush.color(),"roundSquare").toImage()).toBase64(QByteArray.Base64Encoding)).decode()}">'
-                useSpecificColor=yesno(True)
-
-            htmlText=(f'<small><i><table>'
-                      f' {defaultPaintTool}'
-                      f' <tr><td align="left"><b>{i18n("Keep user modifications")}</b></td><td align="right">{yesno(brush.keepUserModifications())}</td><td></td></tr>'
-                      f' <tr><td align="left"><b>{i18n("Ignore eraser mode")}:</b></td>    <td align="right">{yesno(brush.ignoreEraserMode())}</td><td></td></tr>'
-                      f' <tr><td align="left"><b>{i18n("Use specific color")}:</b></td>    <td align="right">{useSpecificColor}</td><td>{imageNfo}</td></tr>'
-                      f' {shortcutText}'
-                      f'</table></i></small>')
-
-        # comment are empty string '' if empty (already stripped in BBSBrush class)
-        if not self.__compactSize:
-            comments=brush.comments()
-            if comments!='':
-                htmlText=f"{comments}<hr>{htmlText}"
-
-        textDocument.setHtml(htmlText)
+        textDocument.setHtml(brush.information(BBSBrush.INFO_WITH_BRUSH_OPTIONS|compactSize))
         cursor=QTextCursor(textDocument)
 
         return textDocument
@@ -1283,7 +1389,7 @@ class BBSBrushesEditor(WTextEditDialog):
             lblImage.setMaximumSize(128, 128)
             lblImage.setMinimumSize(128, 128)
 
-            lblInfo=QLabel(brush.information(True))
+            lblInfo=QLabel(brush.information(BBSBrush.INFO_WITH_BRUSH_DETAILS))
 
             layout.addWidget(lblImage)
             layout.addWidget(lblInfo)

@@ -69,6 +69,9 @@ class BBSSettingsValues(object):
     DEFAULT_SELECTIONMODE_FIRST_FROM_LIST = 'firstFromList'
     DEFAULT_SELECTIONMODE_LAST_SELECTED = 'lastSelected'
 
+    POPUP_BRUSHES_VIEWMODE_LIST=0
+    POPUP_BRUSHES_VIEWMODE_ICON=1
+
 
 class BBSSettingsKey(SettingsKey):
     CONFIG_EDITOR_WINDOW_POSITION_X=                                            'config.editor.window.position.x'
@@ -114,6 +117,7 @@ class BBSSettingsKey(SettingsKey):
     CONFIG_UI_POPUP_WIDTH=                                                      'config.ui.popup.width'
     CONFIG_UI_POPUP_HEIGHT=                                                     'config.ui.popup.height'
     CONFIG_UI_POPUP_BRUSHES_ZOOMLEVEL=                                          'config.ui.popup.brushes.list.zoomLevel'
+    CONFIG_UI_POPUP_BRUSHES_VIEWMODE=                                           'config.ui.popup.brushes.list.viewMode'
 
     CONFIG_BRUSHES_LIST_COUNT =                                                 'config.brushes.list.count'
     CONFIG_BRUSHES_LIST_BRUSHES =                                               'config.brushes.list.brushes'
@@ -185,6 +189,9 @@ class BBSSettings(Settings):
             SettingsRule(BBSSettingsKey.CONFIG_UI_POPUP_WIDTH,                                       -1,         SettingsFmt(int)),
             SettingsRule(BBSSettingsKey.CONFIG_UI_POPUP_HEIGHT,                                      -1,         SettingsFmt(int)),
             SettingsRule(BBSSettingsKey.CONFIG_UI_POPUP_BRUSHES_ZOOMLEVEL,                           3,          SettingsFmt(int, [0,1,2,3,4])),
+            SettingsRule(BBSSettingsKey.CONFIG_UI_POPUP_BRUSHES_VIEWMODE,                            BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_LIST,
+                                                                                                                 SettingsFmt(int, [BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_LIST,
+                                                                                                                                   BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_ICON])),
 
             SettingsRule(BBSSettingsKey.CONFIG_BRUSHES_LIST_COUNT,                                   0,          SettingsFmt(int, (0, None))),
             SettingsRule(BBSSettingsKey.CONFIG_BRUSHES_LIST_BRUSHES,                                 [],         SettingsFmt(list)),

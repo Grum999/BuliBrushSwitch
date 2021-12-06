@@ -34,7 +34,8 @@ from .bbssettings import (
 from .bbswbrushes import (
         BBSBrush,
         BBSBrushes,
-        BBSWBrushes
+        BBSWBrushesTv,
+        BBSWBrushesLv
     )
 
 from .bbsmainwindow import BBSMainWindow
@@ -43,6 +44,7 @@ from bulibrushswitch.pktk.modules.imgutils import buildIcon
 from bulibrushswitch.pktk.modules.edialog import EDialog
 from bulibrushswitch.pktk.modules.about import AboutWindow
 from bulibrushswitch.pktk.modules.ekrita import EKritaBrushPreset
+from bulibrushswitch.pktk.widgets.wseparator import WVLine
 
 
 from bulibrushswitch.pktk.pktk import *
@@ -452,7 +454,7 @@ class BBSWBrushSwitcherUi(QFrame):
         layout=QVBoxLayout()
         layout.setContentsMargins(3,3,3,3)
 
-        self.__tvBrushes=BBSWBrushes()
+        self.__tvBrushes=BBSWBrushesTv()
         self.__tvBrushes.setBrushes(self.__brushes)
         self.__tvBrushes.setIconSizeIndex(BBSSettings.get(BBSSettingsKey.CONFIG_UI_POPUP_BRUSHES_ZOOMLEVEL))
         self.__tvBrushes.setIndentation(0)
@@ -462,8 +464,45 @@ class BBSWBrushSwitcherUi(QFrame):
         self.__tvBrushes.iconSizeIndexChanged.connect(self.__brushesSizeIndexChanged)
         self.__tvBrushesInitialised=False
 
+        self.__lvBrushes=BBSWBrushesLv()
+        self.__lvBrushes.setBrushes(self.__brushes)
+        self.__lvBrushes.setIconSizeIndex(BBSSettings.get(BBSSettingsKey.CONFIG_UI_POPUP_BRUSHES_ZOOMLEVEL))
+        self.__lvBrushes.iconSizeIndexChanged.connect(self.__brushesSizeIndexChanged)
+
+        self.__viewLayout=QStackedLayout()
+        self.__viewLayout.addWidget(self.__tvBrushes)
+        self.__viewLayout.addWidget(self.__lvBrushes)
+
         self.__statusBar=QStatusBar()
         self.__statusBar.setSizeGripEnabled(True)
+
+        currentViewIsListMode=(BBSSettings.get(BBSSettingsKey.CONFIG_UI_POPUP_BRUSHES_VIEWMODE)==BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_LIST)
+        self.__actionModeGroup=QActionGroup(self)
+        self.__actionListMode=QAction(buildIcon('pktk:list_view_details'), i18n("List view"))
+        self.__actionListMode.setCheckable(True)
+        self.__actionListMode.setChecked(currentViewIsListMode)
+        self.__actionListMode.setActionGroup(self.__actionModeGroup)
+        self.__actionListMode.setData(BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_LIST)
+        self.__actionListMode.toggled.connect(self.__brushesViewModeChanged)
+        self.__actionIconMode=QAction(buildIcon('pktk:list_view_icon'), i18n("Icon view"))
+        self.__actionIconMode.setCheckable(True)
+        self.__actionIconMode.setChecked(not currentViewIsListMode)
+        self.__actionIconMode.setActionGroup(self.__actionModeGroup)
+        self.__actionIconMode.setData(BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_ICON)
+        self.__actionIconMode.toggled.connect(self.__brushesViewModeChanged)
+
+        self.__tbViewMode=QToolButton(self)
+        self.__tbViewMode.setAutoRaise(True)
+        self.__tbViewMode.setPopupMode(QToolButton.InstantPopup)
+        self.__tbViewMode.setToolTip(i18n("Select brushes view mode"))
+        if currentViewIsListMode:
+            self.__tbViewMode.setIcon(self.__actionListMode.icon())
+        else:
+            self.__tbViewMode.setIcon(self.__actionIconMode.icon())
+        self.__menuViewMode=QMenu(self.__tbViewMode)
+        self.__menuViewMode.addAction(self.__actionListMode)
+        self.__menuViewMode.addAction(self.__actionIconMode)
+        self.__tbViewMode.setMenu(self.__menuViewMode)
 
         self.__hsBrushesThumbSize=QSlider()
         self.__hsBrushesThumbSize.setOrientation(Qt.Horizontal)
@@ -474,24 +513,31 @@ class BBSWBrushSwitcherUi(QFrame):
         self.__hsBrushesThumbSize.setTracking(True)
         self.__hsBrushesThumbSize.setMaximumWidth(150)
         self.__hsBrushesThumbSize.setValue(self.__tvBrushes.iconSizeIndex())
+        self.__hsBrushesThumbSize.setToolTip(i18n("Icon size"))
         self.__hsBrushesThumbSize.valueChanged.connect(self.__brushesSizeIndexSliderChanged)
 
         self.__tbSettings=QToolButton()
         self.__tbSettings.setIcon(buildIcon("pktk:tune"))
         self.__tbSettings.setAutoRaise(True)
+        self.__tbSettings.setToolTip(i18n("Settings"))
         self.__tbSettings.clicked.connect(self.__brushSwitcher.openSettings)
 
         self.__tbAbout=QToolButton()
         self.__tbAbout.setIcon(buildIcon("pktk:info"))
         self.__tbAbout.setAutoRaise(True)
+        self.__tbAbout.setToolTip(i18n("About <i>Buli Brush Switch</i>"))
         self.__tbAbout.clicked.connect(self.__brushSwitcher.openAbout)
 
+        self.__statusBar.addPermanentWidget(self.__tbViewMode)
         self.__statusBar.addPermanentWidget(self.__hsBrushesThumbSize)
+        self.__statusBar.addPermanentWidget(WVLine())
         self.__statusBar.addPermanentWidget(self.__tbSettings)
         self.__statusBar.addWidget(self.__tbAbout)
 
-        layout.addWidget(self.__tvBrushes)
+        layout.addLayout(self.__viewLayout)
         layout.addWidget(self.__statusBar)
+
+        self.__viewLayout.setCurrentIndex(BBSSettings.get(BBSSettingsKey.CONFIG_UI_POPUP_BRUSHES_VIEWMODE))
 
         width=BBSSettings.get(BBSSettingsKey.CONFIG_UI_POPUP_WIDTH)
         height=BBSSettings.get(BBSSettingsKey.CONFIG_UI_POPUP_HEIGHT)
@@ -500,20 +546,39 @@ class BBSWBrushSwitcherUi(QFrame):
         if width<=0:
             width=950
 
+        self.__inSelectionUpdate=False
+
         self.setLayout(layout)
         self.resize(width, height)
         self.setVisible(False)
 
+    def __brushesViewModeChanged(self, dummy=None):
+        """View mode has been changed"""
+        self.__viewLayout.setCurrentIndex(self.sender().data())
+        self.__tbViewMode.setIcon(self.sender().icon())
+        BBSSettings.set(BBSSettingsKey.CONFIG_UI_POPUP_BRUSHES_VIEWMODE, self.sender().data())
+
     def __brushesSelectionChanged(self, selected=None, deselected=None):
         """Selection in treeview has changed, update UI"""
-        selectedBrushes=self.__tvBrushes.selectedItems()
+        if self.__inSelectionUpdate:
+            return
+        self.__inSelectionUpdate=True
+        if BBSSettings.get(BBSSettingsKey.CONFIG_UI_POPUP_BRUSHES_VIEWMODE)==BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_LIST:
+            selectedBrushes=self.__tvBrushes.selectedItems()
+            selectInView=self.__lvBrushes
+        else:
+            selectedBrushes=self.__lvBrushes.selectedItems()
+            selectInView=self.__tvBrushes
+
         if len(selectedBrushes)==1:
             if selectedBrushes[0].found():
                 self.__brushSwitcher.setBrushActivated(selectedBrushes[0])
+                selectInView.selectItem(selectedBrushes[0])
                 self.hide()
+        self.__inSelectionUpdate=False
 
     def __brushesSizeIndexChanged(self, newSize, newQSize):
-        """Thumbnail size has been changed from brushes treeview"""
+        """Thumbnail size has been changed from brushes treeview/lisview"""
         # update slider
         self.__hsBrushesThumbSize.setValue(newSize)
         # update settings
@@ -523,6 +588,7 @@ class BBSWBrushSwitcherUi(QFrame):
         """Thumbnail size has been changed from brushes slider"""
         # update treeview
         self.__tvBrushes.setIconSizeIndex(newSize)
+        self.__lvBrushes.setIconSizeIndex(newSize)
 
     def keyPressEvent(self, event):
         """Check if need to close window"""
@@ -564,6 +630,7 @@ class BBSWBrushSwitcherUi(QFrame):
         """Widget is visible"""
         if not self.__tvBrushesInitialised:
             self.__tvBrushes.selectionModel().selectionChanged.connect(self.__brushesSelectionChanged)
+            self.__lvBrushes.selectionModel().selectionChanged.connect(self.__brushesSelectionChanged)
             self.__tvBrushesInitialised=True
         self.__tvBrushes.resizeColumns()
 
@@ -581,7 +648,7 @@ class BBSWBrushSwitcherUi(QFrame):
             self.__hsBrushesThumbSize.hasFocus() or
             self.__tbAbout.hasFocus()):
             return
-        elif self.__tvBrushes.hasFocus():
+        elif self.__tvBrushes.hasFocus() or self.__lvBrushes.hasFocus():
             self.__brushesSelectionChanged()
             return
 
