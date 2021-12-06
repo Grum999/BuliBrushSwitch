@@ -161,6 +161,10 @@ class BBSWBrushSwitcher(QWidget):
         # current applied brush (if None, then plugin is not "active")
         self.__selectedBrush=None
 
+        # flag to determinate if brush shortcut have to be updated when shorcut
+        # for related action has been modified
+        self.__disableUpdatingShortcutFromAction=False
+
         # keep a reference to action "set eraser mode"
         self.__actionEraserMode=Krita.instance().action('erase_action')
         self.__actionEraserMode.triggered.connect(self.__eraserModeActivated)
@@ -212,21 +216,65 @@ class BBSWBrushSwitcher(QWidget):
 
     @pyqtSlot(bool)
     def __setSelectedBrushFromAction(self, checked):
+        """An action has been triggered to select a brush"""
         action=self.sender()
         brush=self.__brushes.get(action.data())
         self.setBrushActivated(brush)
 
     @pyqtSlot()
     def __setShortcutFromAction(self):
+        """An action has been changed
+
+        Many change made on action can trigger this method
+        Also, it seems that when changing current tool, action are changed and
+        shortcut is "reset"
+
+        Then we have to:
+        - Ensure that we're not already in a call of this method
+        - Determinate if we are from Krita's settings window (KisShortcutsDialog widget exists)
+            > If yes, accept change
+            > If no, reject change (reapply shortcut from brush)
+        """
+        if self.__disableUpdatingShortcutFromAction:
+            # already in the method, or plugin settings dialog is opened
+            return
+        self.__disableUpdatingShortcutFromAction=True
+
         action=self.sender()
         brush=self.__brushes.get(action.data())
         if brush:
-            brush.setShortcut(action.shortcut())
+            # a brush is defined for action
+            obj=Krita.instance().activeWindow().qwindow().findChild(QWidget,'KisShortcutsDialog')
+            if obj:
+                # shortcut has been modified from settings dialog
+                # update brush
+                brush.setShortcut(action.shortcut())
+            else:
+                # shortcut has been molified from???
+                # force shortcut from brush
+                brush.setShortcut(brush.shortcut())
+            # reapply shortcut to action
+            BBSSettings.setShortcut(brush, brush.shortcut())
+        self.__disableUpdatingShortcutFromAction=False
 
     def __reloadBrushes(self):
         """Brushes configurations has been modified; reload"""
         self.__selectedBrushMode=BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_DEFAULT_SELECTIONMODE)
 
+        # cleanup current action shortcuts
+        for brushId in self.__brushes.idList():
+            action=self.__brushes.get(brushId).action()
+            if action:
+                try:
+                    action.triggered.disconnect(self.__setSelectedBrushFromAction)
+                except:
+                    pass
+                try:
+                    action.changed.disconnect(self.__setSelectedBrushFromAction)
+                except:
+                    pass
+
+        # appky action shortcuts
         brushes=BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_LIST_BRUSHES)
         self.__brushes.beginUpdate()
         self.__brushes.clear()
@@ -239,10 +287,12 @@ class BBSWBrushSwitcher(QWidget):
                         action.triggered.disconnect(self.__setSelectedBrushFromAction)
                     except:
                         pass
+
                     try:
                         action.changed.disconnect(self.__setSelectedBrushFromAction)
                     except:
                         pass
+
                     action.triggered.connect(self.__setSelectedBrushFromAction)
                     action.changed.connect(self.__setShortcutFromAction)
                 self.__brushes.add(brush)
@@ -282,7 +332,6 @@ class BBSWBrushSwitcher(QWidget):
         # only if preset is changed outside plugin
         #
         # new brush is already active Krita
-
         if not self.__selectedBrush is None and self.__selectedBrush.keepUserModifications():
             # we need to keep settings for brush...
             #
@@ -329,7 +378,9 @@ class BBSWBrushSwitcher(QWidget):
 
     def openSettings(self):
         """Open settings dialog box"""
+        self.__disableUpdatingShortcutFromAction=True
         BBSMainWindow(self.__bbsName, self.__bbsVersion, self.__dlgParentWidget)
+        self.__disableUpdatingShortcutFromAction=False
 
     def openAbout(self):
         """Open settings dialog box"""

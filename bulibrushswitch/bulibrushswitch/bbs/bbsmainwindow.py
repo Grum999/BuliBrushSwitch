@@ -101,8 +101,9 @@ class BBSMainWindow(EDialog):
 
         # keep a saved view of current brush shortcuts
         self.__savedShortcuts={}
+        self.__createdShortcuts=[]
 
-        self.setModal(False)
+        self.setModal(True)
         self.setWindowTitle(i18n(f'{bbsName} v{bbsVersion}'))
         self.setWindowFlags(Qt.Dialog|Qt.WindowTitleHint)
 
@@ -112,7 +113,7 @@ class BBSMainWindow(EDialog):
         self.__saveShortcutConfig()
         self.__updateBrushUi()
 
-        self.show()
+        self.__result=self.exec()
 
     def showEvent(self, event):
         """Dialog is visible"""
@@ -229,8 +230,15 @@ class BBSMainWindow(EDialog):
 
     def __restoreShortcutConfig(self):
         """Restore current shortcut configuration"""
+        # for potential new action created, remove designed shortcut
+        for brushId in self.__createdShortcuts:
+            action=BBSSettings.brushAction(brushId)
+            if action:
+                action.setShortcut(QKeySequence())
+
+        # restore initial shortcuts
         for brushId in self.__savedShortcuts:
-            action=Krita.instance().action(f'bulibrushswitch_brush_{brushId.strip("{}")}')
+            action=BBSSettings.brushAction(brushId)
             if action:
                 action.setShortcut(self.__savedShortcuts[brushId])
 
@@ -308,6 +316,7 @@ class BBSMainWindow(EDialog):
             brush.setDefaultPaintTool(options[BBSBrush.KEY_DEFAULTPAINTTOOL])
             brush.setShortcut(options[BBSBrush.KEY_SHORTCUT])
             BBSSettings.setShortcut(brush, options[BBSBrush.KEY_SHORTCUT])
+            self.__createdShortcuts.append(brush.id())
             self.__brushes.add(brush)
             self.__updateBrushUi()
 
@@ -470,7 +479,13 @@ class BBSMainWindow(EDialog):
 
     def __acceptChange(self):
         """User clicked on OK button"""
-        # do export
+        for brushId in self.__brushes.idList():
+            # don't kwow why, it seems that from here, some actions shortcut  are lost??
+            # need to reapply them...
+            brush=self.__brushes.get(brushId)
+            if brush:
+                BBSSettings.setShortcut(brush, brush.shortcut())
+
         self.__restoreViewConfig()
         self.__saveSettings()
         self.accept()
@@ -479,3 +494,7 @@ class BBSMainWindow(EDialog):
         """Window is closed"""
         self.__restoreViewConfig()
         self.accept()
+
+    def result(self):
+        """Result is accepted or rejected"""
+        return self.__result

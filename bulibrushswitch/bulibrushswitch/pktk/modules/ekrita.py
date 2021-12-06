@@ -180,7 +180,6 @@ class EKritaBrushPreset:
         """Return if brush preset (from name) exists and can be used"""
         return EKritaBrushPreset.getName(name)==name
 
-
     @staticmethod
     def presetChooserWidget():
         """Return preset chooser on which 'currentResourceChanged' signal can be

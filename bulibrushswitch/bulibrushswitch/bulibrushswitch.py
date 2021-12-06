@@ -103,7 +103,6 @@ class BuliBrushSwitch(Extension):
         self.parent = parent
         self.__uiController = None
         self.__isKritaVersionOk = checkKritaVersion(*REQUIRED_KRITA_VERSION)
-        self.__dlgParentWidget=QWidget()
         self.__action=None
         self.__notifier=Krita.instance().notifier()
 
@@ -147,9 +146,8 @@ class BuliBrushSwitch(Extension):
             for brushNfo in brushes:
                 action=BBSSettings.brushAction(brushNfo[BBSBrush.KEY_UUID], brushNfo[BBSBrush.KEY_NAME], brushNfo[BBSBrush.KEY_COMMENTS], True, window)
 
-
-    def start(self):
-        """Execute BuliBrushSwitch"""
-        # ----------------------------------------------------------------------
-        # Create dialog box
-        BBSMainWindow(PLUGIN_MENU_ENTRY, PLUGIN_VERSION, self.__dlgParentWidget)
+                if brushNfo[BBSBrush.KEY_SHORTCUT]:
+                    # action will be loaded with defaul shortcut
+                    # force "dedicated" shortcut to be the same than default one to
+                    # avoid problems with Krita's user defined shortcut definition 
+                    action.setShortcut(QKeySequence(brushNfo[BBSBrush.KEY_SHORTCUT]))

@@ -90,7 +90,7 @@ class BBSBrush(QObject):
         self.__shortcut=QKeySequence()
         self.__defaultPaintTool=None
 
-        self.__uuid=QUuid.createUuid().toString()
+        self.__uuid=QUuid.createUuid().toString().strip("{}")
         self.__fingerPrint=''
         self.__emitUpdated=0
 
@@ -283,7 +283,7 @@ class BBSBrush(QObject):
                 BBSBrush.KEY_IGNOREERASERMODE: self.__ignoreEraserMode,
                 BBSBrush.KEY_POSITION: self.__position,
                 BBSBrush.KEY_COLOR: color,
-                BBSBrush.KEY_UUID: self.__uuid,
+                BBSBrush.KEY_UUID: self.__uuid.strip("{}"),
                 BBSBrush.KEY_SHORTCUT: self.__shortcut.toString(),
                 BBSBrush.KEY_DEFAULTPAINTTOOL: self.__defaultPaintTool
             }
@@ -299,7 +299,7 @@ class BBSBrush(QObject):
 
         try:
             if BBSBrush.KEY_UUID in value:
-                self.__uuid=value[BBSBrush.KEY_UUID]
+                self.__uuid=value[BBSBrush.KEY_UUID].strip("{}")
             self.setName(value[BBSBrush.KEY_NAME])
             self.setSize(value[BBSBrush.KEY_SIZE])
             self.setFlow(value[BBSBrush.KEY_FLOW])
@@ -475,7 +475,7 @@ class BBSBrush(QObject):
 
         Shortcut is used as an information only to simplify management
         """
-        if isinstance(shortcut, QKeySequence) and self.__shortcut!=shortcut:
+        if isinstance(shortcut, QKeySequence):
             self.__shortcut=shortcut
             self.__updated('shortcut')
 
@@ -547,8 +547,6 @@ class BBSBrush(QObject):
         if displayOption&BBSBrush.INFO_WITH_BRUSH_ICON and self.__brushNfoImg!='':
             returned=f'<table><tr><td>{self.__brushNfoImg}</td><td>{returned}</td></tr></table>'
 
-
-        print(returned)
 
         return returned
 

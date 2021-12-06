@@ -490,6 +490,7 @@ class BBSSettings(Settings):
 
         If not found, create it
         """
+        brushId=brushId.strip("{}")
         actionId=BBSSettings.brushActionId(brushId)
         action=Krita.instance().action(actionId)
         if action is None and create:
@@ -529,10 +530,10 @@ class BBSSettings(Settings):
         window=Krita.instance().activeWindow()
         if window:
             action=BBSSettings.brushAction(brush.id(), brush.name(), brush.comments(), not shortcut is None)
-
-            if action and shortcut:
-                # assign shortcut
-                action.setShortcut(shortcut)
-            elif action:
-                # remove shortcut
-                action.setShortcut(QKeySequence())
+            if action:
+                if shortcut:
+                    # assign shortcut
+                    action.setShortcut(QKeySequence(shortcut))
+                else:
+                    # remove shortcut
+                    action.setShortcut(QKeySequence())
