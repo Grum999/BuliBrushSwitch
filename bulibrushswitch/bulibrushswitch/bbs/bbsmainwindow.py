@@ -303,19 +303,28 @@ class BBSMainWindow(EDialog):
         self.__activeView.setCurrentBrushPreset(resource)
         self.__actionBrushAdd()
 
+    def __applyBrushOptions(self, brush, options):
+        """Apply options to brush"""
+        brush.setComments(options[BBSBrush.KEY_COMMENTS])
+        brush.setKeepUserModifications(options[BBSBrush.KEY_KEEPUSERMODIFICATIONS])
+        brush.setIgnoreEraserMode(options[BBSBrush.KEY_IGNOREERASERMODE])
+        brush.setColorFg(options[BBSBrush.KEY_COLOR_FG])
+        brush.setColorBg(options[BBSBrush.KEY_COLOR_BG])
+        brush.setDefaultPaintTool(options[BBSBrush.KEY_DEFAULTPAINTTOOL])
+        brush.setBlendingMode(options[BBSBrush.KEY_BLENDINGMODE])
+        brush.setSize(options[BBSBrush.KEY_SIZE])
+        brush.setOpacity(options[BBSBrush.KEY_OPACITY])
+        brush.setFlow(options[BBSBrush.KEY_FLOW])
+        brush.setShortcut(options[BBSBrush.KEY_SHORTCUT])
+        BBSSettings.setShortcut(brush, options[BBSBrush.KEY_SHORTCUT])
+
     def __actionBrushAdd(self):
         """Add a new brush in list (from current view brush)"""
         brush=BBSBrush()
         brush.fromCurrentKritaBrush(self.__activeView)
         options=BBSBrushesEditor.edit(self.__bbsName+' - '+i18n('Add brush'), brush)
         if not options is None:
-            brush.setComments(options[BBSBrush.KEY_COMMENTS])
-            brush.setKeepUserModifications(options[BBSBrush.KEY_KEEPUSERMODIFICATIONS])
-            brush.setIgnoreEraserMode(options[BBSBrush.KEY_IGNOREERASERMODE])
-            brush.setColor(options[BBSBrush.KEY_COLOR])
-            brush.setDefaultPaintTool(options[BBSBrush.KEY_DEFAULTPAINTTOOL])
-            brush.setShortcut(options[BBSBrush.KEY_SHORTCUT])
-            BBSSettings.setShortcut(brush, options[BBSBrush.KEY_SHORTCUT])
+            self.__applyBrushOptions(brush, options)
             self.__createdShortcuts.append(brush.id())
             self.__brushes.add(brush)
             self.__updateBrushUi()
@@ -328,13 +337,7 @@ class BBSMainWindow(EDialog):
             brush=brushes[0]
             options=BBSBrushesEditor.edit(self.__bbsName+' - '+i18n(f'Edit brush'), brush)
             if not options is None:
-                brush.setComments(options[BBSBrush.KEY_COMMENTS])
-                brush.setKeepUserModifications(options[BBSBrush.KEY_KEEPUSERMODIFICATIONS])
-                brush.setIgnoreEraserMode(options[BBSBrush.KEY_IGNOREERASERMODE])
-                brush.setColor(options[BBSBrush.KEY_COLOR])
-                brush.setDefaultPaintTool(options[BBSBrush.KEY_DEFAULTPAINTTOOL])
-                brush.setShortcut(options[BBSBrush.KEY_SHORTCUT])
-                BBSSettings.setShortcut(brush, options[BBSBrush.KEY_SHORTCUT])
+                self.__applyBrushOptions(brush, options)
                 self.__brushes.update(brush)
                 self.__updateBrushUi()
 

@@ -38,13 +38,15 @@ from .bbssettings import (
         BBSSettingsValues
     )
 
+from bulibrushswitch.pktk.modules.edialog import EDialog
 from bulibrushswitch.pktk.modules.uitheme import UITheme
 from bulibrushswitch.pktk.modules.iconsizes import IconSizes
 from bulibrushswitch.pktk.modules.strutils import stripHtml
 from bulibrushswitch.pktk.modules.imgutils import (warningAreaBrush, qImageToPngQByteArray, bullet, buildIcon)
-from bulibrushswitch.pktk.modules.ekrita import (EKritaBrushPreset, EKritaShortcuts, EKritaPaintTools)
+from bulibrushswitch.pktk.modules.ekrita import (EKritaBrushPreset, EKritaShortcuts, EKritaPaintTools, EKritaBlendingModes)
 from bulibrushswitch.pktk.widgets.wtextedit import (WTextEdit, WTextEditDialog, WTextEditBtBarOption)
 from bulibrushswitch.pktk.widgets.wcolorbutton import WColorButton
+from bulibrushswitch.pktk.widgets.wcolorselector import WColorPicker
 from bulibrushswitch.pktk.widgets.wkeysequenceinput import WKeySequenceInput
 
 
@@ -63,7 +65,8 @@ class BBSBrush(QObject):
     KEY_KEEPUSERMODIFICATIONS='keepUserModifications'
     KEY_IGNOREERASERMODE='ignoreEraserMode'
     KEY_POSITION='position'
-    KEY_COLOR='color'
+    KEY_COLOR_FG='color'
+    KEY_COLOR_BG='colorBg'
     KEY_UUID='uuid'
     KEY_SHORTCUT='shortcut'
     KEY_DEFAULTPAINTTOOL='defaultPaintTool'
@@ -86,7 +89,8 @@ class BBSBrush(QObject):
         self.__eraserMode=False
         self.__ignoreEraserMode=True
         self.__position=-1
-        self.__color=None
+        self.__colorFg=None
+        self.__colorBg=None
         self.__shortcut=QKeySequence()
         self.__defaultPaintTool=None
 
@@ -152,11 +156,13 @@ class BBSBrush(QObject):
                 self.__brushNfoOptions=(f' <tr><td align="left"><b>{i18n("Keep user modifications")}</b></td><td align="right">{yesno(self.__blendingMode)}</td><td></td></tr>'
                                         f' {shortcutText}')
             else:
-                if self.__color is None:
+                if self.__colorFg is None:
                     useSpecificColor=yesno(False)
                     imageNfo=''
                 else:
-                    imageNfo=f'&nbsp;<img src="data:image/png;base64,{bytes(qImageToPngQByteArray(bullet(16,self.__color,"roundSquare").toImage()).toBase64(QByteArray.Base64Encoding)).decode()}">'
+                    imageNfo=f'&nbsp;<img src="data:image/png;base64,{bytes(qImageToPngQByteArray(bullet(16,self.__colorFg,"roundSquare").toImage()).toBase64(QByteArray.Base64Encoding)).decode()}">'
+                    if not self.__colorBg is None:
+                        imageNfo+=f'&nbsp;<img src="data:image/png;base64,{bytes(qImageToPngQByteArray(bullet(16,self.__colorBg,"roundSquare").toImage()).toBase64(QByteArray.Base64Encoding)).decode()}">'
                     useSpecificColor=yesno(True)
 
                 self.__brushNfoOptions=(f' {defaultPaintTool}'
@@ -212,9 +218,11 @@ class BBSBrush(QObject):
         self.__image=brush.image()
 
         if saveColor:
-            self.__color=view.foregroundColor().colorForCanvas(view.canvas())
+            self.__colorFg=view.foregroundColor().colorForCanvas(view.canvas())
+            self.__colorBg=view.backgroundColor().colorForCanvas(view.canvas())
         else:
-            self.__color=None
+            self.__colorFg=None
+            self.__colorBg=None
 
         if saveTool:
             current=EKritaPaintTools.current()
@@ -260,8 +268,10 @@ class BBSBrush(QObject):
         view.setPaintingOpacity(self.__opacity)
         view.setCurrentBlendingMode(self.__blendingMode)
 
-        if self.__color!=None:
-            view.setForeGroundColor(ManagedColor.fromQColor(self.__color, view.canvas()))
+        if self.__colorFg!=None:
+            view.setForeGroundColor(ManagedColor.fromQColor(self.__colorFg, view.canvas()))
+        if self.__colorBg!=None:
+            view.setBackGroundColor(ManagedColor.fromQColor(self.__colorBg, view.canvas()))
 
         if not self.__defaultPaintTool is None:
             action=Krita.instance().action(self.__defaultPaintTool)
@@ -280,10 +290,15 @@ class BBSBrush(QObject):
 
     def exportData(self):
         """Export brush definition as dictionary"""
-        if self.__color is None:
-            color=''
+        if self.__colorFg is None:
+            colorFg=''
         else:
-            color=self.__color.name(QColor.HexRgb)
+            colorFg=self.__colorFg.name(QColor.HexRgb)
+
+        if self.__colorBg is None:
+            colorBg=''
+        else:
+            colorBg=self.__colorBg.name(QColor.HexRgb)
 
         returned={
                 BBSBrush.KEY_NAME: self.__name,
@@ -296,7 +311,8 @@ class BBSBrush(QObject):
                 BBSBrush.KEY_KEEPUSERMODIFICATIONS: self.__keepUserModifications,
                 BBSBrush.KEY_IGNOREERASERMODE: self.__ignoreEraserMode,
                 BBSBrush.KEY_POSITION: self.__position,
-                BBSBrush.KEY_COLOR: color,
+                BBSBrush.KEY_COLOR_FG: colorFg,
+                BBSBrush.KEY_COLOR_BG: colorBg,
                 BBSBrush.KEY_UUID: self.__uuid.strip("{}"),
                 BBSBrush.KEY_SHORTCUT: self.__shortcut.toString(),
                 BBSBrush.KEY_DEFAULTPAINTTOOL: self.__defaultPaintTool
@@ -314,16 +330,28 @@ class BBSBrush(QObject):
         try:
             if BBSBrush.KEY_UUID in value:
                 self.__uuid=value[BBSBrush.KEY_UUID].strip("{}")
-            self.setName(value[BBSBrush.KEY_NAME])
-            self.setSize(value[BBSBrush.KEY_SIZE])
-            self.setFlow(value[BBSBrush.KEY_FLOW])
-            self.setOpacity(value[BBSBrush.KEY_OPACITY])
-            self.setBlendingMode(value[BBSBrush.KEY_BLENDINGMODE])
-            self.setComments(value[BBSBrush.KEY_COMMENTS])
-            self.setKeepUserModifications(value[BBSBrush.KEY_KEEPUSERMODIFICATIONS])
-            self.setIgnoreEraserMode(value[BBSBrush.KEY_IGNOREERASERMODE])
-            self.setColor(value[BBSBrush.KEY_COLOR])
-            self.setEraserMode(value[BBSBrush.KEY_ERASERMODE])
+            if BBSBrush.KEY_NAME in value:
+                self.setName(value[BBSBrush.KEY_NAME])
+            if BBSBrush.KEY_SIZE in value:
+                self.setSize(value[BBSBrush.KEY_SIZE])
+            if BBSBrush.KEY_FLOW in value:
+                self.setFlow(value[BBSBrush.KEY_FLOW])
+            if BBSBrush.KEY_OPACITY in value:
+                self.setOpacity(value[BBSBrush.KEY_OPACITY])
+            if BBSBrush.KEY_BLENDINGMODE in value:
+                self.setBlendingMode(value[BBSBrush.KEY_BLENDINGMODE])
+            if BBSBrush.KEY_COMMENTS in value:
+                self.setComments(value[BBSBrush.KEY_COMMENTS])
+            if BBSBrush.KEY_KEEPUSERMODIFICATIONS in value:
+                self.setKeepUserModifications(value[BBSBrush.KEY_KEEPUSERMODIFICATIONS])
+            if BBSBrush.KEY_IGNOREERASERMODE in value:
+                self.setIgnoreEraserMode(value[BBSBrush.KEY_IGNOREERASERMODE])
+            if BBSBrush.KEY_COLOR_FG in value:
+                self.setColorFg(value[BBSBrush.KEY_COLOR_FG])
+            if BBSBrush.KEY_COLOR_BG in value:
+                self.setColorBg(value[BBSBrush.KEY_COLOR_BG])
+            if BBSBrush.KEY_ERASERMODE in value:
+                self.setEraserMode(value[BBSBrush.KEY_ERASERMODE])
 
             if BBSBrush.KEY_DEFAULTPAINTTOOL in value:
                 self.setDefaultPaintTool(value[BBSBrush.KEY_DEFAULTPAINTTOOL])
@@ -452,12 +480,12 @@ class BBSBrush(QObject):
             self.__position=position
             self.__updated('position')
 
-    def color(self):
-        """Return brush position in list"""
-        return self.__color
+    def colorFg(self):
+        """Return foreground color"""
+        return self.__colorFg
 
-    def setColor(self, color):
-        """Set brush color"""
+    def setColorFg(self, color):
+        """Set brush foreground color"""
         if color=='':
             color=None
         elif isinstance(color, str):
@@ -466,9 +494,27 @@ class BBSBrush(QObject):
             except:
                 return
 
-        if color is None or isinstance(color, QColor) and self.__color!=color:
-            self.__color=color
-            self.__updated('color')
+        if color is None or isinstance(color, QColor) and self.__colorFg!=color:
+            self.__colorFg=color
+            self.__updated('colorFg')
+
+    def colorBg(self):
+        """Return background color"""
+        return self.__colorBg
+
+    def setColorBg(self, color):
+        """Set brush background color"""
+        if color=='':
+            color=None
+        elif isinstance(color, str):
+            try:
+                color=QColor(color)
+            except:
+                return
+
+        if color is None or isinstance(color, QColor) and self.__colorBg!=color:
+            self.__colorBg=color
+            self.__updated('colorBg')
 
     def eraserMode(self):
         """Return eraser mode"""
@@ -1335,7 +1381,7 @@ class BBSBrushesModelDelegate(QStyledItemDelegate):
         return size
 
 
-class BBSBrushesEditor(WTextEditDialog):
+class BBSBrushesEditor(EDialog):
     """A simple dialog box to brushe comment
 
     The WTextEditDialog doesn't allows to manage color picker configuration then,
@@ -1344,221 +1390,295 @@ class BBSBrushesEditor(WTextEditDialog):
 
     @staticmethod
     def edit(title, brush):
-        """Open a dialog box to edit text"""
-        cbKeepUserModifications=None
-        cbIgnoreEraserMode=None
-        cbUseSpecificColor=None
-        btUseSpecificColor=None
-        kseShortcut=None
-        lblShortcutAlreadyUsed=None
-        dlgBox=None
-        cbDefaultPaintTool=None
-        cbDefaultPaintTools=None
+        """Open a dialog box to edit brush"""
+        widget=QWidget()
+        dlgBox=BBSBrushesEditor(title, brush, widget)
 
-        def shorcutModification(keySequence):
-            """Shortcut value is currently modified"""
-            # disable OK button, waiting for editingFinished singal to determinate
-            # if shortcut is valid or not
-            nonlocal lblShortcutAlreadyUsed
-            nonlocal dlgBox
-            lblShortcutAlreadyUsed.setText('')
-            dlgBox.setOkEnabled(False)
+        returned=dlgBox.exec()
 
-        def shortcutModified():
-            """Shortcut value has been modified
+        if returned==QDialog.Accepted:
+            BBSSettings.setTxtColorPickerLayout(dlgBox.colorPickerLayoutTxt())
+            BBSSettings.setBrushColorPickerLayout(dlgBox.colorPickerLayoutBrush())
 
-            Check if valid
-            """
-            nonlocal kseShortcut
-            nonlocal lblShortcutAlreadyUsed
-            nonlocal dlgBox
-            keySequence=kseShortcut.keySequence()
-            if keySequence.isEmpty():
-                dlgBox.setOkEnabled(True)
-                lblShortcutAlreadyUsed.setText('')
-                lblShortcutAlreadyUsed.setStyleSheet('')
-            else:
-                # need to check if shortcut already exists or not in Krita
-                foundActions=EKritaShortcuts.checkIfExists(keySequence)
-                if len(foundActions)==0:
-                    dlgBox.setOkEnabled(True)
-                    lblShortcutAlreadyUsed.setText('')
-                    lblShortcutAlreadyUsed.setStyleSheet('')
-                else:
-                    dlgBox.setOkEnabled(False)
-                    text=[i18n("<b>Shortcut is already used</b>")]
-                    eChar='\x01'
-                    for action in foundActions:
-                        text.append(f"- <i>{action.text().replace('&&', eChar).replace('&', '').replace(eChar, '&')}</i>")
-                    lblShortcutAlreadyUsed.setText("<br>".join(text))
-                    lblShortcutAlreadyUsed.setStyleSheet(UITheme.style('warning-box'))
-
-        def getTitleLabel(text):
-            title=QLabel(text)
-            titleFont=title.font()
-            titleFont.setBold(True)
-            titleFont.setPointSize(12)
-            title.setFont(titleFont)
-            title.setStyleSheet("background-color: palette(light);padding: 6;")
-            title.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Maximum)
-            return title
-
-        def getBrushLayout(brush):
-            # return a QLayout with current information
-            layout=QHBoxLayout()
-
-            lblImage=QLabel()
-            lblImage.setPixmap(QPixmap.fromImage(brush.image()).scaled(128,128,Qt.KeepAspectRatio,Qt.SmoothTransformation))
-            lblImage.setMaximumSize(128, 128)
-            lblImage.setMinimumSize(128, 128)
-
-            lblInfo=QLabel(brush.information(BBSBrush.INFO_WITH_BRUSH_DETAILS))
-
-            layout.addWidget(lblImage)
-            layout.addWidget(lblInfo)
-
-            return layout
-
-        def getOptionsLayout(brush):
-            # return a QLayout with current brush options
-            nonlocal cbKeepUserModifications
-            nonlocal cbIgnoreEraserMode
-            nonlocal cbUseSpecificColor
-            nonlocal btUseSpecificColor
-            nonlocal kseShortcut
-            nonlocal lblShortcutAlreadyUsed
-            nonlocal cbDefaultPaintTool
-            nonlocal cbDefaultPaintTools
-
-            layout=QGridLayout()
-
-            cbKeepUserModifications=QCheckBox(i18n('Keep user modifications'))
-            cbKeepUserModifications.setToolTip(i18n("When checked, user modifications made on plugin selected brush (size, opacity, ...) are kept in memory and reapplied on next switch to plugin brush\nWhen unchecked user modifications made on plugin selected brush are not kept and default values are applied on next switch to plugin brush"))
-            cbKeepUserModifications.setChecked(brush.keepUserModifications())
-
-            if brush.blendingMode()!='erase':
-                # for eraser, eraser mode is ignored
-                cbIgnoreEraserMode=QCheckBox(i18n('Ignore eraser mode'))
-                cbIgnoreEraserMode.setToolTip(i18n("When brush is selected, eraser mode is ignored"))
-                cbIgnoreEraserMode.setChecked(brush.ignoreEraserMode())
-
-                # for eraser brush, option is not available
-                color=brush.color()
-
-                lUseSpecificColor=QHBoxLayout()
-
-                cbUseSpecificColor=QCheckBox(i18n('Use specific color'))
-                cbUseSpecificColor.setToolTip(i18n("When checked, defined color is always used on next switch to plugin brush; brush color is restored when going back to Krita's brush\nWhen unchecked, current color used bu Krita's is used on next switch to plugin brush"))
-
-                btUseSpecificColor=WColorButton()
-                btUseSpecificColor.colorPicker().setOptionLayout(BBSSettings.getBrushColorPickerLayout())
-
-                if color is None:
-                    cbUseSpecificColor.setChecked(False)
-                    btUseSpecificColor.setVisible(False)
-                else:
-                    cbUseSpecificColor.setChecked(True)
-                    btUseSpecificColor.setVisible(True)
-                btUseSpecificColor.setColor(color)
-                cbUseSpecificColor.toggled.connect(lambda isChecked: btUseSpecificColor.setVisible(isChecked))
-
-                lUseSpecificColor.addWidget(cbUseSpecificColor)
-                lUseSpecificColor.addWidget(btUseSpecificColor)
-                lUseSpecificColor.addStretch()
-
-
-            # layout for shortcut options
-            lblShortcutAlreadyUsed=QLabel()
-            font=lblShortcutAlreadyUsed.font()
-            font.setPointSize(8)
-            lblShortcutAlreadyUsed.setFont(font)
-            kseShortcut=WKeySequenceInput()
-            kseShortcut.setKeySequence(brush.shortcut())
-            kseShortcut.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Preferred)
-            kseShortcut.setClearButtonEnabled(True)
-            kseShortcut.keySequenceCleared.connect(shortcutModified)
-            kseShortcut.editingFinished.connect(shortcutModified)
-            kseShortcut.keySequenceChanged.connect(shorcutModification)
-            lShortcut=QHBoxLayout()
-            lShortcut.addWidget(QLabel(i18n('Shortcut')))
-            lShortcut.addWidget(kseShortcut)
-
-            cbDefaultPaintTool=QCheckBox(i18n('Use a default paint tool'))
-            cbDefaultPaintTool.setToolTip(i18n("Defined paint tool is automatically activated when brush is selected"))
-            cbDefaultPaintTools=QComboBox()
-            cbDefaultPaintTools.setToolTip(i18n("Defined paint tool is automatically activated when brush is selected"))
-            toolIdList=EKritaPaintTools.idList()
-            for index, toolId in enumerate(toolIdList):
-                cbDefaultPaintTools.addItem(EKritaPaintTools.name(toolId), toolId)
-                if toolId==brush.defaultPaintTool():
-                    cbDefaultPaintTools.setCurrentIndex(index)
-            cbDefaultPaintTool.toggled.connect(cbDefaultPaintTools.setEnabled)
-            cbDefaultPaintTool.setChecked(brush.defaultPaintTool() in toolIdList)
-            cbDefaultPaintTools.setEnabled(cbDefaultPaintTool.isChecked())
-
-            # define grid layout
-            layout.setColumnStretch(0, 50)
-            layout.setColumnStretch(1, 50)
-
-            row=0
-            layout.addWidget(cbDefaultPaintTool, row, 0)
-            layout.addWidget(cbDefaultPaintTools, row, 1)
-
-            row+=1
-            layout.addWidget(cbKeepUserModifications, row, 0)
-            layout.addLayout(lShortcut, row, 1)
-
-            row+=1
-            layout.addWidget(cbIgnoreEraserMode, row, 0)
-            layout.addWidget(lblShortcutAlreadyUsed, row, 1, -1, 1)
-
-            if not cbUseSpecificColor is None:
-                row+=1
-                layout.addLayout(lUseSpecificColor, row, 0)
-
-            return layout
-
-        dlgBox = BBSBrushesEditor(None)
-        dlgBox.setHtml(brush.comments())
-        dlgBox.setWindowTitle(title)
-
-        dlgBox.editor.setToolbarButtons(WTextEdit.DEFAULT_TOOLBAR|WTextEditBtBarOption.STYLE_STRIKETHROUGH|WTextEditBtBarOption.STYLE_COLOR_BG)
-        dlgBox.editor.setColorPickerLayout(BBSSettings.getTxtColorPickerLayout())
-
-        dlgBox.layout().insertWidget(0, getTitleLabel(i18n('Comments')))
-
-        # add options
-        dlgBox.layout().insertLayout(0, getOptionsLayout(brush))
-        dlgBox.layout().insertWidget(0, getTitleLabel(i18n('Options')))
-
-        # Add brush information
-        dlgBox.layout().insertLayout(0, getBrushLayout(brush))
-        dlgBox.layout().insertWidget(0, getTitleLabel(i18n('Brush')))
-
-        returned = dlgBox.exec()
-
-        if returned == QDialog.Accepted:
-            BBSSettings.setTxtColorPickerLayout(dlgBox.editor.colorPickerLayout())
-            if not btUseSpecificColor is None:
-                BBSSettings.setBrushColorPickerLayout(btUseSpecificColor.colorPicker().optionLayout())
-            returned={
-                    BBSBrush.KEY_COMMENTS: dlgBox.toHtml(),
-                    BBSBrush.KEY_KEEPUSERMODIFICATIONS: cbKeepUserModifications.isChecked(),
-                    BBSBrush.KEY_IGNOREERASERMODE: True,
-                    BBSBrush.KEY_SHORTCUT: kseShortcut.keySequence(),
-                    BBSBrush.KEY_COLOR: None,
-                    BBSBrush.KEY_DEFAULTPAINTTOOL: None
-                }
-
-            if cbDefaultPaintTool.isChecked():
-                returned[BBSBrush.KEY_DEFAULTPAINTTOOL]=cbDefaultPaintTools.currentData()
-
-            if not cbIgnoreEraserMode is None:
-                returned[BBSBrush.KEY_IGNOREERASERMODE]=cbIgnoreEraserMode.isChecked()
-
-            if not cbUseSpecificColor is None and cbUseSpecificColor.isChecked():
-                returned[BBSBrush.KEY_COLOR]=btUseSpecificColor.color()
-
-            return returned
+            return dlgBox.options()
         else:
             return None
+
+
+    def __init__(self, title, brush, parent=None):
+        super(BBSBrushesEditor, self).__init__(os.path.join(os.path.dirname(__file__), 'resources', 'bbsbrushedit.ui'), parent)
+
+        self.__brush=brush
+
+        self.__inSliderSpinBoxEvent=False
+        self.__inColorUiChangeEvent=False
+
+        self.lblBrushTitle.setText(f"{i18n('Brush')} - <i>{brush.name()}</i>")
+
+        self.wtComments.setHtml(self.__brush.comments())
+        self.wtComments.setToolbarButtons(WTextEdit.DEFAULT_TOOLBAR|WTextEditBtBarOption.STYLE_STRIKETHROUGH|WTextEditBtBarOption.STYLE_COLOR_BG)
+        self.wtComments.setColorPickerLayout(BBSSettings.getTxtColorPickerLayout())
+
+        self.kseShortcut.setKeySequence(brush.shortcut())
+        self.kseShortcut.setClearButtonEnabled(True)
+        self.kseShortcut.keySequenceCleared.connect(self.__shortcutModified)
+        self.kseShortcut.editingFinished.connect(self.__shortcutModified)
+        self.kseShortcut.keySequenceChanged.connect(self.__shortcutModified)
+
+        self.lblBrushIcon.setPixmap(QPixmap.fromImage(brush.image()).scaled(128,128,Qt.KeepAspectRatio,Qt.SmoothTransformation))
+
+        self.cbKeepUserModifications.setChecked(brush.keepUserModifications())
+
+        self.tbResetBrushValues.clicked.connect(self.__resetBrushValues)
+
+        try:
+            maxValue=int(Krita.instance().readSetting('', 'maximumBrushSize', '1000'))
+        except:
+            maxValue=1000
+        self.hsBrushSize.setScale(1000)
+        self.hsBrushSize.setNaturalMin(10)
+        self.hsBrushSize.setNaturalMax(100*maxValue)
+        self.dsbBrushSize.setMaximum(maxValue)
+        self.hsBrushSize.naturalValueChanged.connect(lambda v: self.__brushSizeChanged(v, False))
+        self.dsbBrushSize.valueChanged[float].connect(lambda v: self.__brushSizeChanged(v, True))
+        self.dsbBrushSize.setValue(brush.size())
+
+        self.hsBrushOpacity.valueChanged.connect(lambda v: self.__brushOpacityChanged(v, False))
+        self.dsbBrushOpacity.valueChanged[float].connect(lambda v: self.__brushOpacityChanged(v, True))
+        self.dsbBrushOpacity.setValue(100*brush.opacity())
+
+        self.hsBrushFlow.valueChanged.connect(lambda v: self.__brushFlowChanged(v, False))
+        self.dsbBrushFlow.valueChanged[float].connect(lambda v: self.__brushFlowChanged(v, True))
+        self.dsbBrushFlow.setValue(100*brush.flow())
+
+        index=0
+        for catId in EKritaBlendingModes.categoriesIdList():
+            self.cbBrushBlendingMode.addItem(EKritaBlendingModes.categoryName(catId), None)
+            index+=1
+
+            for bModeId in EKritaBlendingModes.categoryBlendingMode(catId):
+                self.cbBrushBlendingMode.addItem(EKritaBlendingModes.blendingModeName(bModeId), bModeId)
+                if bModeId==brush.blendingMode():
+                    self.cbBrushBlendingMode.setCurrentIndex(index)
+                index+=1
+
+        model=self.cbBrushBlendingMode.model()
+        for row in range(model.rowCount()):
+            if self.cbBrushBlendingMode.itemData(row) is None:
+                item=model.item(row, 0)
+                item.setFlags(item.flags() & ~(Qt.ItemIsSelectable|Qt.ItemIsEnabled))
+                font=item.font()
+                font.setBold(True)
+                font.setItalic(True)
+                item.setFont(font)
+
+        cbBrushBlendingModeItemDelegate=QStyledItemDelegate(self)
+        self.cbBrushBlendingMode.setItemDelegate(cbBrushBlendingModeItemDelegate)
+
+
+        toolIdList=EKritaPaintTools.idList()
+        for index, toolId in enumerate(toolIdList):
+            self.cbDefaultPaintTools.addItem(EKritaPaintTools.name(toolId), toolId)
+            if toolId==brush.defaultPaintTool():
+                self.cbDefaultPaintTools.setCurrentIndex(index)
+        self.cbDefaultPaintTool.toggled.connect(self.cbDefaultPaintTools.setEnabled)
+        self.cbDefaultPaintTool.setChecked(brush.defaultPaintTool() in toolIdList)
+        self.cbDefaultPaintTools.setEnabled(self.cbDefaultPaintTool.isChecked())
+
+        self.btUseSpecificColorFg.colorPicker().setOptionLayout(BBSSettings.getBrushColorPickerLayout())
+        self.btUseSpecificColorBg.colorPicker().setOptionLayout(BBSSettings.getBrushColorPickerLayout())
+        self.btUseSpecificColorFg.colorPicker().setOptionMenu(WColorPicker.OPTION_MENU_RGB|WColorPicker.OPTION_MENU_CMYK|WColorPicker.OPTION_MENU_HSV|WColorPicker.OPTION_MENU_HSL|WColorPicker.OPTION_MENU_CSSRGB|WColorPicker.OPTION_MENU_COLCOMP|WColorPicker.OPTION_MENU_COLWHEEL|WColorPicker.OPTION_MENU_PALETTE|WColorPicker.OPTION_MENU_UICOMPACT|WColorPicker.OPTION_MENU_COLPREVIEW)
+        self.btUseSpecificColorBg.colorPicker().setOptionMenu(WColorPicker.OPTION_MENU_RGB|WColorPicker.OPTION_MENU_CMYK|WColorPicker.OPTION_MENU_HSV|WColorPicker.OPTION_MENU_HSL|WColorPicker.OPTION_MENU_CSSRGB|WColorPicker.OPTION_MENU_COLCOMP|WColorPicker.OPTION_MENU_COLWHEEL|WColorPicker.OPTION_MENU_PALETTE|WColorPicker.OPTION_MENU_UICOMPACT|WColorPicker.OPTION_MENU_COLPREVIEW)
+        self.btUseSpecificColorFg.colorPicker().uiChanged.connect(self.__brushColorPickerUiChanged)
+        self.btUseSpecificColorBg.colorPicker().uiChanged.connect(self.__brushColorPickerUiChanged)
+        self.btUseSpecificColorBg.setNoneColor(True)
+
+        if brush.blendingMode()!='erase':
+            # for eraser, eraser mode is ignored
+            self.cbIgnoreEraserMode.setChecked(brush.ignoreEraserMode())
+
+            # for eraser brush, option is not available
+            colorFg=brush.colorFg()
+            colorBg=brush.colorBg()
+
+            if colorFg is None:
+                # foreground color define if a specific color is used
+                self.cbUseSpecificColor.setChecked(False)
+                self.btUseSpecificColorFg.setVisible(False)
+                self.btUseSpecificColorBg.setVisible(False)
+            else:
+                self.cbUseSpecificColor.setChecked(True)
+                self.btUseSpecificColorFg.setVisible(True)
+                self.btUseSpecificColorBg.setVisible(True)
+
+            self.btUseSpecificColorFg.setColor(colorFg)
+            self.btUseSpecificColorBg.setColor(brush.colorBg())
+            self.cbUseSpecificColor.toggled.connect(self.__useSpecificColorChanged)
+        else:
+            self.cbIgnoreEraserMode.setVisible(False)
+            self.cbUseSpecificColor.setVisible(False)
+            self.btUseSpecificColorFg.setVisible(False)
+            self.btUseSpecificColorBg.setVisible(False)
+
+        self.pbOk.clicked.connect(self.accept)
+        self.pbCancel.clicked.connect(self.reject)
+
+        self.setModal(True)
+        self.setWindowTitle(title)
+        self.setWindowFlags(Qt.Dialog|Qt.WindowTitleHint)
+
+    def __resetBrushValues(self):
+        """Reset brush properties to default values"""
+        # memorize brush
+        currentBrush=BBSBrush()
+        currentBrush.fromCurrentKritaBrush()
+
+        # reset brush
+        Krita.instance().action('reload_preset_action').trigger()
+
+        resetBrush=BBSBrush()
+        resetBrush.fromCurrentKritaBrush()
+
+        # update brush ui properties
+        self.dsbBrushSize.setValue(resetBrush.size())
+        self.dsbBrushFlow.setValue(100*resetBrush.flow())
+        self.dsbBrushOpacity.setValue(100*resetBrush.opacity())
+        for index in range(self.cbBrushBlendingMode.count()):
+            if self.cbBrushBlendingMode.itemData(index)==resetBrush.blendingMode():
+                self.cbBrushBlendingMode.setCurrentIndex(index)
+                break
+
+        # restore brush
+        currentBrush.toCurrentKritaBrush()
+
+    def __useSpecificColorChanged(self, isChecked):
+        """Checkbox state for cbUseSpecificColor has changed"""
+        self.btUseSpecificColorFg.setVisible(isChecked)
+        self.btUseSpecificColorBg.setVisible(isChecked)
+
+    def __brushSizeChanged(self, value, fromSpinBox=True):
+        """Size has been changed, update slider/spinbox according to value and source"""
+        if self.__inSliderSpinBoxEvent:
+            # avoid infinite call
+            return
+        self.__inSliderSpinBoxEvent=True
+        if fromSpinBox:
+            # update Slider
+            self.hsBrushSize.setNaturalValue(round(value * 100))
+        else:
+            # update spinbox
+            self.dsbBrushSize.setValue(round(value / 100, 2))
+        self.__inSliderSpinBoxEvent=False
+
+    def __brushOpacityChanged(self, value, fromSpinBox=True):
+        """Size has been changed, update slider/spinbox according to value and source"""
+        if self.__inSliderSpinBoxEvent:
+            # avoid infinite call
+            return
+        self.__inSliderSpinBoxEvent=True
+        if fromSpinBox:
+            # update Slider
+            self.hsBrushOpacity.setValue(round(value * 100))
+        else:
+            # update spinbox
+            self.dsbBrushOpacity.setValue(round(value / 100, 2))
+        self.__inSliderSpinBoxEvent=False
+
+    def __brushFlowChanged(self, value, fromSpinBox=True):
+        """Size has been changed, update slider/spinbox according to value and source"""
+        if self.__inSliderSpinBoxEvent:
+            # avoid infinite call
+            return
+        self.__inSliderSpinBoxEvent=True
+        if fromSpinBox:
+            # update Slider
+            self.hsBrushFlow.setValue(round(value * 100))
+        else:
+            # update spinbox
+            self.dsbBrushFlow.setValue(round(value / 100, 2))
+        self.__inSliderSpinBoxEvent=False
+
+    def __setOkEnabled(self, value):
+        """Enable/Disable OK button"""
+        if isinstance(value, bool):
+            self.pbOk.setEnabled(value)
+
+    def __shortcutModified(self):
+        """Shortcut value has been modified
+
+        Check if valid
+        """
+        keySequence=self.kseShortcut.keySequence()
+        if keySequence.isEmpty():
+            self.__setOkEnabled(True)
+            self.lblShortcutAlreadyUsed.setText('')
+            self.lblShortcutAlreadyUsed.setStyleSheet('')
+        else:
+            # need to check if shortcut already exists or not in Krita
+            foundActions=EKritaShortcuts.checkIfExists(keySequence)
+            if len(foundActions)==0:
+                self.__setOkEnabled(True)
+                self.lblShortcutAlreadyUsed.setText('')
+                self.lblShortcutAlreadyUsed.setStyleSheet('')
+            else:
+                self.__setOkEnabled(False)
+                text=[i18n("<b>Shortcut is already used</b>")]
+                eChar='\x01'
+                for action in foundActions:
+                    text.append(f"- <i>{action.text().replace('&&', eChar).replace('&', '').replace(eChar, '&')}</i>")
+                self.lblShortcutAlreadyUsed.setText("<br>".join(text))
+                self.lblShortcutAlreadyUsed.setStyleSheet(UITheme.style('warning-box'))
+
+    def __brushColorPickerUiChanged(self):
+        """UI has been changed for fg/bg color => apply same ui to other color bg/fg panel"""
+        if self.__inColorUiChangeEvent:
+            # avoid recursive calls
+            return
+
+        self.__inColorUiChangeEvent=True
+        if self.sender()==self.btUseSpecificColorFg.colorPicker():
+            print('__brushColorPickerUiChanged: from Fg')
+            self.btUseSpecificColorBg.colorPicker().setOptionLayout(self.btUseSpecificColorFg.colorPicker().optionLayout())
+        else:
+            print('__brushColorPickerUiChanged: from Bg')
+            self.btUseSpecificColorFg.colorPicker().setOptionLayout(self.btUseSpecificColorBg.colorPicker().optionLayout())
+        self.__inColorUiChangeEvent=False
+
+    def colorPickerLayoutTxt(self):
+        """Return color picked layout for text editor"""
+        return self.wtComments.colorPickerLayout()
+
+    def colorPickerLayoutBrush(self):
+        """Return color picked layout for brush"""
+        return self.btUseSpecificColorFg.colorPicker().optionLayout()
+
+    def options(self):
+        """Return options from brush editor"""
+        returned={
+                BBSBrush.KEY_SIZE: self.dsbBrushSize.value(),
+                BBSBrush.KEY_OPACITY: self.dsbBrushOpacity.value()/100,
+                BBSBrush.KEY_FLOW: self.dsbBrushFlow.value()/100,
+                BBSBrush.KEY_BLENDINGMODE: self.cbBrushBlendingMode.currentData(),
+                BBSBrush.KEY_COMMENTS: self.wtComments.toHtml(),
+                BBSBrush.KEY_KEEPUSERMODIFICATIONS: self.cbKeepUserModifications.isChecked(),
+                BBSBrush.KEY_IGNOREERASERMODE: True,
+                BBSBrush.KEY_SHORTCUT: self.kseShortcut.keySequence(),
+                BBSBrush.KEY_COLOR_FG: None,
+                BBSBrush.KEY_COLOR_BG: None,
+                BBSBrush.KEY_DEFAULTPAINTTOOL: None
+            }
+
+        if self.cbDefaultPaintTool.isChecked():
+            returned[BBSBrush.KEY_DEFAULTPAINTTOOL]=self.cbDefaultPaintTools.currentData()
+
+        if self.cbIgnoreEraserMode.isVisible():
+            returned[BBSBrush.KEY_IGNOREERASERMODE]=self.cbIgnoreEraserMode.isChecked()
+
+        if self.cbUseSpecificColor.isChecked():
+            returned[BBSBrush.KEY_COLOR_FG]=self.btUseSpecificColorFg.color()
+            if self.btUseSpecificColorBg.color().isNone():
+                returned[BBSBrush.KEY_COLOR_BG]=None
+            else:
+                returned[BBSBrush.KEY_COLOR_BG]=self.btUseSpecificColorBg.color()
+
+        return returned

@@ -240,6 +240,7 @@ class BBSSettings(Settings):
                 brushDict={
                         "blendingMode": "erase",
                         "color": "",
+                        "colorBg": "",
                         "comments": "",
                         "flow": 1.0,
                         "ignoreEraserMode": True,
@@ -256,6 +257,7 @@ class BBSSettings(Settings):
                 brushDict={
                         "blendingMode": "erase",
                         "color": "",
+                        "colorBg": "",
                         "comments": "",
                         "flow": 1.0,
                         "ignoreEraserMode": True,
@@ -272,6 +274,7 @@ class BBSSettings(Settings):
                 brushDict={
                         "blendingMode": "erase",
                         "color": "",
+                        "colorBg": "",
                         "comments": "",
                         "flow": 1.0,
                         "ignoreEraserMode": True,
@@ -299,6 +302,7 @@ class BBSSettings(Settings):
                 brushDict={
                         "blendingMode": "normal",
                         "color": "#000000",
+                        "colorBg": "",
                         "comments": "",
                         "flow": 1.0,
                         "ignoreEraserMode": True,
