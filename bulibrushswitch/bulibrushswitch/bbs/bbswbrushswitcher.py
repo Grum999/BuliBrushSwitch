@@ -21,7 +21,9 @@
 
 from krita import (
         Krita,
-        Window
+        Window,
+        View,
+        ManagedColor
     )
 from PyQt5.Qt import *
 
@@ -150,7 +152,7 @@ class BBSWBrushSwitcher(QWidget):
         self.__actionPopupUi=BBSWBrushSwitcherUi(self, self.__bbsName, self.__bbsVersion)
 
         # current selected brush (used when direct click on __tbBrush button)
-        self.__selectedBrushName=None
+        self.__selectedBrushId=None
 
         # wich icon is displayed in button __tbBrush
         self.__selectedBrushMode=BBSSettingsValues.DEFAULT_SELECTIONMODE_FIRST_FROM_LIST
@@ -185,33 +187,36 @@ class BBSWBrushSwitcher(QWidget):
         self.setLayout(layout)
         self.__reloadBrushes()
 
-    def __setSelectedBrushName(self, brushName=None):
+    def __setSelectedBrushId(self, brushId=None):
         """Set `brushName` as new selected brush
 
         If given `brushName` is None (or not found in list of brush), first brush
         in list will be defined as current selected brush name
         """
         updated=False
-        brushNames=self.__brushes.namesList()
+        brushIdList=self.__brushes.idList()
 
         if self.__selectedBrushMode==BBSSettingsValues.DEFAULT_SELECTIONMODE_FIRST_FROM_LIST:
             # always use the first item from brush list
-            if self.__selectedBrushName!=brushNames[0]:
-                self.__selectedBrushName=brushNames[0]
+            if self.__selectedBrushId!=brushIdList[0]:
+                self.__selectedBrushId=brushIdList[0]
                 updated=True
-        elif brushName in brushNames:
-            if self.__selectedBrushName!=brushName:
-                self.__selectedBrushName=brushName
+        elif brushId in brushIdList:
+            # in list
+            if self.__selectedBrushId!=brushId:
+                # and not the current selected brush, use it
+                self.__selectedBrushId=brushId
                 updated=True
-        elif self.__selectedBrushName!=brushNames[0]:
-            self.__selectedBrushName=brushNames[0]
+        elif self.__selectedBrushId!=brushIdList[0]:
+            # not in list, use the first one
+            self.__selectedBrushId=brushIdList[0]
             updated=True
 
-        BBSSettings.set(BBSSettingsKey.CONFIG_BRUSHES_LAST_SELECTED, self.__selectedBrushName)
+        BBSSettings.set(BBSSettingsKey.CONFIG_BRUSHES_LAST_SELECTED, self.__selectedBrushId)
 
         if updated:
             # update icon...
-            brush=self.__brushes.getFromName(self.__selectedBrushName)
+            brush=self.__brushes.get(self.__selectedBrushId)
             self.__tbBrush.setIcon(QIcon(QPixmap.fromImage(brush.image())))
 
     @pyqtSlot(bool)
@@ -297,7 +302,7 @@ class BBSWBrushSwitcher(QWidget):
                     action.changed.connect(self.__setShortcutFromAction)
                 self.__brushes.add(brush)
         self.__brushes.endUpdate()
-        self.__setSelectedBrushName(self.__selectedBrushName)
+        self.__setSelectedBrushId(self.__selectedBrushId)
 
     def __displayPopupUi(self):
         """Display popup user interface"""
@@ -333,7 +338,7 @@ class BBSWBrushSwitcher(QWidget):
         #
         # new brush is already active Krita
         if not self.__selectedBrush is None and self.__selectedBrush.keepUserModifications():
-            # we need to keep settings for brush...
+            # we need to keep settings for plugin's brush...
             #
             # need to disconnect to avoid recursives call...
             self.__disconnectResourceSignal()
@@ -362,7 +367,7 @@ class BBSWBrushSwitcher(QWidget):
             if self.__selectedBrush.ignoreEraserMode():
                 pass
 
-            if self.__selectedBrush.color():
+            if self.__selectedBrush.colorFg():
                 saveColor=True
             else:
                 saveColor=False
@@ -398,28 +403,28 @@ class BBSWBrushSwitcher(QWidget):
         if isinstance(value, BBSBrush):
             # brush is provided
             selectedBrush=value
-            selectedBrushName=value.name()
+            selectedBrushId=value.id()
         elif isinstance(value, bool):
             # toggle status from __tbBrush button
             # -- need to keep current
             if self.__selectedBrush is None:
-                # activate current "selectedBrushName"
-                selectedBrush=self.__brushes.getFromName(self.__selectedBrushName)
-                selectedBrushName=self.__selectedBrushName
+                # activate current "selectedBrushId"
+                selectedBrush=self.__brushes.get(self.__selectedBrushId)
+                selectedBrushId=self.__selectedBrushId
             else:
-                # deactivate current "selectedBrushName"
+                # deactivate current "selectedBrushId"
                 selectedBrush=None
-                selectedBrushName=None
+                selectedBrushId=None
         elif value is None:
             # want to deactivate current brush
             selectedBrush=None
-            selectedBrushName=None
+            selectedBrushId=None
         else:
             raise EInvalidType("Given `value` must be <str> or <BBSBrush> or <bool>")
 
         if selectedBrush==self.__selectedBrush:
             selectedBrush=None
-            selectedBrushName=None
+            selectedBrushId=None
 
         if self.__selectedBrush:
             # restore original Krita's brush properties if available
@@ -435,13 +440,29 @@ class BBSWBrushSwitcher(QWidget):
                 #
                 # case when not asked: brush as been changed outside plugin
                 # in this case don't need to restore brush, and no need to
-                # keep user modificatin as already processed in __keepUserModif()
+                # keep user modification as already processed in __keepUserModif()
 
                 # keep user modification made on current brush, if needed
                 self.__keepUserModif()
 
                 # restore Krita's brush, if asked
                 self.__kritaBrush.toCurrentKritaBrush()
+            elif self.__kritaBrush:
+                # do not restore Krita's brush, but a krita's brush exist
+                #
+                # case when not asked: brush as been changed outside plugin
+                # in this case don't need to restore brush, but we want to restore
+                # initial colors
+
+                view = Krita.instance().activeWindow().activeView()
+
+                colorFg=self.__kritaBrush.colorFg()
+                colorBg=self.__kritaBrush.colorBg()
+
+                if colorFg and view:
+                    view.setForeGroundColor(ManagedColor.fromQColor(colorFg, view.canvas()))
+                if colorBg and view:
+                    view.setBackGroundColor(ManagedColor.fromQColor(colorBg, view.canvas()))
 
             self.__kritaBrush=None
             self.__selectedBrush=None
@@ -463,7 +484,7 @@ class BBSWBrushSwitcher(QWidget):
             self.__keepUserModif()
 
             # apply current asked brush
-            self.__setSelectedBrushName(selectedBrushName)
+            self.__setSelectedBrushId(selectedBrushId)
             self.__selectedBrush=selectedBrush
             self.__selectedBrush.toCurrentKritaBrush()
 
