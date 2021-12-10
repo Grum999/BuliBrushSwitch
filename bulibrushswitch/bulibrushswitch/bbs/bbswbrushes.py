@@ -157,7 +157,8 @@ class BBSBrush(QObject):
                 defaultPaintTool=''
 
             if self.__blendingMode=='erase':
-                self.__brushNfoOptions=(f' <tr><td align="left"><b>{i18n("Keep user modifications")}</b></td><td align="right">{yesno(self.__blendingMode)}</td><td></td></tr>'
+                self.__brushNfoOptions=(f' {defaultPaintTool}'
+                                        f' <tr><td align="left"><b>{i18n("Keep user modifications")}</b></td><td align="right">{yesno(self.__blendingMode)}</td><td></td></tr>'
                                         f' {shortcutText}')
             else:
                 if self.__colorFg is None:
