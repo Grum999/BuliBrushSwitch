@@ -427,10 +427,24 @@ class BBSWBrushSwitcher(QWidget):
             selectedBrush=None
             selectedBrushId=None
 
+        # keep current plugin brush color
+        applyBrushColor=True
+        applyBrushTool=True
+
         if self.__selectedBrush:
             # restore original Krita's brush properties if available
-            self.__selectedBrush.restoreKritaBrush()
+            if self.__selectedBrush.colorFg() is None:
+                # brush don't have a specific color
+                # do not keep current color (restore initial Krita's brush color)
+                applyBrushColor=False
 
+            if self.__selectedBrush.defaultPaintTool() is None:
+                # brush don't have a specific paint tool
+                # do not keep current paint tool (restore initial Krita's paint tool)
+                applyBrushTool=False
+
+
+            self.__selectedBrush.restoreKritaBrush(applyBrushColor, applyBrushTool)
         if selectedBrush is None:
             # "deactivate" current brush
             # no need anymore to be aware for brushes change
@@ -447,23 +461,33 @@ class BBSWBrushSwitcher(QWidget):
                 self.__keepUserModif()
 
                 # restore Krita's brush, if asked
-                self.__kritaBrush.toCurrentKritaBrush()
-            elif self.__kritaBrush:
+                self.__kritaBrush.toCurrentKritaBrush(None, applyBrushColor, applyBrushTool)
+            elif self.__kritaBrush and restoreKritaBrush==False:
                 # do not restore Krita's brush, but a krita's brush exist
                 #
                 # case when not asked: brush as been changed outside plugin
                 # in this case don't need to restore brush, but we want to restore
                 # initial colors
 
-                view = Krita.instance().activeWindow().activeView()
+                if applyBrushColor:
+                    view = Krita.instance().activeWindow().activeView()
 
-                colorFg=self.__kritaBrush.colorFg()
-                colorBg=self.__kritaBrush.colorBg()
+                    colorFg=self.__kritaBrush.colorFg()
+                    colorBg=self.__kritaBrush.colorBg()
 
-                if colorFg and view:
-                    view.setForeGroundColor(ManagedColor.fromQColor(colorFg, view.canvas()))
-                if colorBg and view:
-                    view.setBackGroundColor(ManagedColor.fromQColor(colorBg, view.canvas()))
+                    if colorFg and view:
+                        view.setForeGroundColor(ManagedColor.fromQColor(colorFg, view.canvas()))
+                    if colorBg and view:
+                        view.setBackGroundColor(ManagedColor.fromQColor(colorBg, view.canvas()))
+
+                if applyBrushTool:
+                    paintTool=self.__kritaBrush.defaultPaintTool()
+
+                    if paintTool:
+                        action=Krita.instance().action(paintTool)
+                        if action:
+                            action.trigger()
+
 
             self.__kritaBrush=None
             self.__selectedBrush=None
@@ -706,8 +730,17 @@ class BBSWBrushSwitcherUi(QFrame):
     def showEvent(self, event):
         """Widget is visible"""
         if not self.__tvBrushesInitialised:
+            # if user click on an already selected item, selectionChanged signal is not emitted
+            #
+            # if user click on an item that is not selected, selectionChanged signal is emitted
+            # but clicked signal is not
+            #
+            # add signal for both case, to ensure that when a item is clicked or selected, the
+            # brush selection method is executed
             self.__tvBrushes.selectionModel().selectionChanged.connect(self.__brushesSelectionChanged)
             self.__lvBrushes.selectionModel().selectionChanged.connect(self.__brushesSelectionChanged)
+            self.__tvBrushes.clicked.connect(self.__brushesSelectionChanged)
+            self.__lvBrushes.clicked.connect(self.__brushesSelectionChanged)
             self.__tvBrushesInitialised=True
         self.__tvBrushes.resizeColumns()
 
@@ -726,7 +759,7 @@ class BBSWBrushSwitcherUi(QFrame):
             self.__tbAbout.hasFocus()):
             return
         elif self.__tvBrushes.hasFocus() or self.__lvBrushes.hasFocus():
-            self.__brushesSelectionChanged()
+            # let "selectionChanged" and/or "clicked" signal manage this case
             return
 
         self.hide()

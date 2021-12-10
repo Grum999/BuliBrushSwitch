@@ -117,7 +117,11 @@ class BBSBrush(QObject):
             self.importData(brush.exportData())
 
     def __repr__(self):
-        return f"<BBSBrush({self.__uuid}, {self.__name})>"
+        colorFg=self.colorFg()
+        if colorFg:
+            return f"<BBSBrush({self.__uuid}, {self.__name}, {colorFg.name()})>"
+        else:
+            return f"<BBSBrush({self.__uuid}, {self.__name}, None)>"
 
     def __updated(self, property):
         """Emit updated signal when a property has been changed"""
@@ -240,7 +244,7 @@ class BBSBrush(QObject):
         self.endUpdate()
         return True
 
-    def toCurrentKritaBrush(self, view=None):
+    def toCurrentKritaBrush(self, view=None, loadColor=True, loadTool=True):
         """Set brush properties to given view
 
         If no view is provided, use current active view
@@ -268,12 +272,15 @@ class BBSBrush(QObject):
         view.setPaintingOpacity(self.__opacity)
         view.setCurrentBlendingMode(self.__blendingMode)
 
-        if self.__colorFg!=None:
+        if not self.__colorFg is None and loadColor:
+            # use specific color
             view.setForeGroundColor(ManagedColor.fromQColor(self.__colorFg, view.canvas()))
-        if self.__colorBg!=None:
-            view.setBackGroundColor(ManagedColor.fromQColor(self.__colorBg, view.canvas()))
 
-        if not self.__defaultPaintTool is None:
+            # use bg specific color (available only if fg specific color is defined)
+            if self.__colorBg!=None:
+                view.setBackGroundColor(ManagedColor.fromQColor(self.__colorBg, view.canvas()))
+
+        if not self.__defaultPaintTool is None and loadTool:
             action=Krita.instance().action(self.__defaultPaintTool)
             if action:
                 action.trigger()
@@ -618,11 +625,11 @@ class BBSBrush(QObject):
         """Return Krita's brush if any, otherwise None"""
         return self.__kritaBrush
 
-    def restoreKritaBrush(self):
+    def restoreKritaBrush(self, restoreColor=True, restorePaintTool=True):
         """Restore Return Krita's brush if any, otherwise does nothing"""
         if self.__kritaBrush:
             self.__kritaBrushIsRestoring=True
-            self.__kritaBrush.toCurrentKritaBrush()
+            self.__kritaBrush.toCurrentKritaBrush(None, restoreColor, restorePaintTool)
             self.__kritaBrushIsRestoring=False
 
 
