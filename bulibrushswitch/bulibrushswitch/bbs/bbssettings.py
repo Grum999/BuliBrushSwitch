@@ -69,6 +69,9 @@ class BBSSettingsValues(object):
     DEFAULT_SELECTIONMODE_FIRST_FROM_LIST = 'firstFromList'
     DEFAULT_SELECTIONMODE_LAST_SELECTED = 'lastSelected'
 
+    DEFAULT_MODIFICATIONMODE_IGNORE = 'ignoreModification'
+    DEFAULT_MODIFICATIONMODE_KEEP = 'keepModification'
+
     POPUP_BRUSHES_VIEWMODE_LIST=0
     POPUP_BRUSHES_VIEWMODE_ICON=1
 
@@ -124,6 +127,7 @@ class BBSSettingsKey(SettingsKey):
 
     CONFIG_BRUSHES_DEFAULT_SELECTIONMODE =                                      'config.brushes.default.selectionMode'
     CONFIG_BRUSHES_LAST_SELECTED =                                              'config.brushes.default.lastSelected'
+    CONFIG_BRUSHES_DEFAULT_MODIFICATIONMODE =                                   'config.brushes.default.modificationMode'
 
 
 class BBSSettings(Settings):
@@ -200,6 +204,9 @@ class BBSSettings(Settings):
             SettingsRule(BBSSettingsKey.CONFIG_BRUSHES_DEFAULT_SELECTIONMODE,                        BBSSettingsValues.DEFAULT_SELECTIONMODE_FIRST_FROM_LIST,
                                                                                                                  SettingsFmt(str, [BBSSettingsValues.DEFAULT_SELECTIONMODE_FIRST_FROM_LIST,
                                                                                                                                    BBSSettingsValues.DEFAULT_SELECTIONMODE_LAST_SELECTED])),
+            SettingsRule(BBSSettingsKey.CONFIG_BRUSHES_DEFAULT_MODIFICATIONMODE,                     BBSSettingsValues.DEFAULT_MODIFICATIONMODE_IGNORE,
+                                                                                                                 SettingsFmt(str, [BBSSettingsValues.DEFAULT_MODIFICATIONMODE_IGNORE,
+                                                                                                                                   BBSSettingsValues.DEFAULT_MODIFICATIONMODE_KEEP])),
         ]
 
         super(BBSSettings, self).__init__(pluginId, rules)

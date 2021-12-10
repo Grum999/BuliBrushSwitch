@@ -45,7 +45,7 @@ from .bbsmainwindow import BBSMainWindow
 from bulibrushswitch.pktk.modules.imgutils import buildIcon
 from bulibrushswitch.pktk.modules.edialog import EDialog
 from bulibrushswitch.pktk.modules.about import AboutWindow
-from bulibrushswitch.pktk.modules.ekrita import EKritaBrushPreset
+from bulibrushswitch.pktk.modules.ekrita import (EKritaBrushPreset, EKritaPaintTools)
 from bulibrushswitch.pktk.widgets.wseparator import WVLine
 
 
@@ -154,8 +154,13 @@ class BBSWBrushSwitcher(QWidget):
         # current selected brush (used when direct click on __tbBrush button)
         self.__selectedBrushId=None
 
-        # wich icon is displayed in button __tbBrush
+        # which icon is displayed in button __tbBrush
         self.__selectedBrushMode=BBSSettingsValues.DEFAULT_SELECTIONMODE_FIRST_FROM_LIST
+
+
+        # For brush with specific color/paint tool, when color/paint tool is modified, how
+        # switch back to initial brush is managed
+        self.__selectedBrushModificationMode=BBSSettingsValues.DEFAULT_MODIFICATIONMODE_KEEP
 
         # memorized brush from Krita
         self.__kritaBrush=None
@@ -266,6 +271,7 @@ class BBSWBrushSwitcher(QWidget):
     def __reloadBrushes(self):
         """Brushes configurations has been modified; reload"""
         self.__selectedBrushMode=BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_DEFAULT_SELECTIONMODE)
+        self.__selectedBrushModificationMode=BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_DEFAULT_MODIFICATIONMODE)
 
         # cleanup current action shortcuts
         for brushId in self.__brushes.idList():
@@ -427,6 +433,8 @@ class BBSWBrushSwitcher(QWidget):
             selectedBrush=None
             selectedBrushId=None
 
+        view = Krita.instance().activeWindow().activeView()
+
         # keep current plugin brush color
         applyBrushColor=True
         applyBrushTool=True
@@ -443,8 +451,24 @@ class BBSWBrushSwitcher(QWidget):
                 # do not keep current paint tool (restore initial Krita's paint tool)
                 applyBrushTool=False
 
+            if applyBrushColor:
+                if self.__selectedBrushModificationMode==BBSSettingsValues.DEFAULT_MODIFICATIONMODE_KEEP:
+                    currentFg=view.foregroundColor().colorForCanvas(view.canvas())
+                    currentBg=view.backgroundColor().colorForCanvas(view.canvas())
+
+                    if self.__selectedBrush.colorFg()!=currentFg or (not self.__selectedBrush.colorBg() is None and self.__selectedBrush.colorBg()!=currentBg):
+                        applyBrushColor=False
+
+            if applyBrushTool:
+                if self.__selectedBrushModificationMode==BBSSettingsValues.DEFAULT_MODIFICATIONMODE_KEEP:
+                    currentPaintTool=EKritaPaintTools.current()
+
+                    if currentPaintTool and self.__selectedBrush.defaultPaintTool()!=currentPaintTool:
+                        applyBrushTool=False
+
 
             self.__selectedBrush.restoreKritaBrush(applyBrushColor, applyBrushTool)
+
         if selectedBrush is None:
             # "deactivate" current brush
             # no need anymore to be aware for brushes change
@@ -470,8 +494,6 @@ class BBSWBrushSwitcher(QWidget):
                 # initial colors
 
                 if applyBrushColor:
-                    view = Krita.instance().activeWindow().activeView()
-
                     colorFg=self.__kritaBrush.colorFg()
                     colorBg=self.__kritaBrush.colorBg()
 
@@ -663,6 +685,7 @@ class BBSWBrushSwitcherUi(QFrame):
         """Selection in treeview has changed, update UI"""
         if self.__inSelectionUpdate:
             return
+
         self.__inSelectionUpdate=True
         if BBSSettings.get(BBSSettingsKey.CONFIG_UI_POPUP_BRUSHES_VIEWMODE)==BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_LIST:
             selectedBrushes=self.__tvBrushes.selectedItems()

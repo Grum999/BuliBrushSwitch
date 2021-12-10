@@ -1644,10 +1644,8 @@ class BBSBrushesEditor(EDialog):
 
         self.__inColorUiChangeEvent=True
         if self.sender()==self.btUseSpecificColorFg.colorPicker():
-            print('__brushColorPickerUiChanged: from Fg')
             self.btUseSpecificColorBg.colorPicker().setOptionLayout(self.btUseSpecificColorFg.colorPicker().optionLayout())
         else:
-            print('__brushColorPickerUiChanged: from Bg')
             self.btUseSpecificColorFg.colorPicker().setOptionLayout(self.btUseSpecificColorBg.colorPicker().optionLayout())
         self.__inColorUiChangeEvent=False
 

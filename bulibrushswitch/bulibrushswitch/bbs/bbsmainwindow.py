@@ -174,6 +174,11 @@ class BBSMainWindow(EDialog):
         else:
             self.rbLastSelected.setChecked(True)
 
+        if BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_DEFAULT_MODIFICATIONMODE)==BBSSettingsValues.DEFAULT_MODIFICATIONMODE_IGNORE:
+            self.rbModificationModeIgnore.setChecked(True)
+        else:
+            self.rbModificationModeKeep.setChecked(True)
+
         # -- brush list
         self.tvBrushes.doubleClicked.connect(self.__actionBrushEdit)
         self.tvBrushes.setBrushes(self.__brushes)
@@ -441,6 +446,11 @@ class BBSMainWindow(EDialog):
             BBSSettings.set(BBSSettingsKey.CONFIG_BRUSHES_DEFAULT_SELECTIONMODE, BBSSettingsValues.DEFAULT_SELECTIONMODE_FIRST_FROM_LIST)
         else:
             BBSSettings.set(BBSSettingsKey.CONFIG_BRUSHES_DEFAULT_SELECTIONMODE, BBSSettingsValues.DEFAULT_SELECTIONMODE_LAST_SELECTED)
+
+        if self.rbModificationModeIgnore.isChecked():
+            BBSSettings.set(BBSSettingsKey.CONFIG_BRUSHES_DEFAULT_MODIFICATIONMODE, BBSSettingsValues.DEFAULT_MODIFICATIONMODE_IGNORE)
+        else:
+            BBSSettings.set(BBSSettingsKey.CONFIG_BRUSHES_DEFAULT_MODIFICATIONMODE, BBSSettingsValues.DEFAULT_MODIFICATIONMODE_KEEP)
 
         BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_WINDOW_POSITION_X, self.x())
         BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_WINDOW_POSITION_Y, self.y())
