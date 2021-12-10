@@ -353,7 +353,7 @@ class BBSMainWindow(EDialog):
             # a brush is selected
             brush=brushes[0]
 
-            brushDescription="<br><br>"+brush.information(True, True)+"<br><br>"
+            brushDescription="<br><br>"+brush.information(BBSBrush.INFO_WITH_BRUSH_DETAILS|BBSBrush.INFO_WITH_BRUSH_OPTIONS)+"<br><br>"
 
             if WDialogBooleanInput.display(self.__bbsName+' - '+i18n(f'Remove brush'),
                                            i18n(f"<b>Following brush will removed from user list</b>{brushDescription}<b>Do you confirm action?</b>"),
