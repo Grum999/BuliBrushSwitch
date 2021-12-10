@@ -124,7 +124,7 @@
          <string notr="true">background-color: palette(light);padding: 6;</string>
         </property>
         <property name="text">
-         <string>Behavior for brushes with specific values</string>
+         <string>Behaviour for brushes with specific values</string>
         </property>
        </widget>
       </item>
