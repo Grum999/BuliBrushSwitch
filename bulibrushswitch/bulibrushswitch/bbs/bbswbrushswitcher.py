@@ -218,6 +218,7 @@ class BBSWBrushSwitcher(QWidget):
             # update icon...
             brush=self.__brushes.get(self.__selectedBrushId)
             self.__tbBrush.setIcon(QIcon(QPixmap.fromImage(brush.image())))
+            self.__tbBrush.setToolTip(brush.information(BBSBrush.INFO_WITH_BRUSH_DETAILS|BBSBrush.INFO_WITH_BRUSH_OPTIONS))
 
     @pyqtSlot(bool)
     def __setSelectedBrushFromAction(self, checked):
