@@ -724,7 +724,7 @@ class BBSWBrushSwitcherUi(QFrame):
                 key = event.key()
 
                 if key in (Qt.Key_unknown, Qt.Key_Control, Qt.Key_Shift, Qt.Key_Alt, Qt.Key_Meta):
-                    newKeySequence=self.setKeySequence(QKeySequence(key))
+                    newKeySequence=QKeySequence(key)
                 else:
                     # combination of keys
                     modifiers = event.modifiers()
