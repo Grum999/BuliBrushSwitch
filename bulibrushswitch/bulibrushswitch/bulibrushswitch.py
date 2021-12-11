@@ -84,7 +84,7 @@ else:
 
 
 EXTENSION_ID = 'pykrita_bulibrushswitch'
-PLUGIN_VERSION = '0.1.1b'
+PLUGIN_VERSION = '0.2.0b'
 PLUGIN_MENU_ENTRY = 'Buli Brush Switch'
 
 REQUIRED_KRITA_VERSION = (5, 0, 0)
@@ -103,11 +103,10 @@ class BuliBrushSwitch(Extension):
         self.parent = parent
         self.__uiController = None
         self.__isKritaVersionOk = checkKritaVersion(*REQUIRED_KRITA_VERSION)
-        self.__dlgParentWidget=QWidget()
         self.__action=None
         self.__notifier=Krita.instance().notifier()
 
-
+    @pyqtSlot()
     def __windowCreated(self):
         """Main window has been created"""
         # consider that newly created window is active window (because no more information
@@ -115,10 +114,11 @@ class BuliBrushSwitch(Extension):
         window=Krita.instance().activeWindow()
         installedWindow=BBSWBrushSwitcher.installToWindow(window, PLUGIN_MENU_ENTRY, PLUGIN_VERSION)
 
+    @pyqtSlot()
     def __kritaIsClosing(self):
         """Save configuration before closing"""
         if BBSSettings.modified():
-            BBSSettings.saveConfig()
+            BBSSettings.save()
 
     def setup(self):
         """Is executed at Krita's startup"""
@@ -127,8 +127,12 @@ class BuliBrushSwitch(Extension):
 
         UITheme.load()
 
+        self.__notifier.setActive(True)
         self.__notifier.windowCreated.connect(self.__windowCreated)
-        self.__notifier.applicationClosing.connect(self.__kritaIsClosing)
+
+        #self.__notifier.applicationClosing.connect(self.__kritaIsClosing)
+        # doesn't work, use QApplication signal instead
+        QApplication.instance().aboutToQuit.connect(self.__kritaIsClosing)
 
     def createActions(self, window):
         """Create default actions for plugin"""
@@ -142,9 +146,8 @@ class BuliBrushSwitch(Extension):
             for brushNfo in brushes:
                 action=BBSSettings.brushAction(brushNfo[BBSBrush.KEY_UUID], brushNfo[BBSBrush.KEY_NAME], brushNfo[BBSBrush.KEY_COMMENTS], True, window)
 
-
-    def start(self):
-        """Execute BuliBrushSwitch"""
-        # ----------------------------------------------------------------------
-        # Create dialog box
-        BBSMainWindow(PLUGIN_MENU_ENTRY, PLUGIN_VERSION, self.__dlgParentWidget)
+                if brushNfo[BBSBrush.KEY_SHORTCUT]:
+                    # action will be loaded with defaul shortcut
+                    # force "dedicated" shortcut to be the same than default one to
+                    # avoid problems with Krita's user defined shortcut definition 
+                    action.setShortcut(QKeySequence(brushNfo[BBSBrush.KEY_SHORTCUT]))

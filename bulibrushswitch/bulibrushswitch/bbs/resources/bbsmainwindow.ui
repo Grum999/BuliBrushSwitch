@@ -88,10 +88,50 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="0" colspan="2">
+      <item row="0" column="0">
+       <widget class="QLabel" name="label">
+        <property name="font">
+         <font>
+          <pointsize>12</pointsize>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="toolTip">
+         <string>Define how the button in toolbar is managed by plugin</string>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">background-color: palette(light);padding: 6;</string>
+        </property>
+        <property name="text">
+         <string>Button selection mode</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLabel" name="label_2">
+        <property name="font">
+         <font>
+          <pointsize>12</pointsize>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="toolTip">
+         <string>For brushes with specific paint tool and/or color, define what to do when exit plugin's brush</string>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">background-color: palette(light);padding: 6;</string>
+        </property>
+        <property name="text">
+         <string>Behaviour for brushes with specific values</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
        <widget class="QRadioButton" name="rbFirstFromList">
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Button in toolbar is always mapped to first brush from list&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>Button in toolbar is always mapped to first brush from list</string>
         </property>
         <property name="text">
          <string>First from &amp;list</string>
@@ -104,36 +144,47 @@
         </attribute>
        </widget>
       </item>
-      <item row="0" column="0" colspan="2">
-       <widget class="QLabel" name="label">
-        <property name="font">
-         <font>
-          <pointsize>12</pointsize>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
-        </property>
-        <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Define how the button in toolbar is managed by plugin&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-        <property name="styleSheet">
-         <string notr="true">background-color: palette(light);padding: 6;</string>
-        </property>
-        <property name="text">
-         <string>Button selection mode</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0" colspan="2">
+      <item row="2" column="0">
        <widget class="QRadioButton" name="rbLastSelected">
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Button in toolbar is mapped to last brush that has been selected from list&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>Button in toolbar is mapped to last brush that has been selected from list</string>
         </property>
         <property name="text">
          <string>Las&amp;t selected</string>
         </property>
         <attribute name="buttonGroup">
          <string notr="true">buttonGroup</string>
+        </attribute>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QRadioButton" name="rbModificationModeIgnore">
+        <property name="toolTip">
+         <string>For brushes with specific paint tool and/or color, exiting plugin's brush will always restore initial paint tool and/or color</string>
+        </property>
+        <property name="text">
+         <string>I&amp;gnore modified state</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+        <attribute name="buttonGroup">
+         <string notr="true">buttonGroup_2</string>
+        </attribute>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QRadioButton" name="rbModificationModeKeep">
+        <property name="toolTip">
+         <string>For brushes with specific paint tool and/or color, exiting plugin's brush will:
+- If paint tool and/or color has been modified, keep last selected paint tool and/or color
+- If paint tool and/or color has NOT been modified, restore initial paint tool and/or color</string>
+        </property>
+        <property name="text">
+         <string>&amp;Keep modified state</string>
+        </property>
+        <attribute name="buttonGroup">
+         <string notr="true">buttonGroup_2</string>
         </attribute>
        </widget>
       </item>
@@ -383,7 +434,7 @@
            </widget>
           </item>
           <item>
-           <widget class="BBSWBrushes" name="tvBrushes">
+           <widget class="BBSWBrushesTv" name="tvBrushes">
             <property name="editTriggers">
              <set>QAbstractItemView::NoEditTriggers</set>
             </property>
@@ -487,8 +538,10 @@
                 <string>...</string>
                </property>
                <property name="icon">
-                <iconset theme="edit-clear-all">
-                 <normaloff>../../../../../../../../../../../../.designer/backup</normaloff>../../../../../../../../../../../../.designer/backup</iconset>
+                <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
+                 <normaloff>:/pktk/images/normal/clear</normaloff>
+                 <disabledoff>:/pktk/images/disabled/clear</disabledoff>
+                 <disabledon>:/pktk/images/disabled/clear</disabledon>:/pktk/images/normal/clear</iconset>
                </property>
                <property name="autoRaise">
                 <bool>true</bool>
@@ -605,7 +658,7 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>BBSWBrushes</class>
+   <class>BBSWBrushesTv</class>
    <extends>QTreeView</extends>
    <header>bulibrushswitch.bbs.bbswbrushes</header>
   </customwidget>
@@ -617,5 +670,6 @@
  <connections/>
  <buttongroups>
   <buttongroup name="buttonGroup"/>
+  <buttongroup name="buttonGroup_2"/>
  </buttongroups>
 </ui>

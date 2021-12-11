@@ -41,7 +41,7 @@ class QEColor(QColor):
     def __init__(self, value=None):
         super(QEColor, self).__init__(value)
 
-        self.__isNone=False
+        self.__isNone=(value is None)
 
     def isNone(self):
         return self.__isNone

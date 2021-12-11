@@ -69,6 +69,12 @@ class BBSSettingsValues(object):
     DEFAULT_SELECTIONMODE_FIRST_FROM_LIST = 'firstFromList'
     DEFAULT_SELECTIONMODE_LAST_SELECTED = 'lastSelected'
 
+    DEFAULT_MODIFICATIONMODE_IGNORE = 'ignoreModification'
+    DEFAULT_MODIFICATIONMODE_KEEP = 'keepModification'
+
+    POPUP_BRUSHES_VIEWMODE_LIST=0
+    POPUP_BRUSHES_VIEWMODE_ICON=1
+
 
 class BBSSettingsKey(SettingsKey):
     CONFIG_EDITOR_WINDOW_POSITION_X=                                            'config.editor.window.position.x'
@@ -114,12 +120,14 @@ class BBSSettingsKey(SettingsKey):
     CONFIG_UI_POPUP_WIDTH=                                                      'config.ui.popup.width'
     CONFIG_UI_POPUP_HEIGHT=                                                     'config.ui.popup.height'
     CONFIG_UI_POPUP_BRUSHES_ZOOMLEVEL=                                          'config.ui.popup.brushes.list.zoomLevel'
+    CONFIG_UI_POPUP_BRUSHES_VIEWMODE=                                           'config.ui.popup.brushes.list.viewMode'
 
     CONFIG_BRUSHES_LIST_COUNT =                                                 'config.brushes.list.count'
     CONFIG_BRUSHES_LIST_BRUSHES =                                               'config.brushes.list.brushes'
 
     CONFIG_BRUSHES_DEFAULT_SELECTIONMODE =                                      'config.brushes.default.selectionMode'
     CONFIG_BRUSHES_LAST_SELECTED =                                              'config.brushes.default.lastSelected'
+    CONFIG_BRUSHES_DEFAULT_MODIFICATIONMODE =                                   'config.brushes.default.modificationMode'
 
 
 class BBSSettings(Settings):
@@ -185,6 +193,9 @@ class BBSSettings(Settings):
             SettingsRule(BBSSettingsKey.CONFIG_UI_POPUP_WIDTH,                                       -1,         SettingsFmt(int)),
             SettingsRule(BBSSettingsKey.CONFIG_UI_POPUP_HEIGHT,                                      -1,         SettingsFmt(int)),
             SettingsRule(BBSSettingsKey.CONFIG_UI_POPUP_BRUSHES_ZOOMLEVEL,                           3,          SettingsFmt(int, [0,1,2,3,4])),
+            SettingsRule(BBSSettingsKey.CONFIG_UI_POPUP_BRUSHES_VIEWMODE,                            BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_LIST,
+                                                                                                                 SettingsFmt(int, [BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_LIST,
+                                                                                                                                   BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_ICON])),
 
             SettingsRule(BBSSettingsKey.CONFIG_BRUSHES_LIST_COUNT,                                   0,          SettingsFmt(int, (0, None))),
             SettingsRule(BBSSettingsKey.CONFIG_BRUSHES_LIST_BRUSHES,                                 [],         SettingsFmt(list)),
@@ -193,6 +204,9 @@ class BBSSettings(Settings):
             SettingsRule(BBSSettingsKey.CONFIG_BRUSHES_DEFAULT_SELECTIONMODE,                        BBSSettingsValues.DEFAULT_SELECTIONMODE_FIRST_FROM_LIST,
                                                                                                                  SettingsFmt(str, [BBSSettingsValues.DEFAULT_SELECTIONMODE_FIRST_FROM_LIST,
                                                                                                                                    BBSSettingsValues.DEFAULT_SELECTIONMODE_LAST_SELECTED])),
+            SettingsRule(BBSSettingsKey.CONFIG_BRUSHES_DEFAULT_MODIFICATIONMODE,                     BBSSettingsValues.DEFAULT_MODIFICATIONMODE_IGNORE,
+                                                                                                                 SettingsFmt(str, [BBSSettingsValues.DEFAULT_MODIFICATIONMODE_IGNORE,
+                                                                                                                                   BBSSettingsValues.DEFAULT_MODIFICATIONMODE_KEEP])),
         ]
 
         super(BBSSettings, self).__init__(pluginId, rules)
@@ -233,6 +247,7 @@ class BBSSettings(Settings):
                 brushDict={
                         "blendingMode": "erase",
                         "color": "",
+                        "colorBg": "",
                         "comments": "",
                         "flow": 1.0,
                         "ignoreEraserMode": True,
@@ -242,12 +257,14 @@ class BBSSettings(Settings):
                         "position": 0,
                         "size": 50.0,
                         "eraserMode": True,
+                        "defaultPaintTool": None,
                         "uuid": '1367df61-b0e2-4304-9b51-ff04c102659e'
                     }
             elif brushName.name()=='a) Eraser Small':
                 brushDict={
                         "blendingMode": "erase",
                         "color": "",
+                        "colorBg": "",
                         "comments": "",
                         "flow": 1.0,
                         "ignoreEraserMode": True,
@@ -257,12 +274,14 @@ class BBSSettings(Settings):
                         "position": 0,
                         "size": 25.0,
                         "eraserMode": True,
+                        "defaultPaintTool": None,
                         "uuid": '1367df61-b0e2-4304-9b51-ff04c102659e'
                     }
             elif brushName.name()=='a) Eraser Soft':
                 brushDict={
                         "blendingMode": "erase",
                         "color": "",
+                        "colorBg": "",
                         "comments": "",
                         "flow": 1.0,
                         "ignoreEraserMode": True,
@@ -272,6 +291,7 @@ class BBSSettings(Settings):
                         "position": 0,
                         "size": 60.0,
                         "eraserMode": True,
+                        "defaultPaintTool": None,
                         "uuid": '1367df61-b0e2-4304-9b51-ff04c102659e'
                     }
             else:
@@ -289,6 +309,7 @@ class BBSSettings(Settings):
                 brushDict={
                         "blendingMode": "normal",
                         "color": "#000000",
+                        "colorBg": "",
                         "comments": "",
                         "flow": 1.0,
                         "ignoreEraserMode": True,
@@ -298,6 +319,7 @@ class BBSSettings(Settings):
                         "position": 0,
                         "size": 60.0,
                         "eraserMode": False,
+                        "defaultPaintTool": None,
                         "uuid": '1367df61-b0e2-4304-9b51-ff04c102659e'
                     }
 
@@ -479,6 +501,7 @@ class BBSSettings(Settings):
 
         If not found, create it
         """
+        brushId=brushId.strip("{}")
         actionId=BBSSettings.brushActionId(brushId)
         action=Krita.instance().action(actionId)
         if action is None and create:
@@ -518,10 +541,10 @@ class BBSSettings(Settings):
         window=Krita.instance().activeWindow()
         if window:
             action=BBSSettings.brushAction(brush.id(), brush.name(), brush.comments(), not shortcut is None)
-
-            if action and shortcut:
-                # assign shortcut
-                action.setShortcut(shortcut)
-            elif action:
-                # remove shortcut
-                action.setShortcut(QKeySequence())
+            if action:
+                if shortcut:
+                    # assign shortcut
+                    action.setShortcut(QKeySequence(shortcut))
+                else:
+                    # remove shortcut
+                    action.setShortcut(QKeySequence())

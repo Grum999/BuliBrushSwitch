@@ -21,7 +21,9 @@
 
 from krita import (
         Krita,
-        Window
+        Window,
+        View,
+        ManagedColor
     )
 from PyQt5.Qt import *
 
@@ -34,7 +36,8 @@ from .bbssettings import (
 from .bbswbrushes import (
         BBSBrush,
         BBSBrushes,
-        BBSWBrushes
+        BBSWBrushesTv,
+        BBSWBrushesLv
     )
 
 from .bbsmainwindow import BBSMainWindow
@@ -42,7 +45,8 @@ from .bbsmainwindow import BBSMainWindow
 from bulibrushswitch.pktk.modules.imgutils import buildIcon
 from bulibrushswitch.pktk.modules.edialog import EDialog
 from bulibrushswitch.pktk.modules.about import AboutWindow
-from bulibrushswitch.pktk.modules.ekrita import EKritaBrushPreset
+from bulibrushswitch.pktk.modules.ekrita import (EKritaBrushPreset, EKritaPaintTools)
+from bulibrushswitch.pktk.widgets.wseparator import WVLine
 
 
 from bulibrushswitch.pktk.pktk import *
@@ -148,16 +152,25 @@ class BBSWBrushSwitcher(QWidget):
         self.__actionPopupUi=BBSWBrushSwitcherUi(self, self.__bbsName, self.__bbsVersion)
 
         # current selected brush (used when direct click on __tbBrush button)
-        self.__selectedBrushName=None
+        self.__selectedBrushId=None
 
-        # wich icon is displayed in button __tbBrush
+        # which icon is displayed in button __tbBrush
         self.__selectedBrushMode=BBSSettingsValues.DEFAULT_SELECTIONMODE_FIRST_FROM_LIST
+
+
+        # For brush with specific color/paint tool, when color/paint tool is modified, how
+        # switch back to initial brush is managed
+        self.__selectedBrushModificationMode=BBSSettingsValues.DEFAULT_MODIFICATIONMODE_KEEP
 
         # memorized brush from Krita
         self.__kritaBrush=None
 
         # current applied brush (if None, then plugin is not "active")
         self.__selectedBrush=None
+
+        # flag to determinate if brush shortcut have to be updated when shorcut
+        # for related action has been modified
+        self.__disableUpdatingShortcutFromAction=False
 
         # keep a reference to action "set eraser mode"
         self.__actionEraserMode=Krita.instance().action('erase_action')
@@ -179,53 +192,101 @@ class BBSWBrushSwitcher(QWidget):
         self.setLayout(layout)
         self.__reloadBrushes()
 
-    def __setSelectedBrushName(self, brushName=None):
+    def __setSelectedBrushId(self, brushId=None):
         """Set `brushName` as new selected brush
 
         If given `brushName` is None (or not found in list of brush), first brush
         in list will be defined as current selected brush name
         """
         updated=False
-        brushNames=self.__brushes.namesList()
+        brushIdList=self.__brushes.idList()
 
         if self.__selectedBrushMode==BBSSettingsValues.DEFAULT_SELECTIONMODE_FIRST_FROM_LIST:
             # always use the first item from brush list
-            if self.__selectedBrushName!=brushNames[0]:
-                self.__selectedBrushName=brushNames[0]
+            if self.__selectedBrushId!=brushIdList[0]:
+                self.__selectedBrushId=brushIdList[0]
                 updated=True
-        elif brushName in brushNames:
-            if self.__selectedBrushName!=brushName:
-                self.__selectedBrushName=brushName
+        elif brushId in brushIdList:
+            # in list
+            if self.__selectedBrushId!=brushId:
+                # and not the current selected brush, use it
+                self.__selectedBrushId=brushId
                 updated=True
-        elif self.__selectedBrushName!=brushNames[0]:
-            self.__selectedBrushName=brushNames[0]
+        elif self.__selectedBrushId!=brushIdList[0]:
+            # not in list, use the first one
+            self.__selectedBrushId=brushIdList[0]
             updated=True
 
-        BBSSettings.set(BBSSettingsKey.CONFIG_BRUSHES_LAST_SELECTED, self.__selectedBrushName)
+        BBSSettings.set(BBSSettingsKey.CONFIG_BRUSHES_LAST_SELECTED, self.__selectedBrushId)
 
         if updated:
             # update icon...
-            brush=self.__brushes.getFromName(self.__selectedBrushName)
+            brush=self.__brushes.get(self.__selectedBrushId)
             self.__tbBrush.setIcon(QIcon(QPixmap.fromImage(brush.image())))
+            self.__tbBrush.setToolTip(brush.information(BBSBrush.INFO_WITH_BRUSH_DETAILS|BBSBrush.INFO_WITH_BRUSH_OPTIONS))
 
     @pyqtSlot(bool)
     def __setSelectedBrushFromAction(self, checked):
+        """An action has been triggered to select a brush"""
         action=self.sender()
         brush=self.__brushes.get(action.data())
         self.setBrushActivated(brush)
 
     @pyqtSlot()
     def __setShortcutFromAction(self):
+        """An action has been changed
+
+        Many change made on action can trigger this method
+        Also, it seems that when changing current tool, action are changed and
+        shortcut is "reset"
+
+        Then we have to:
+        - Ensure that we're not already in a call of this method
+        - Determinate if we are from Krita's settings window (KisShortcutsDialog widget exists)
+            > If yes, accept change
+            > If no, reject change (reapply shortcut from brush)
+        """
+        if self.__disableUpdatingShortcutFromAction:
+            # already in the method, or plugin settings dialog is opened
+            return
+        self.__disableUpdatingShortcutFromAction=True
+
         action=self.sender()
         brush=self.__brushes.get(action.data())
         if brush:
-            brush.setShortcut(action.shortcut())
-
+            # a brush is defined for action
+            obj=Krita.instance().activeWindow().qwindow().findChild(QWidget,'KisShortcutsDialog')
+            if obj:
+                # shortcut has been modified from settings dialog
+                # update brush
+                brush.setShortcut(action.shortcut())
+            else:
+                # shortcut has been molified from???
+                # force shortcut from brush
+                brush.setShortcut(brush.shortcut())
+            # reapply shortcut to action
+            BBSSettings.setShortcut(brush, brush.shortcut())
+        self.__disableUpdatingShortcutFromAction=False
 
     def __reloadBrushes(self):
         """Brushes configurations has been modified; reload"""
         self.__selectedBrushMode=BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_DEFAULT_SELECTIONMODE)
+        self.__selectedBrushModificationMode=BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_DEFAULT_MODIFICATIONMODE)
 
+        # cleanup current action shortcuts
+        for brushId in self.__brushes.idList():
+            action=self.__brushes.get(brushId).action()
+            if action:
+                try:
+                    action.triggered.disconnect(self.__setSelectedBrushFromAction)
+                except:
+                    pass
+                try:
+                    action.changed.disconnect(self.__setSelectedBrushFromAction)
+                except:
+                    pass
+
+        # appky action shortcuts
         brushes=BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_LIST_BRUSHES)
         self.__brushes.beginUpdate()
         self.__brushes.clear()
@@ -238,19 +299,25 @@ class BBSWBrushSwitcher(QWidget):
                         action.triggered.disconnect(self.__setSelectedBrushFromAction)
                     except:
                         pass
+
                     try:
                         action.changed.disconnect(self.__setSelectedBrushFromAction)
                     except:
                         pass
+
                     action.triggered.connect(self.__setSelectedBrushFromAction)
                     action.changed.connect(self.__setShortcutFromAction)
                 self.__brushes.add(brush)
         self.__brushes.endUpdate()
-        self.__setSelectedBrushName(self.__selectedBrushName)
+        self.__setSelectedBrushId(self.__selectedBrushId)
 
     def __displayPopupUi(self):
         """Display popup user interface"""
-        self.__actionPopupUi.showRelativeTo(self)
+        action=Krita.instance().action('view_show_canvas_only')
+        if action and action.isChecked():
+            self.__actionPopupUi.showRelativeTo(QCursor.pos())
+        else:
+            self.__actionPopupUi.showRelativeTo(self)
 
     def __disconnectResourceSignal(self):
         """Disconnect resource signal to __presetChanged() method"""
@@ -277,9 +344,8 @@ class BBSWBrushSwitcher(QWidget):
         # only if preset is changed outside plugin
         #
         # new brush is already active Krita
-
         if not self.__selectedBrush is None and self.__selectedBrush.keepUserModifications():
-            # we need to keep settings for brush...
+            # we need to keep settings for plugin's brush...
             #
             # need to disconnect to avoid recursives call...
             self.__disconnectResourceSignal()
@@ -308,16 +374,25 @@ class BBSWBrushSwitcher(QWidget):
             if self.__selectedBrush.ignoreEraserMode():
                 pass
 
-            if self.__selectedBrush.color():
-                self.__selectedBrush.fromCurrentKritaBrush(saveColor=True)
+            if self.__selectedBrush.colorFg():
+                saveColor=True
             else:
-                self.__selectedBrush.fromCurrentKritaBrush(saveColor=False)
+                saveColor=False
+
+            if self.__selectedBrush.defaultPaintTool():
+                saveTool=True
+            else:
+                saveTool=False
+
+            self.__selectedBrush.fromCurrentKritaBrush(saveColor=saveColor, saveTool=saveTool)
 
             BBSSettings.setBrushes(self.__brushes)
 
     def openSettings(self):
         """Open settings dialog box"""
+        self.__disableUpdatingShortcutFromAction=True
         BBSMainWindow(self.__bbsName, self.__bbsVersion, self.__dlgParentWidget)
+        self.__disableUpdatingShortcutFromAction=False
 
     def openAbout(self):
         """Open settings dialog box"""
@@ -335,28 +410,64 @@ class BBSWBrushSwitcher(QWidget):
         if isinstance(value, BBSBrush):
             # brush is provided
             selectedBrush=value
-            selectedBrushName=value.name()
+            selectedBrushId=value.id()
         elif isinstance(value, bool):
             # toggle status from __tbBrush button
             # -- need to keep current
             if self.__selectedBrush is None:
-                # activate current "selectedBrushName"
-                selectedBrush=self.__brushes.getFromName(self.__selectedBrushName)
-                selectedBrushName=self.__selectedBrushName
+                # activate current "selectedBrushId"
+                selectedBrush=self.__brushes.get(self.__selectedBrushId)
+                selectedBrushId=self.__selectedBrushId
             else:
-                # deactivate current "selectedBrushName"
+                # deactivate current "selectedBrushId"
                 selectedBrush=None
-                selectedBrushName=None
+                selectedBrushId=None
         elif value is None:
             # want to deactivate current brush
             selectedBrush=None
-            selectedBrushName=None
+            selectedBrushId=None
         else:
             raise EInvalidType("Given `value` must be <str> or <BBSBrush> or <bool>")
 
         if selectedBrush==self.__selectedBrush:
             selectedBrush=None
-            selectedBrushName=None
+            selectedBrushId=None
+
+        view = Krita.instance().activeWindow().activeView()
+
+        # keep current plugin brush color
+        applyBrushColor=True
+        applyBrushTool=True
+
+        if self.__selectedBrush:
+            # restore original Krita's brush properties if available
+            if self.__selectedBrush.colorFg() is None:
+                # brush don't have a specific color
+                # do not keep current color (restore initial Krita's brush color)
+                applyBrushColor=False
+
+            if self.__selectedBrush.defaultPaintTool() is None:
+                # brush don't have a specific paint tool
+                # do not keep current paint tool (restore initial Krita's paint tool)
+                applyBrushTool=False
+
+            if applyBrushColor:
+                if self.__selectedBrushModificationMode==BBSSettingsValues.DEFAULT_MODIFICATIONMODE_KEEP:
+                    currentFg=view.foregroundColor().colorForCanvas(view.canvas())
+                    currentBg=view.backgroundColor().colorForCanvas(view.canvas())
+
+                    if self.__selectedBrush.colorFg()!=currentFg or (not self.__selectedBrush.colorBg() is None and self.__selectedBrush.colorBg()!=currentBg):
+                        applyBrushColor=False
+
+            if applyBrushTool:
+                if self.__selectedBrushModificationMode==BBSSettingsValues.DEFAULT_MODIFICATIONMODE_KEEP:
+                    currentPaintTool=EKritaPaintTools.current()
+
+                    if currentPaintTool and self.__selectedBrush.defaultPaintTool()!=currentPaintTool:
+                        applyBrushTool=False
+
+
+            self.__selectedBrush.restoreKritaBrush(applyBrushColor, applyBrushTool)
 
         if selectedBrush is None:
             # "deactivate" current brush
@@ -368,13 +479,37 @@ class BBSWBrushSwitcher(QWidget):
                 #
                 # case when not asked: brush as been changed outside plugin
                 # in this case don't need to restore brush, and no need to
-                # keep user modificatin as already processed in __keepUserModif()
+                # keep user modification as already processed in __keepUserModif()
 
                 # keep user modification made on current brush, if needed
                 self.__keepUserModif()
 
                 # restore Krita's brush, if asked
-                self.__kritaBrush.toCurrentKritaBrush()
+                self.__kritaBrush.toCurrentKritaBrush(None, applyBrushColor, applyBrushTool)
+            elif self.__kritaBrush and restoreKritaBrush==False:
+                # do not restore Krita's brush, but a krita's brush exist
+                #
+                # case when not asked: brush as been changed outside plugin
+                # in this case don't need to restore brush, but we want to restore
+                # initial colors
+
+                if applyBrushColor:
+                    colorFg=self.__kritaBrush.colorFg()
+                    colorBg=self.__kritaBrush.colorBg()
+
+                    if colorFg and view:
+                        view.setForeGroundColor(ManagedColor.fromQColor(colorFg, view.canvas()))
+                    if colorBg and view:
+                        view.setBackGroundColor(ManagedColor.fromQColor(colorBg, view.canvas()))
+
+                if applyBrushTool:
+                    paintTool=self.__kritaBrush.defaultPaintTool()
+
+                    if paintTool:
+                        action=Krita.instance().action(paintTool)
+                        if action:
+                            action.trigger()
+
 
             self.__kritaBrush=None
             self.__selectedBrush=None
@@ -384,7 +519,9 @@ class BBSWBrushSwitcher(QWidget):
                 # memorize current Krita brush to finally restore when plugin brush is "deactivated"
                 self.__kritaBrush=BBSBrush()
                 self.__kritaBrush.setIgnoreEraserMode(False)
-                self.__kritaBrush.fromCurrentKritaBrush(saveColor=True)
+                if not self.__kritaBrush.fromCurrentKritaBrush(saveColor=True, saveTool=True):
+                    self.__kritaBrush=None
+                    return
             else:
                 # already using brush activated from plugin
                 # temporary disable signal management
@@ -394,7 +531,7 @@ class BBSWBrushSwitcher(QWidget):
             self.__keepUserModif()
 
             # apply current asked brush
-            self.__setSelectedBrushName(selectedBrushName)
+            self.__setSelectedBrushId(selectedBrushId)
             self.__selectedBrush=selectedBrush
             self.__selectedBrush.toCurrentKritaBrush()
 
@@ -440,7 +577,7 @@ class BBSWBrushSwitcherUi(QFrame):
         layout=QVBoxLayout()
         layout.setContentsMargins(3,3,3,3)
 
-        self.__tvBrushes=BBSWBrushes()
+        self.__tvBrushes=BBSWBrushesTv()
         self.__tvBrushes.setBrushes(self.__brushes)
         self.__tvBrushes.setIconSizeIndex(BBSSettings.get(BBSSettingsKey.CONFIG_UI_POPUP_BRUSHES_ZOOMLEVEL))
         self.__tvBrushes.setIndentation(0)
@@ -450,8 +587,45 @@ class BBSWBrushSwitcherUi(QFrame):
         self.__tvBrushes.iconSizeIndexChanged.connect(self.__brushesSizeIndexChanged)
         self.__tvBrushesInitialised=False
 
+        self.__lvBrushes=BBSWBrushesLv()
+        self.__lvBrushes.setBrushes(self.__brushes)
+        self.__lvBrushes.setIconSizeIndex(BBSSettings.get(BBSSettingsKey.CONFIG_UI_POPUP_BRUSHES_ZOOMLEVEL))
+        self.__lvBrushes.iconSizeIndexChanged.connect(self.__brushesSizeIndexChanged)
+
+        self.__viewLayout=QStackedLayout()
+        self.__viewLayout.addWidget(self.__tvBrushes)
+        self.__viewLayout.addWidget(self.__lvBrushes)
+
         self.__statusBar=QStatusBar()
         self.__statusBar.setSizeGripEnabled(True)
+
+        currentViewIsListMode=(BBSSettings.get(BBSSettingsKey.CONFIG_UI_POPUP_BRUSHES_VIEWMODE)==BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_LIST)
+        self.__actionModeGroup=QActionGroup(self)
+        self.__actionListMode=QAction(buildIcon('pktk:list_view_details'), i18n("List view"))
+        self.__actionListMode.setCheckable(True)
+        self.__actionListMode.setChecked(currentViewIsListMode)
+        self.__actionListMode.setActionGroup(self.__actionModeGroup)
+        self.__actionListMode.setData(BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_LIST)
+        self.__actionListMode.toggled.connect(self.__brushesViewModeChanged)
+        self.__actionIconMode=QAction(buildIcon('pktk:list_view_icon'), i18n("Icon view"))
+        self.__actionIconMode.setCheckable(True)
+        self.__actionIconMode.setChecked(not currentViewIsListMode)
+        self.__actionIconMode.setActionGroup(self.__actionModeGroup)
+        self.__actionIconMode.setData(BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_ICON)
+        self.__actionIconMode.toggled.connect(self.__brushesViewModeChanged)
+
+        self.__tbViewMode=QToolButton(self)
+        self.__tbViewMode.setAutoRaise(True)
+        self.__tbViewMode.setPopupMode(QToolButton.InstantPopup)
+        self.__tbViewMode.setToolTip(i18n("Select brushes view mode"))
+        if currentViewIsListMode:
+            self.__tbViewMode.setIcon(self.__actionListMode.icon())
+        else:
+            self.__tbViewMode.setIcon(self.__actionIconMode.icon())
+        self.__menuViewMode=QMenu(self.__tbViewMode)
+        self.__menuViewMode.addAction(self.__actionListMode)
+        self.__menuViewMode.addAction(self.__actionIconMode)
+        self.__tbViewMode.setMenu(self.__menuViewMode)
 
         self.__hsBrushesThumbSize=QSlider()
         self.__hsBrushesThumbSize.setOrientation(Qt.Horizontal)
@@ -462,24 +636,31 @@ class BBSWBrushSwitcherUi(QFrame):
         self.__hsBrushesThumbSize.setTracking(True)
         self.__hsBrushesThumbSize.setMaximumWidth(150)
         self.__hsBrushesThumbSize.setValue(self.__tvBrushes.iconSizeIndex())
+        self.__hsBrushesThumbSize.setToolTip(i18n("Icon size"))
         self.__hsBrushesThumbSize.valueChanged.connect(self.__brushesSizeIndexSliderChanged)
 
         self.__tbSettings=QToolButton()
         self.__tbSettings.setIcon(buildIcon("pktk:tune"))
         self.__tbSettings.setAutoRaise(True)
+        self.__tbSettings.setToolTip(i18n("Settings"))
         self.__tbSettings.clicked.connect(self.__brushSwitcher.openSettings)
 
         self.__tbAbout=QToolButton()
         self.__tbAbout.setIcon(buildIcon("pktk:info"))
         self.__tbAbout.setAutoRaise(True)
+        self.__tbAbout.setToolTip(i18n("About <i>Buli Brush Switch</i>"))
         self.__tbAbout.clicked.connect(self.__brushSwitcher.openAbout)
 
+        self.__statusBar.addPermanentWidget(self.__tbViewMode)
         self.__statusBar.addPermanentWidget(self.__hsBrushesThumbSize)
+        self.__statusBar.addPermanentWidget(WVLine())
         self.__statusBar.addPermanentWidget(self.__tbSettings)
         self.__statusBar.addWidget(self.__tbAbout)
 
-        layout.addWidget(self.__tvBrushes)
+        layout.addLayout(self.__viewLayout)
         layout.addWidget(self.__statusBar)
+
+        self.__viewLayout.setCurrentIndex(BBSSettings.get(BBSSettingsKey.CONFIG_UI_POPUP_BRUSHES_VIEWMODE))
 
         width=BBSSettings.get(BBSSettingsKey.CONFIG_UI_POPUP_WIDTH)
         height=BBSSettings.get(BBSSettingsKey.CONFIG_UI_POPUP_HEIGHT)
@@ -488,20 +669,40 @@ class BBSWBrushSwitcherUi(QFrame):
         if width<=0:
             width=950
 
+        self.__inSelectionUpdate=False
+
         self.setLayout(layout)
         self.resize(width, height)
         self.setVisible(False)
 
+    def __brushesViewModeChanged(self, dummy=None):
+        """View mode has been changed"""
+        self.__viewLayout.setCurrentIndex(self.sender().data())
+        self.__tbViewMode.setIcon(self.sender().icon())
+        BBSSettings.set(BBSSettingsKey.CONFIG_UI_POPUP_BRUSHES_VIEWMODE, self.sender().data())
+
     def __brushesSelectionChanged(self, selected=None, deselected=None):
         """Selection in treeview has changed, update UI"""
-        selectedBrushes=self.__tvBrushes.selectedItems()
+        if self.__inSelectionUpdate:
+            return
+
+        self.__inSelectionUpdate=True
+        if BBSSettings.get(BBSSettingsKey.CONFIG_UI_POPUP_BRUSHES_VIEWMODE)==BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_LIST:
+            selectedBrushes=self.__tvBrushes.selectedItems()
+            selectInView=self.__lvBrushes
+        else:
+            selectedBrushes=self.__lvBrushes.selectedItems()
+            selectInView=self.__tvBrushes
+
         if len(selectedBrushes)==1:
             if selectedBrushes[0].found():
                 self.__brushSwitcher.setBrushActivated(selectedBrushes[0])
+                selectInView.selectItem(selectedBrushes[0])
                 self.hide()
+        self.__inSelectionUpdate=False
 
     def __brushesSizeIndexChanged(self, newSize, newQSize):
-        """Thumbnail size has been changed from brushes treeview"""
+        """Thumbnail size has been changed from brushes treeview/lisview"""
         # update slider
         self.__hsBrushesThumbSize.setValue(newSize)
         # update settings
@@ -511,11 +712,58 @@ class BBSWBrushSwitcherUi(QFrame):
         """Thumbnail size has been changed from brushes slider"""
         # update treeview
         self.__tvBrushes.setIconSizeIndex(newSize)
+        self.__lvBrushes.setIconSizeIndex(newSize)
+
+    def keyPressEvent(self, event):
+        """Check if need to close window"""
+        if event.type() == QEvent.KeyPress:
+            action=Krita.instance().action('bulibrushswitch_show_brushes_list')
+
+            if action and action.shortcut().toString()!='':
+                # a shortcut has been defined to popup list
+                key = event.key()
+
+                if key in (Qt.Key_unknown, Qt.Key_Control, Qt.Key_Shift, Qt.Key_Alt, Qt.Key_Meta):
+                    newKeySequence=QKeySequence(key)
+                else:
+                    # combination of keys
+                    modifiers = event.modifiers()
+                    # if the keyText is empty than it's a special key like F1, F5, ...
+                    keyText = event.text()
+
+                    if modifiers & Qt.ShiftModifier:
+                        key+=Qt.SHIFT
+                    if modifiers & Qt.ControlModifier:
+                        key+=Qt.CTRL
+                    if modifiers & Qt.AltModifier:
+                        key+=Qt.ALT
+                    if modifiers & Qt.MetaModifier:
+                        key+=Qt.META
+
+                    newKeySequence=QKeySequence(key)
+
+
+                if newKeySequence.matches(action.shortcut())==QKeySequence.ExactMatch:
+                    event.accept()
+                    self.close()
+                    return
+
+        super(BBSWBrushSwitcherUi, self).keyPressEvent(event)
 
     def showEvent(self, event):
         """Widget is visible"""
         if not self.__tvBrushesInitialised:
+            # if user click on an already selected item, selectionChanged signal is not emitted
+            #
+            # if user click on an item that is not selected, selectionChanged signal is emitted
+            # but clicked signal is not
+            #
+            # add signal for both case, to ensure that when a item is clicked or selected, the
+            # brush selection method is executed
             self.__tvBrushes.selectionModel().selectionChanged.connect(self.__brushesSelectionChanged)
+            self.__lvBrushes.selectionModel().selectionChanged.connect(self.__brushesSelectionChanged)
+            self.__tvBrushes.clicked.connect(self.__brushesSelectionChanged)
+            self.__lvBrushes.clicked.connect(self.__brushesSelectionChanged)
             self.__tvBrushesInitialised=True
         self.__tvBrushes.resizeColumns()
 
@@ -533,15 +781,42 @@ class BBSWBrushSwitcherUi(QFrame):
             self.__hsBrushesThumbSize.hasFocus() or
             self.__tbAbout.hasFocus()):
             return
-        elif self.__tvBrushes.hasFocus():
-            self.__brushesSelectionChanged()
+        elif self.__tvBrushes.hasFocus() or self.__lvBrushes.hasFocus():
+            # let "selectionChanged" and/or "clicked" signal manage this case
             return
 
         self.hide()
 
-    def showRelativeTo(self, widget):
+    def showRelativeTo(self, origin):
         """Show ui using given `widget` as reference for position"""
-        screenPosition=widget.mapToGlobal(QPoint(0,widget.height()))
+        if isinstance(origin, QWidget):
+            # display under button
+            screenPosition=origin.mapToGlobal(QPoint(0,origin.height()))
+            checkPosition=QPoint(screenPosition)
+        else:
+            # display under cursor
+            screenPosition=origin
+            checkPosition=QPoint(origin)
+            screenPosition.setX(screenPosition.x() - self.width()//2)
+            screenPosition.setY(screenPosition.y() - self.height()//2)
+
+        # need to ensure popup is not "outside" visible screen
+        for screen in QGuiApplication.screens():
+            screenRect=screen.availableGeometry()
+            if screenRect.contains(checkPosition):
+                # we're on the right screen
+                # need to check if window if displayed properly in screen
+                relativePosition=screenPosition - screenRect.topLeft()
+
+                if screenPosition.x()<screenRect.left():
+                    screenPosition.setX(screenRect.left())
+                elif screenPosition.x() + self.width() > screenRect.right():
+                    screenPosition.setX(screenRect.right() - self.width())
+
+                if screenPosition.y()<screenRect.top():
+                    screenPosition.setY(screenRect.top())
+                elif screenPosition.y() + self.height() > screenRect.bottom():
+                    screenPosition.setY(screenRect.bottom() - self.height())
 
         self.move(screenPosition)
         self.setVisible(True)
