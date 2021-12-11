@@ -1,4 +1,4 @@
-# Buli Brush Switch :: Release 0.2.0b [2021-12-10]
+# Buli Brush Switch :: Release 0.2.0b [2021-12-11]
 
 # Improve *Popup brushes list*
 
