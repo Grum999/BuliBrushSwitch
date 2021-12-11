@@ -184,7 +184,7 @@ To **unselect** a brush from plugin list:
 
 ### What's new?
 
-_[2021-12-10] Version 0.2.0b_ *[Show detailed release content](https://github.com/Grum999/BuliBrushSwitch/blob/main/releases-notes/RELEASE-0.2.0b.md)*
+_[2021-12-10] Version 0.2.0b_ *[Show detailed release content](./releases-notes/RELEASE-0.2.0b.md)*
 - Improve *Popup brushes list*
 - Implement *Default behaviour option for brushes with specific values*
 - Implement *Modification of brush properties from brush settings*
@@ -200,12 +200,12 @@ _[2021-12-10] Version 0.2.0b_ *[Show detailed release content](https://github.co
 - Fix bug *Missing icon on Brushes list settings*
 
 
-_[2021-12-02] Version 0.1.1b_ *[Show detailed release content](https://github.com/Grum999/BuliBrushSwitch/blob/main/releases-notes/RELEASE-0.1.1b.md)*
+_[2021-12-02] Version 0.1.1b_ *[Show detailed release content](./releases-notes/RELEASE-0.1.1b.md)*
 - Add missing `.action` file on installation
 - Fix invalid default brush definition from settings when no configuration files exists
 - On Windows, fix main Brushes list window staying over Brush setting window
 
-_[2021-12-01] Version 0.1.0b_ *[Show detailed release content](https://github.com/Grum999/BuliBrushSwitch/blob/main/releases-notes/RELEASE-0.1.0b.md)*
+_[2021-12-01] Version 0.1.0b_ *[Show detailed release content](./releases-notes/RELEASE-0.1.0b.md)*
 - First implemented/released version!
 
 
