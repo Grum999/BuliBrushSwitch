@@ -144,10 +144,11 @@ class BuliBrushSwitch(Extension):
 
             brushes=BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_LIST_BRUSHES)
             for brushNfo in brushes:
-                action=BBSSettings.brushAction(brushNfo[BBSBrush.KEY_UUID], brushNfo[BBSBrush.KEY_NAME], brushNfo[BBSBrush.KEY_COMMENTS], True, window)
+                if BBSBrush.KEY_UUID in brushNfo and BBSBrush.KEY_NAME in brushNfo and BBSBrush.KEY_COMMENTS in brushNfo:
+                    action=BBSSettings.brushAction(brushNfo[BBSBrush.KEY_UUID], brushNfo[BBSBrush.KEY_NAME], brushNfo[BBSBrush.KEY_COMMENTS], True, window)
 
-                if brushNfo[BBSBrush.KEY_SHORTCUT]:
-                    # action will be loaded with defaul shortcut
-                    # force "dedicated" shortcut to be the same than default one to
-                    # avoid problems with Krita's user defined shortcut definition 
-                    action.setShortcut(QKeySequence(brushNfo[BBSBrush.KEY_SHORTCUT]))
+                    if BBSBrush.KEY_SHORTCUT in brushNfo and brushNfo[BBSBrush.KEY_SHORTCUT]:
+                        # action will be loaded with defaul shortcut
+                        # force "dedicated" shortcut to be the same than default one to
+                        # avoid problems with Krita's user defined shortcut definition
+                        action.setShortcut(QKeySequence(brushNfo[BBSBrush.KEY_SHORTCUT]))
