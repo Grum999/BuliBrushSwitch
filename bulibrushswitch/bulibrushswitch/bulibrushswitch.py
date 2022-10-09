@@ -84,10 +84,10 @@ else:
 
 
 EXTENSION_ID = 'pykrita_bulibrushswitch'
-PLUGIN_VERSION = '0.2.1b'
+PLUGIN_VERSION = '1.0.0'
 PLUGIN_MENU_ENTRY = 'Buli Brush Switch'
 
-REQUIRED_KRITA_VERSION = (5, 0, 0)
+REQUIRED_KRITA_VERSION = (5, 1, 0)
 
 PkTk.setPackageName('bulibrushswitch')
 
