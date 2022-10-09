@@ -92,6 +92,9 @@ class BBSMainWindow(EDialog):
 
         BBSSettings.load()
 
+        # default bg color for scratchpad
+        self.__scratchpadDefaultBgColor = QColor('#ffffff')
+
         # current active view
         self.__activeView = Krita.instance().activeWindow().activeView()
 
@@ -124,30 +127,68 @@ class BBSMainWindow(EDialog):
 
     def __initialiseUi(self):
         """Initialise window interface"""
-        self.__actionSelectBrushScratchpadColor=WMenuColorPicker()
-        self.__actionSelectBrushScratchpadColor.colorPicker().colorUpdated.connect(self.__actionBrushScratchpadSetColor)
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionCompactUi(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_COMPACT))
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowColorPalette(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_PALETTE_VISIBLE))
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionColorPalette(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_PALETTE_DEFAULT))
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowColorWheel(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CWHEEL_VISIBLE))
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowPreviewColor(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CWHEEL_CPREVIEW))
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowColorCombination(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CCOMBINATION))
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowCssRgb(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CCSS))
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowColorRGB(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_RGB_VISIBLE))
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionDisplayAsPctColorRGB(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_RGB_ASPCT))
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowColorCMYK(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_CMYK_VISIBLE))
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionDisplayAsPctColorCMYK(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_CMYK_ASPCT))
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowColorHSV(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSL_VISIBLE))
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionDisplayAsPctColorHSV(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSL_ASPCT))
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowColorHSL(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSV_VISIBLE))
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionDisplayAsPctColorHSL(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSV_ASPCT))
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionShowColorAlpha(False)
-        self.__actionSelectBrushScratchpadColor.colorPicker().setOptionMenu(WColorPicker.OPTION_MENU_ALL&~WColorPicker.OPTION_MENU_ALPHA)
-
-        menuBrushScratchpadColor = QMenu(self.tbBrushScratchpadColor)
-        menuBrushScratchpadColor.addAction(self.__actionSelectBrushScratchpadColor)
-
         self.__actionSelectBrushScratchpadColorFg = WMenuColorPicker()
+        self.__actionSelectBrushScratchpadColorFg.colorPicker().colorUpdated.connect(self.__actionBrushScratchpadSetColorFg)
+        self.__actionSelectBrushScratchpadColorFg.colorPicker().setOptionCompactUi(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_COMPACT))
+        self.__actionSelectBrushScratchpadColorFg.colorPicker().setOptionShowColorPalette(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_PALETTE_VISIBLE))
+        self.__actionSelectBrushScratchpadColorFg.colorPicker().setOptionColorPalette(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_PALETTE_DEFAULT))
+        self.__actionSelectBrushScratchpadColorFg.colorPicker().setOptionShowColorWheel(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CWHEEL_VISIBLE))
+        self.__actionSelectBrushScratchpadColorFg.colorPicker().setOptionShowPreviewColor(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CWHEEL_CPREVIEW))
+        self.__actionSelectBrushScratchpadColorFg.colorPicker().setOptionShowColorCombination(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CCOMBINATION))
+        self.__actionSelectBrushScratchpadColorFg.colorPicker().setOptionShowCssRgb(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CCSS))
+        self.__actionSelectBrushScratchpadColorFg.colorPicker().setOptionShowColorRGB(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_RGB_VISIBLE))
+        self.__actionSelectBrushScratchpadColorFg.colorPicker().setOptionDisplayAsPctColorRGB(
+                                                                                        BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_RGB_ASPCT)
+                                                                                        )
+        self.__actionSelectBrushScratchpadColorFg.colorPicker().setOptionShowColorCMYK(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_CMYK_VISIBLE))
+        self.__actionSelectBrushScratchpadColorFg.colorPicker().setOptionDisplayAsPctColorCMYK(
+                                                                                        BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_CMYK_ASPCT)
+                                                                                        )
+        self.__actionSelectBrushScratchpadColorFg.colorPicker().setOptionShowColorHSV(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_HSL_VISIBLE))
+        self.__actionSelectBrushScratchpadColorFg.colorPicker().setOptionDisplayAsPctColorHSV(
+                                                                                        BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_HSL_ASPCT)
+                                                                                        )
+        self.__actionSelectBrushScratchpadColorFg.colorPicker().setOptionShowColorHSL(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_HSV_VISIBLE))
+        self.__actionSelectBrushScratchpadColorFg.colorPicker().setOptionDisplayAsPctColorHSL(
+                                                                                        BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_HSV_ASPCT)
+                                                                                        )
+        self.__actionSelectBrushScratchpadColorFg.colorPicker().setOptionShowColorAlpha(False)
+        self.__actionSelectBrushScratchpadColorFg.colorPicker().setOptionMenu(WColorPicker.OPTION_MENU_ALL & ~WColorPicker.OPTION_MENU_ALPHA)
+
+        menuBrushScratchpadColorFg = QMenu(self.tbBrushScratchpadColorFg)
+        menuBrushScratchpadColorFg.addAction(self.__actionSelectBrushScratchpadColorFg)
+
+        self.__actionSelectBrushScratchpadColorBg = WMenuColorPicker()
+        self.__actionSelectBrushScratchpadColorBg.colorPicker().colorUpdated.connect(self.__actionBrushScratchpadSetColorBg)
+        self.__actionSelectBrushScratchpadColorBg.colorPicker().setOptionCompactUi(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_COMPACT))
+        self.__actionSelectBrushScratchpadColorBg.colorPicker().setOptionShowColorPalette(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_PALETTE_VISIBLE))
+        self.__actionSelectBrushScratchpadColorBg.colorPicker().setOptionColorPalette(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_PALETTE_DEFAULT))
+        self.__actionSelectBrushScratchpadColorBg.colorPicker().setOptionShowColorWheel(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CWHEEL_VISIBLE))
+        self.__actionSelectBrushScratchpadColorBg.colorPicker().setOptionShowPreviewColor(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CWHEEL_CPREVIEW))
+        self.__actionSelectBrushScratchpadColorBg.colorPicker().setOptionShowColorCombination(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CCOMBINATION))
+        self.__actionSelectBrushScratchpadColorBg.colorPicker().setOptionShowCssRgb(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CCSS))
+        self.__actionSelectBrushScratchpadColorBg.colorPicker().setOptionShowColorRGB(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_RGB_VISIBLE))
+        self.__actionSelectBrushScratchpadColorBg.colorPicker().setOptionDisplayAsPctColorRGB(
+                                                                                        BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_RGB_ASPCT)
+                                                                                        )
+        self.__actionSelectBrushScratchpadColorBg.colorPicker().setOptionShowColorCMYK(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_CMYK_VISIBLE))
+        self.__actionSelectBrushScratchpadColorBg.colorPicker().setOptionDisplayAsPctColorCMYK(
+                                                                                        BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_CMYK_ASPCT)
+                                                                                        )
+        self.__actionSelectBrushScratchpadColorBg.colorPicker().setOptionShowColorHSV(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_HSL_VISIBLE))
+        self.__actionSelectBrushScratchpadColorBg.colorPicker().setOptionDisplayAsPctColorHSV(
+                                                                                        BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_HSL_ASPCT)
+                                                                                        )
+        self.__actionSelectBrushScratchpadColorBg.colorPicker().setOptionShowColorHSL(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_HSV_VISIBLE))
+        self.__actionSelectBrushScratchpadColorBg.colorPicker().setOptionDisplayAsPctColorHSL(
+                                                                                        BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_HSV_ASPCT)
+                                                                                        )
+        self.__actionSelectBrushScratchpadColorBg.colorPicker().setOptionShowColorAlpha(False)
+        self.__actionSelectBrushScratchpadColorBg.colorPicker().setOptionMenu(WColorPicker.OPTION_MENU_ALL & ~WColorPicker.OPTION_MENU_ALPHA)
+
+        menuBrushScratchpadColorBg = QMenu(self.tbBrushScratchpadColorBg)
+        menuBrushScratchpadColorBg.addAction(self.__actionSelectBrushScratchpadColorBg)
+
         self.__actionSelectCurrentBrush = QAction(QIcon(QPixmap.fromImage(self.__activeViewCurrentConfig['brushPreset'].image())),
                                                   i18n(f"Current painting brush ({self.__activeViewCurrentConfig['brushPreset'].name()})"),
                                                   self)
@@ -159,6 +200,8 @@ class BBSMainWindow(EDialog):
         self.__menuBrushAdd.addAction(self.__actionSelectCurrentBrush)
         self.__menuBrushAdd.addAction(self.__actionSelectChoosenBrush)
 
+        self.__scratchpadDefaultBgColor = QColor(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLOR_BG))
+
         # -- toolbar
         self.tbBrushAdd.setMenu(self.__menuBrushAdd)
         self.tbBrushEdit.clicked.connect(self.__actionBrushEdit)
@@ -168,7 +211,8 @@ class BBSMainWindow(EDialog):
         self.tbBrushMoveUp.clicked.connect(self.__actionBrushMoveUp)
         self.tbBrushMoveDown.clicked.connect(self.__actionBrushMoveDown)
         self.tbBrushScratchpadClear.clicked.connect(self.__actionBrushScratchpadClear)
-        self.tbBrushScratchpadColor.setMenu(menuBrushScratchpadColor)
+        self.tbBrushScratchpadColorFg.setMenu(menuBrushScratchpadColorFg)
+        self.tbBrushScratchpadColorBg.setMenu(menuBrushScratchpadColorBg)
 
         self.hsBrushesThumbSize.setValue(self.tvBrushes.iconSizeIndex())
         self.hsBrushesThumbSize.valueChanged.connect(self.__brushesSizeIndexSliderChanged)
@@ -290,9 +334,16 @@ class BBSMainWindow(EDialog):
 
         self.__activeView.canvas().setZoomLevel(self.__activeViewCurrentConfig['zoom'])
 
-    def __actionBrushScratchpadSetColor(self, color):
+    def __actionBrushScratchpadSetColorFg(self, color):
         """Set brush testing scratchpad color"""
         self.__activeView.setForeGroundColor(ManagedColor.fromQColor(color, self.__activeView.canvas()))
+
+    def __actionBrushScratchpadSetColorBg(self, color):
+        """Set background testing scratchpad color"""
+        self.__scratchpadDefaultBgColor = color
+        self.__scratchpadTestBrush.setFillColor(color)
+        # need to clear scratchpad to apply color
+        self.__scratchpadTestBrush.clear()
 
     def __actionBrushScratchpadClear(self):
         """Clear Scratchpad content"""
@@ -464,21 +515,47 @@ class BBSMainWindow(EDialog):
 
         BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_BRUSHES_ZOOMLEVEL, self.tvBrushes.iconSizeIndex())
 
-        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_COMPACT, self.__actionSelectBrushScratchpadColor.colorPicker().optionCompactUi())
-        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_PALETTE_VISIBLE, self.__actionSelectBrushScratchpadColor.colorPicker().optionShowColorPalette())
-        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_PALETTE_DEFAULT, self.__actionSelectBrushScratchpadColor.colorPicker().optionColorPalette())
-        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CWHEEL_VISIBLE, self.__actionSelectBrushScratchpadColor.colorPicker().optionShowColorWheel())
-        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CWHEEL_CPREVIEW, self.__actionSelectBrushScratchpadColor.colorPicker().optionShowPreviewColor())
-        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CCOMBINATION, self.__actionSelectBrushScratchpadColor.colorPicker().optionShowColorCombination())
-        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CCSS, self.__actionSelectBrushScratchpadColor.colorPicker().optionShowColorCssRGB())
-        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_RGB_VISIBLE, self.__actionSelectBrushScratchpadColor.colorPicker().optionShowColorRGB())
-        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_RGB_ASPCT, self.__actionSelectBrushScratchpadColor.colorPicker().optionDisplayAsPctColorRGB())
-        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_CMYK_VISIBLE, self.__actionSelectBrushScratchpadColor.colorPicker().optionShowColorCMYK())
-        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_CMYK_ASPCT, self.__actionSelectBrushScratchpadColor.colorPicker().optionDisplayAsPctColorCMYK())
-        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSL_VISIBLE, self.__actionSelectBrushScratchpadColor.colorPicker().optionShowColorHSL())
-        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSL_ASPCT, self.__actionSelectBrushScratchpadColor.colorPicker().optionDisplayAsPctColorHSL())
-        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSV_VISIBLE, self.__actionSelectBrushScratchpadColor.colorPicker().optionShowColorHSV())
-        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSV_ASPCT, self.__actionSelectBrushScratchpadColor.colorPicker().optionDisplayAsPctColorHSV())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_COMPACT, self.__actionSelectBrushScratchpadColorFg.colorPicker().optionCompactUi())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_PALETTE_VISIBLE, self.__actionSelectBrushScratchpadColorFg.colorPicker().optionShowColorPalette())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_PALETTE_DEFAULT, self.__actionSelectBrushScratchpadColorFg.colorPicker().optionColorPalette())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CWHEEL_VISIBLE, self.__actionSelectBrushScratchpadColorFg.colorPicker().optionShowColorWheel())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CWHEEL_CPREVIEW, self.__actionSelectBrushScratchpadColorFg.colorPicker().optionShowPreviewColor())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CCOMBINATION, self.__actionSelectBrushScratchpadColorFg.colorPicker().optionShowColorCombination())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CCSS, self.__actionSelectBrushScratchpadColorFg.colorPicker().optionShowColorCssRGB())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_RGB_VISIBLE, self.__actionSelectBrushScratchpadColorFg.colorPicker().optionShowColorRGB())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_RGB_ASPCT,
+                        self.__actionSelectBrushScratchpadColorFg.colorPicker().optionDisplayAsPctColorRGB())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_CMYK_VISIBLE, self.__actionSelectBrushScratchpadColorFg.colorPicker().optionShowColorCMYK())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_CMYK_ASPCT,
+                        self.__actionSelectBrushScratchpadColorFg.colorPicker().optionDisplayAsPctColorCMYK())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_HSL_VISIBLE, self.__actionSelectBrushScratchpadColorFg.colorPicker().optionShowColorHSL())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_HSL_ASPCT,
+                        self.__actionSelectBrushScratchpadColorFg.colorPicker().optionDisplayAsPctColorHSL())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_HSV_VISIBLE, self.__actionSelectBrushScratchpadColorFg.colorPicker().optionShowColorHSV())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_HSV_ASPCT,
+                        self.__actionSelectBrushScratchpadColorFg.colorPicker().optionDisplayAsPctColorHSV())
+
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_COMPACT, self.__actionSelectBrushScratchpadColorBg.colorPicker().optionCompactUi())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_PALETTE_VISIBLE, self.__actionSelectBrushScratchpadColorBg.colorPicker().optionShowColorPalette())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_PALETTE_DEFAULT, self.__actionSelectBrushScratchpadColorBg.colorPicker().optionColorPalette())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CWHEEL_VISIBLE, self.__actionSelectBrushScratchpadColorBg.colorPicker().optionShowColorWheel())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CWHEEL_CPREVIEW, self.__actionSelectBrushScratchpadColorBg.colorPicker().optionShowPreviewColor())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CCOMBINATION, self.__actionSelectBrushScratchpadColorBg.colorPicker().optionShowColorCombination())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CCSS, self.__actionSelectBrushScratchpadColorBg.colorPicker().optionShowColorCssRGB())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_RGB_VISIBLE, self.__actionSelectBrushScratchpadColorBg.colorPicker().optionShowColorRGB())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_RGB_ASPCT,
+                        self.__actionSelectBrushScratchpadColorBg.colorPicker().optionDisplayAsPctColorRGB())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_CMYK_VISIBLE, self.__actionSelectBrushScratchpadColorBg.colorPicker().optionShowColorCMYK())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_CMYK_ASPCT,
+                        self.__actionSelectBrushScratchpadColorBg.colorPicker().optionDisplayAsPctColorCMYK())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_HSL_VISIBLE, self.__actionSelectBrushScratchpadColorBg.colorPicker().optionShowColorHSL())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_HSL_ASPCT,
+                        self.__actionSelectBrushScratchpadColorBg.colorPicker().optionDisplayAsPctColorHSL())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_HSV_VISIBLE, self.__actionSelectBrushScratchpadColorBg.colorPicker().optionShowColorHSV())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_HSV_ASPCT,
+                        self.__actionSelectBrushScratchpadColorBg.colorPicker().optionDisplayAsPctColorHSV())
+
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLOR_BG, self.__scratchpadDefaultBgColor.name())
 
         BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_BRUSHES_SPLITTER_POSITION, self.splitterBrushes.sizes())
 

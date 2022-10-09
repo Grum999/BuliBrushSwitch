@@ -1419,12 +1419,12 @@ class BBSBrushesEditor(EDialog):
 
         if returned == QDialog.Accepted:
             BBSSettings.setTxtColorPickerLayout(dlgBox.colorPickerLayoutTxt())
-            BBSSettings.setBrushColorPickerLayout(dlgBox.colorPickerLayoutBrush())
+            BBSSettings.setBrushColorPickerLayoutFg(dlgBox.colorPickerLayoutBrushFg())
+            BBSSettings.setBrushColorPickerLayoutBg(dlgBox.colorPickerLayoutBrushBg())
 
             return dlgBox.options()
         else:
             return None
-
 
     def __init__(self, title, brush, parent=None):
         super(BBSBrushesEditor, self).__init__(os.path.join(os.path.dirname(__file__), 'resources', 'bbsbrushedit.ui'), parent)
@@ -1684,9 +1684,13 @@ class BBSBrushesEditor(EDialog):
         """Return color picked layout for text editor"""
         return self.wtComments.colorPickerLayout()
 
-    def colorPickerLayoutBrush(self):
+    def colorPickerLayoutBrushFg(self):
         """Return color picked layout for brush"""
         return self.btUseSpecificColorFg.colorPicker().optionLayout()
+
+    def colorPickerLayoutBrushBg(self):
+        """Return color picked layout for background"""
+        return self.btUseSpecificColorBg.colorPicker().optionLayout()
 
     def options(self):
         """Return options from brush editor"""

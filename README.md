@@ -184,6 +184,9 @@ To **unselect** a brush from plugin list:
 
 ### What's new?
 
+_[2022-xx-xx] Version 1.0.0_ *[Show detailed release content](./releases-notes/RELEASE-1.0.0.md)*
+- Settings Interface - *Let user choose scratchpad background color*
+
 _[2021-12-11] Version 0.2.1b_ *[Show detailed release content](./releases-notes/RELEASE-0.2.1b.md)*
 - Fix bug *Invalid plugin initialisation*
 

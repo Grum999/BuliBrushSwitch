@@ -79,23 +79,6 @@ class BBSSettingsValues(object):
 
 
 class BBSSettingsKey(SettingsKey):
-
-    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_COMPACT=                               'config.editor.scratchpad.colorPicker.compact'
-    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_PALETTE_VISIBLE=                       'config.editor.scratchpad.colorPicker.palette.visible'
-    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_PALETTE_DEFAULT=                       'config.editor.scratchpad.colorPicker.palette.default'
-    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CWHEEL_VISIBLE=                        'config.editor.scratchpad.colorPicker.colorWheel.visible'
-    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CWHEEL_CPREVIEW=                       'config.editor.scratchpad.colorPicker.colorWheel.colorPreview'
-    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CCOMBINATION=                          'config.editor.scratchpad.colorPicker.colorCombination'
-    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CCSS=                                  'config.editor.scratchpad.colorPicker.colorCss.visible'
-    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_RGB_VISIBLE=                   'config.editor.scratchpad.colorPicker.colorSlider.rgb.visible'
-    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_RGB_ASPCT=                     'config.editor.scratchpad.colorPicker.colorSlider.rgb.asPct'
-    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_CMYK_VISIBLE=                  'config.editor.scratchpad.colorPicker.colorSlider.cmyk.visible'
-    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_CMYK_ASPCT=                    'config.editor.scratchpad.colorPicker.colorSlider.cmyk.asPct'
-    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSL_VISIBLE=                   'config.editor.scratchpad.colorPicker.colorSlider.hsl.visible'
-    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSL_ASPCT=                     'config.editor.scratchpad.colorPicker.colorSlider.hsl.asPct'
-    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSV_VISIBLE=                   'config.editor.scratchpad.colorPicker.colorSlider.hsv.visible'
-    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSV_ASPCT=                     'config.editor.scratchpad.colorPicker.colorSlider.hsv.asPct'
-
     CONFIG_EDITOR_WINDOW_POSITION_X =                                           'config.editor.window.position.x'
     CONFIG_EDITOR_WINDOW_POSITION_Y =                                           'config.editor.window.position.y'
     CONFIG_EDITOR_WINDOW_SIZE_WIDTH =                                           'config.editor.window.size.width'
@@ -119,6 +102,40 @@ class BBSSettingsKey(SettingsKey):
     CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_HSL_ASPCT =                          'config.editor.text.colorPicker.colorSlider.hsl.asPct'
     CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_HSV_VISIBLE =                        'config.editor.text.colorPicker.colorSlider.hsv.visible'
     CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_HSV_ASPCT =                          'config.editor.text.colorPicker.colorSlider.hsv.asPct'
+
+    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_COMPACT =                           'config.editor.scratchpad.colorPicker.compact'
+    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_PALETTE_VISIBLE =                   'config.editor.scratchpad.colorPicker.palette.visible'
+    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_PALETTE_DEFAULT =                   'config.editor.scratchpad.colorPicker.palette.default'
+    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CWHEEL_VISIBLE =                    'config.editor.scratchpad.colorPicker.colorWheel.visible'
+    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CWHEEL_CPREVIEW =                   'config.editor.scratchpad.colorPicker.colorWheel.colorPreview'
+    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CCOMBINATION =                      'config.editor.scratchpad.colorPicker.colorCombination'
+    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CCSS =                              'config.editor.scratchpad.colorPicker.colorCss.visible'
+    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_RGB_VISIBLE =               'config.editor.scratchpad.colorPicker.colorSlider.rgb.visible'
+    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_RGB_ASPCT =                 'config.editor.scratchpad.colorPicker.colorSlider.rgb.asPct'
+    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_CMYK_VISIBLE =              'config.editor.scratchpad.colorPicker.colorSlider.cmyk.visible'
+    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_CMYK_ASPCT =                'config.editor.scratchpad.colorPicker.colorSlider.cmyk.asPct'
+    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_HSL_VISIBLE =               'config.editor.scratchpad.colorPicker.colorSlider.hsl.visible'
+    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_HSL_ASPCT =                 'config.editor.scratchpad.colorPicker.colorSlider.hsl.asPct'
+    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_HSV_VISIBLE =               'config.editor.scratchpad.colorPicker.colorSlider.hsv.visible'
+    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_HSV_ASPCT =                 'config.editor.scratchpad.colorPicker.colorSlider.hsv.asPct'
+
+    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_COMPACT =                           'config.editor.scratchpad.colorPickerBg.compact'
+    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_PALETTE_VISIBLE =                   'config.editor.scratchpad.colorPickerBg.palette.visible'
+    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_PALETTE_DEFAULT =                   'config.editor.scratchpad.colorPickerBg.palette.default'
+    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CWHEEL_VISIBLE =                    'config.editor.scratchpad.colorPickerBg.colorWheel.visible'
+    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CWHEEL_CPREVIEW =                   'config.editor.scratchpad.colorPickerBg.colorWheel.colorPreview'
+    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CCOMBINATION =                      'config.editor.scratchpad.colorPickerBg.colorCombination'
+    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CCSS =                              'config.editor.scratchpad.colorPickerBg.colorCss.visible'
+    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_RGB_VISIBLE =               'config.editor.scratchpad.colorPickerBg.colorSlider.rgb.visible'
+    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_RGB_ASPCT =                 'config.editor.scratchpad.colorPickerBg.colorSlider.rgb.asPct'
+    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_CMYK_VISIBLE =              'config.editor.scratchpad.colorPickerBg.colorSlider.cmyk.visible'
+    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_CMYK_ASPCT =                'config.editor.scratchpad.colorPickerBg.colorSlider.cmyk.asPct'
+    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_HSL_VISIBLE =               'config.editor.scratchpad.colorPickerBg.colorSlider.hsl.visible'
+    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_HSL_ASPCT =                 'config.editor.scratchpad.colorPickerBg.colorSlider.hsl.asPct'
+    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_HSV_VISIBLE =               'config.editor.scratchpad.colorPickerBg.colorSlider.hsv.visible'
+    CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_HSV_ASPCT =                 'config.editor.scratchpad.colorPickerBg.colorSlider.hsv.asPct'
+
+    CONFIG_EDITOR_SCRATCHPAD_COLOR_BG =                                         'config.editor.scratchpad.colorBg'
 
     CONFIG_UI_POPUP_WIDTH =                                                     'config.ui.popup.width'
     CONFIG_UI_POPUP_HEIGHT =                                                    'config.ui.popup.height'
@@ -146,28 +163,12 @@ class BBSSettings(Settings):
             'bulibrushswitch_show_brushes_list'
         ]
 
-
     def __init__(self, pluginId=None):
         """Initialise settings"""
         if pluginId is None or pluginId == '':
             pluginId = 'bulibrushswitch'
 
         rules = [
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_COMPACT,                False,      SettingsFmt(bool)),
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_PALETTE_VISIBLE,        False,      SettingsFmt(bool)),
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_PALETTE_DEFAULT,        "Default",  SettingsFmt(str)),
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CWHEEL_VISIBLE,         True,       SettingsFmt(bool)),
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CWHEEL_CPREVIEW,        True,       SettingsFmt(bool)),
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CCOMBINATION,           0,          SettingsFmt(int, [0,1,2,3,4,5])),
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CCSS,                   False,      SettingsFmt(bool)),
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_RGB_VISIBLE,    False,      SettingsFmt(bool)),
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_RGB_ASPCT,      False,      SettingsFmt(bool)),
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_CMYK_VISIBLE,   False,      SettingsFmt(bool)),
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_CMYK_ASPCT,     False,      SettingsFmt(bool)),
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSL_VISIBLE,    True,       SettingsFmt(bool)),
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSL_ASPCT,      False,      SettingsFmt(bool)),
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSV_VISIBLE,    False,      SettingsFmt(bool)),
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSV_ASPCT,      False,      SettingsFmt(bool)),
             SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_COMPACT,                         True,          SettingsFmt(bool)),
             SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_PALETTE_VISIBLE,                 True,          SettingsFmt(bool)),
             SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_PALETTE_DEFAULT,                 "Default",     SettingsFmt(str)),
@@ -184,6 +185,37 @@ class BBSSettings(Settings):
             SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_HSV_VISIBLE,             False,         SettingsFmt(bool)),
             SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_HSV_ASPCT,               False,         SettingsFmt(bool)),
 
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_COMPACT,                False,         SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_PALETTE_VISIBLE,        False,         SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_PALETTE_DEFAULT,        "Default",     SettingsFmt(str)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CWHEEL_VISIBLE,         True,          SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CWHEEL_CPREVIEW,        True,          SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CCOMBINATION,           0,             SettingsFmt(int, [0, 1, 2, 3, 4, 5])),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CCSS,                   False,         SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_RGB_VISIBLE,    False,         SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_RGB_ASPCT,      False,         SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_CMYK_VISIBLE,   False,         SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_CMYK_ASPCT,     False,         SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_HSL_VISIBLE,    True,          SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_HSL_ASPCT,      False,         SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_HSV_VISIBLE,    False,         SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_HSV_ASPCT,      False,         SettingsFmt(bool)),
+
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_COMPACT,                False,         SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_PALETTE_VISIBLE,        False,         SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_PALETTE_DEFAULT,        "Default",     SettingsFmt(str)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CWHEEL_VISIBLE,         True,          SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CWHEEL_CPREVIEW,        True,          SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CCOMBINATION,           0,             SettingsFmt(int, [0, 1, 2, 3, 4, 5])),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CCSS,                   False,         SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_RGB_VISIBLE,    False,         SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_RGB_ASPCT,      False,         SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_CMYK_VISIBLE,   False,         SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_CMYK_ASPCT,     False,         SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_HSL_VISIBLE,    True,          SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_HSL_ASPCT,      False,         SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_HSV_VISIBLE,    False,         SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_HSV_ASPCT,      False,         SettingsFmt(bool)),
 
             SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLOR_BG,                              '#ffffff',     SettingsFmt(str)),
 
@@ -451,50 +483,96 @@ class BBSSettings(Settings):
         BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_HSV_ASPCT, tmpColorPicker.optionDisplayAsPctColorHSV())
 
     @staticmethod
-    def getBrushColorPickerLayout():
+    def getBrushColorPickerLayoutFg():
         """Convert brush color picker layout from settings to layout"""
         # build a dummy color picker
-        tmpColorPicker=WColorPicker()
-        tmpColorPicker.setOptionCompactUi(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_COMPACT))
-        tmpColorPicker.setOptionShowColorPalette(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_PALETTE_VISIBLE))
-        tmpColorPicker.setOptionColorPalette(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_PALETTE_DEFAULT))
-        tmpColorPicker.setOptionShowColorWheel(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CWHEEL_VISIBLE))
-        tmpColorPicker.setOptionShowPreviewColor(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CWHEEL_CPREVIEW))
-        tmpColorPicker.setOptionShowColorCombination(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CCOMBINATION))
-        tmpColorPicker.setOptionShowCssRgb(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CCSS))
-        tmpColorPicker.setOptionShowColorRGB(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_RGB_VISIBLE))
-        tmpColorPicker.setOptionDisplayAsPctColorRGB(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_RGB_ASPCT))
-        tmpColorPicker.setOptionShowColorCMYK(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_CMYK_VISIBLE))
-        tmpColorPicker.setOptionDisplayAsPctColorCMYK(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_CMYK_ASPCT))
-        tmpColorPicker.setOptionShowColorHSV(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSL_VISIBLE))
-        tmpColorPicker.setOptionDisplayAsPctColorHSV(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSL_ASPCT))
-        tmpColorPicker.setOptionShowColorHSL(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSV_VISIBLE))
-        tmpColorPicker.setOptionDisplayAsPctColorHSL(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSV_ASPCT))
+        tmpColorPicker = WColorPicker()
+        tmpColorPicker.setOptionCompactUi(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_COMPACT))
+        tmpColorPicker.setOptionShowColorPalette(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_PALETTE_VISIBLE))
+        tmpColorPicker.setOptionColorPalette(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_PALETTE_DEFAULT))
+        tmpColorPicker.setOptionShowColorWheel(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CWHEEL_VISIBLE))
+        tmpColorPicker.setOptionShowPreviewColor(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CWHEEL_CPREVIEW))
+        tmpColorPicker.setOptionShowColorCombination(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CCOMBINATION))
+        tmpColorPicker.setOptionShowCssRgb(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CCSS))
+        tmpColorPicker.setOptionShowColorRGB(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_RGB_VISIBLE))
+        tmpColorPicker.setOptionDisplayAsPctColorRGB(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_RGB_ASPCT))
+        tmpColorPicker.setOptionShowColorCMYK(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_CMYK_VISIBLE))
+        tmpColorPicker.setOptionDisplayAsPctColorCMYK(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_CMYK_ASPCT))
+        tmpColorPicker.setOptionShowColorHSV(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_HSL_VISIBLE))
+        tmpColorPicker.setOptionDisplayAsPctColorHSV(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_HSL_ASPCT))
+        tmpColorPicker.setOptionShowColorHSL(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_HSV_VISIBLE))
+        tmpColorPicker.setOptionDisplayAsPctColorHSL(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_HSV_ASPCT))
         tmpColorPicker.setOptionShowColorAlpha(False)
         return tmpColorPicker.optionLayout()
 
     @staticmethod
-    def setBrushColorPickerLayout(layout):
+    def setBrushColorPickerLayoutFg(layout):
         """Convert brush color picker layout from settings to layout"""
         # build a dummy color picker
-        tmpColorPicker=WColorPicker()
+        tmpColorPicker = WColorPicker()
         tmpColorPicker.setOptionLayout(layout)
 
-        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_COMPACT, tmpColorPicker.optionCompactUi())
-        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_PALETTE_VISIBLE, tmpColorPicker.optionShowColorPalette())
-        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_PALETTE_DEFAULT, tmpColorPicker.optionColorPalette())
-        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CWHEEL_VISIBLE, tmpColorPicker.optionShowColorWheel())
-        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CWHEEL_CPREVIEW, tmpColorPicker.optionShowPreviewColor())
-        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CCOMBINATION, tmpColorPicker.optionShowColorCombination())
-        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CCSS, tmpColorPicker.optionShowColorCssRGB())
-        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_RGB_VISIBLE, tmpColorPicker.optionShowColorRGB())
-        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_RGB_ASPCT, tmpColorPicker.optionDisplayAsPctColorRGB())
-        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_CMYK_VISIBLE, tmpColorPicker.optionShowColorCMYK())
-        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_CMYK_ASPCT, tmpColorPicker.optionDisplayAsPctColorCMYK())
-        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSL_VISIBLE, tmpColorPicker.optionShowColorHSL())
-        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSL_ASPCT, tmpColorPicker.optionDisplayAsPctColorHSL())
-        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSV_VISIBLE, tmpColorPicker.optionShowColorHSV())
-        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSV_ASPCT, tmpColorPicker.optionDisplayAsPctColorHSV())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_COMPACT, tmpColorPicker.optionCompactUi())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_PALETTE_VISIBLE, tmpColorPicker.optionShowColorPalette())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_PALETTE_DEFAULT, tmpColorPicker.optionColorPalette())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CWHEEL_VISIBLE, tmpColorPicker.optionShowColorWheel())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CWHEEL_CPREVIEW, tmpColorPicker.optionShowPreviewColor())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CCOMBINATION, tmpColorPicker.optionShowColorCombination())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CCSS, tmpColorPicker.optionShowColorCssRGB())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_RGB_VISIBLE, tmpColorPicker.optionShowColorRGB())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_RGB_ASPCT, tmpColorPicker.optionDisplayAsPctColorRGB())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_CMYK_VISIBLE, tmpColorPicker.optionShowColorCMYK())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_CMYK_ASPCT, tmpColorPicker.optionDisplayAsPctColorCMYK())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_HSL_VISIBLE, tmpColorPicker.optionShowColorHSL())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_HSL_ASPCT, tmpColorPicker.optionDisplayAsPctColorHSL())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_HSV_VISIBLE, tmpColorPicker.optionShowColorHSV())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_CSLIDER_HSV_ASPCT, tmpColorPicker.optionDisplayAsPctColorHSV())
+
+    @staticmethod
+    def getBrushColorPickerLayoutBg():
+        """Convert background color picker layout from settings to layout"""
+        # build a dummy color picker
+        tmpColorPicker = WColorPicker()
+        tmpColorPicker.setOptionCompactUi(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_COMPACT))
+        tmpColorPicker.setOptionShowColorPalette(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_PALETTE_VISIBLE))
+        tmpColorPicker.setOptionColorPalette(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_PALETTE_DEFAULT))
+        tmpColorPicker.setOptionShowColorWheel(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CWHEEL_VISIBLE))
+        tmpColorPicker.setOptionShowPreviewColor(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CWHEEL_CPREVIEW))
+        tmpColorPicker.setOptionShowColorCombination(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CCOMBINATION))
+        tmpColorPicker.setOptionShowCssRgb(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CCSS))
+        tmpColorPicker.setOptionShowColorRGB(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_RGB_VISIBLE))
+        tmpColorPicker.setOptionDisplayAsPctColorRGB(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_RGB_ASPCT))
+        tmpColorPicker.setOptionShowColorCMYK(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_CMYK_VISIBLE))
+        tmpColorPicker.setOptionDisplayAsPctColorCMYK(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_CMYK_ASPCT))
+        tmpColorPicker.setOptionShowColorHSV(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_HSL_VISIBLE))
+        tmpColorPicker.setOptionDisplayAsPctColorHSV(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_HSL_ASPCT))
+        tmpColorPicker.setOptionShowColorHSL(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_HSV_VISIBLE))
+        tmpColorPicker.setOptionDisplayAsPctColorHSL(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_HSV_ASPCT))
+        tmpColorPicker.setOptionShowColorAlpha(False)
+        return tmpColorPicker.optionLayout()
+
+    @staticmethod
+    def setBrushColorPickerLayoutBg(layout):
+        """Convert background color picker layout from settings to layout"""
+        # build a dummy color picker
+        tmpColorPicker = WColorPicker()
+        tmpColorPicker.setOptionLayout(layout)
+
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_COMPACT, tmpColorPicker.optionCompactUi())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_PALETTE_VISIBLE, tmpColorPicker.optionShowColorPalette())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_PALETTE_DEFAULT, tmpColorPicker.optionColorPalette())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CWHEEL_VISIBLE, tmpColorPicker.optionShowColorWheel())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CWHEEL_CPREVIEW, tmpColorPicker.optionShowPreviewColor())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CCOMBINATION, tmpColorPicker.optionShowColorCombination())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CCSS, tmpColorPicker.optionShowColorCssRGB())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_RGB_VISIBLE, tmpColorPicker.optionShowColorRGB())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_RGB_ASPCT, tmpColorPicker.optionDisplayAsPctColorRGB())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_CMYK_VISIBLE, tmpColorPicker.optionShowColorCMYK())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_CMYK_ASPCT, tmpColorPicker.optionDisplayAsPctColorCMYK())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_HSL_VISIBLE, tmpColorPicker.optionShowColorHSL())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_HSL_ASPCT, tmpColorPicker.optionDisplayAsPctColorHSL())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_HSV_VISIBLE, tmpColorPicker.optionShowColorHSV())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_HSV_ASPCT, tmpColorPicker.optionDisplayAsPctColorHSV())
 
     @staticmethod
     def setBrushes(brushes):

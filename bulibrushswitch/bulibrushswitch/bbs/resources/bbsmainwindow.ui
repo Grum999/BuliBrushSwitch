@@ -502,7 +502,7 @@
               <number>0</number>
              </property>
              <item>
-              <widget class="QToolButton" name="tbBrushScratchpadColor">
+              <widget class="QToolButton" name="tbBrushScratchpadColorFg">
                <property name="toolTip">
                 <string>Testing brush color</string>
                </property>
@@ -511,8 +511,28 @@
                </property>
                <property name="icon">
                 <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
-                 <normaloff>:/pktk/images/normal/color</normaloff>
-                 <disabledoff>:/pktk/images/disabled/color</disabledoff>:/pktk/images/normal/color</iconset>
+                 <normaloff>:/pktk/images/normal/brush_color</normaloff>
+                 <disabledoff>:/pktk/images/disabled/brush_color</disabledoff>:/pktk/images/normal/brush_color</iconset>
+               </property>
+               <property name="popupMode">
+                <enum>QToolButton::InstantPopup</enum>
+               </property>
+               <property name="autoRaise">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QToolButton" name="tbBrushScratchpadColorBg">
+               <property name="toolTip">
+                <string>Testing background color</string>
+               </property>
+               <property name="text">
+                <string>...</string>
+               </property>
+               <property name="icon">
+                <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
+                 <normaloff>:/pktk/images/normal/color</normaloff>:/pktk/images/normal/color</iconset>
                </property>
                <property name="popupMode">
                 <enum>QToolButton::InstantPopup</enum>
@@ -669,7 +689,7 @@
  </resources>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup"/>
   <buttongroup name="buttonGroup_2"/>
+  <buttongroup name="buttonGroup"/>
  </buttongroups>
 </ui>
