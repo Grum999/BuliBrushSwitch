@@ -1,26 +1,25 @@
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # PyKritaToolKit
-# Copyright (C) 2019-2021 - Grum999
-#
-# A toolkit to make pykrita plugin coding easier :-)
+# Copyright (C) 2019-2022 - Grum999
 # -----------------------------------------------------------------------------
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.
-# If not, see https://www.gnu.org/licenses/
+# https://spdx.org/licenses/GPL-3.0-or-later.html
+# -----------------------------------------------------------------------------
+# A Krita plugin framework
 # -----------------------------------------------------------------------------
 
-
 # -----------------------------------------------------------------------------
+# The wkeysequenceinput module provides an extended version of QKeySequenceEdit
+# widget
+#
+# Main class from this module
+#
+# - WKeySequenceInput:
+#       Widget
+#
+# -----------------------------------------------------------------------------
+
 from PyQt5.Qt import *
 from PyQt5.QtCore import (
         pyqtSignal as Signal
@@ -30,19 +29,20 @@ from PyQt5.QtWidgets import QKeySequenceEdit
 
 from ..modules.utils import replaceLineEditClearButton
 
+
 class WKeySequenceInput(QKeySequenceEdit):
     """An improved version of QKeySequenceEdit"""
-    keySequenceCleared=Signal()
+    keySequenceCleared = Signal()
 
     def __init__(self, parent=None):
         super(WKeySequenceInput, self).__init__(parent)
 
-        self.__lineEdit=self.findChild(QLineEdit)
+        self.__lineEdit = self.findChild(QLineEdit)
         self.__lineEdit.textChanged.connect(self.__textChanged)
 
     def __textChanged(self, value):
         """Text has been changed"""
-        if value=='':
+        if value == '':
             self.clear()
             self.keySequenceCleared.emit()
 
@@ -56,18 +56,18 @@ class WKeySequenceInput(QKeySequenceEdit):
         if value:
             replaceLineEditClearButton(self.__lineEdit)
 
-    #def event(self, event):
+    # def event(self, event):
     #    print("event", event, event.type())
     #    return super(WKeySequenceInput, self).event(event)
 
-    #def keyPressEvent(self, event):
+    # def keyPressEvent(self, event):
     #    print("keyPressEvent", event, event.text(), event.key(), event.modifiers())
     #    super(WKeySequenceInput, self).keyPressEvent(event)
 
-    #def keyReleaseEvent(self, event):
+    # def keyReleaseEvent(self, event):
     #    print("keyReleaseEvent", event, event.text(), event.key(), event.modifiers())
     #    super(WKeySequenceInput, self).keyReleaseEvent(event)
 
-    #def timerEvent(self, event):
+    # def timerEvent(self, event):
     #    print("timerEvent", event)
     #    super(WKeySequenceInput, self).timerEvent(event)
