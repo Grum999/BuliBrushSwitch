@@ -1,22 +1,12 @@
-#-----------------------------------------------------------------------------
-# BuliBrushSwitch
-# Copyright (C) 2021 - Grum999
 # -----------------------------------------------------------------------------
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.
-# If not, see https://www.gnu.org/licenses/
+# Buli Brush Switch
+# Copyright (C) 2011-2022 - Grum999
 # -----------------------------------------------------------------------------
-# A Krita plugin designed to export as JPEG with a preview of final result
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# https://spdx.org/licenses/GPL-3.0-or-later.html
+# -----------------------------------------------------------------------------
+# A Krita plugin designed to manage brushes switch easy
 # -----------------------------------------------------------------------------
 
 import os
@@ -38,7 +28,7 @@ from PyQt5.QtCore import (
     )
 
 if __name__ != '__main__':
-     # script is executed from Krita, loaded as a module
+    # script is executed from Krita, loaded as a module
     __PLUGIN_EXEC_FROM__ = 'KRITA'
 
     from .pktk.pktk import (
@@ -103,16 +93,16 @@ class BuliBrushSwitch(Extension):
         self.parent = parent
         self.__uiController = None
         self.__isKritaVersionOk = checkKritaVersion(*REQUIRED_KRITA_VERSION)
-        self.__action=None
-        self.__notifier=Krita.instance().notifier()
+        self.__action = None
+        self.__notifier = Krita.instance().notifier()
 
     @pyqtSlot()
     def __windowCreated(self):
         """Main window has been created"""
         # consider that newly created window is active window (because no more information
         # is provided by signal)
-        window=Krita.instance().activeWindow()
-        installedWindow=BBSWBrushSwitcher.installToWindow(window, PLUGIN_MENU_ENTRY, PLUGIN_VERSION)
+        window = Krita.instance().activeWindow()
+        installedWindow = BBSWBrushSwitcher.installToWindow(window, PLUGIN_MENU_ENTRY, PLUGIN_VERSION)
 
     @pyqtSlot()
     def __kritaIsClosing(self):
@@ -130,8 +120,8 @@ class BuliBrushSwitch(Extension):
         self.__notifier.setActive(True)
         self.__notifier.windowCreated.connect(self.__windowCreated)
 
-        #self.__notifier.applicationClosing.connect(self.__kritaIsClosing)
-        # doesn't work, use QApplication signal instead
+        # self.__notifier.applicationClosing.connect(self.__kritaIsClosing)
+        # doesn't work, use QApplication signal instead
         QApplication.instance().aboutToQuit.connect(self.__kritaIsClosing)
 
     def createActions(self, window):
@@ -142,10 +132,10 @@ class BuliBrushSwitch(Extension):
             for actionId in BBSSettings.DEFAULT_ACTIONS:
                 action = window.createAction(actionId, '', None)
 
-            brushes=BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_LIST_BRUSHES)
+            brushes = BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_LIST_BRUSHES)
             for brushNfo in brushes:
                 if BBSBrush.KEY_UUID in brushNfo and BBSBrush.KEY_NAME in brushNfo and BBSBrush.KEY_COMMENTS in brushNfo:
-                    action=BBSSettings.brushAction(brushNfo[BBSBrush.KEY_UUID], brushNfo[BBSBrush.KEY_NAME], brushNfo[BBSBrush.KEY_COMMENTS], True, window)
+                    action = BBSSettings.brushAction(brushNfo[BBSBrush.KEY_UUID], brushNfo[BBSBrush.KEY_NAME], brushNfo[BBSBrush.KEY_COMMENTS], True, window)
 
                     if BBSBrush.KEY_SHORTCUT in brushNfo and brushNfo[BBSBrush.KEY_SHORTCUT]:
                         # action will be loaded with defaul shortcut

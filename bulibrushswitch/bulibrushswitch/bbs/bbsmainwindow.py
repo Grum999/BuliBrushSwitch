@@ -1,24 +1,26 @@
-#-----------------------------------------------------------------------------
-# BuliBrushSwitch
-# Copyright (C) 2020 - Grum999
 # -----------------------------------------------------------------------------
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.
-# If not, see https://www.gnu.org/licenses/
+# Buli Brush Switch
+# Copyright (C) 2011-2022 - Grum999
 # -----------------------------------------------------------------------------
-# A Krita plugin designed to export as JPEG with a preview of final result
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# https://spdx.org/licenses/GPL-3.0-or-later.html
+# -----------------------------------------------------------------------------
+# A Krita plugin designed to manage brushes switch easy
 # -----------------------------------------------------------------------------
 
+# -----------------------------------------------------------------------------
+# The bbsmainvindow module provides classes used to manage main user interface
+# (the main window)
+# --> this module is a core module for plugin
+#
+# Main classes from this module
+#
+# - BBSMainWindow:
+#       The main use interface window :)
+#       Mostly used to manage main window menu entries & toolbars
+#
+# -----------------------------------------------------------------------------
 
 import os
 import os.path
@@ -61,7 +63,6 @@ from bulibrushswitch.pktk.widgets.wiodialog import (WDialogBooleanInput, WDialog
 from bulibrushswitch.pktk.modules.ekrita import EKritaBrushPreset
 
 
-
 # -----------------------------------------------------------------------------
 class BBSMainWindow(EDialog):
     """Main BuliBrushSwitch window"""
@@ -74,38 +75,39 @@ class BBSMainWindow(EDialog):
         self.__bbsVersion = bbsVersion
 
         # not yet initialised
-        self.__activeView=None
+        self.__activeView = None
 
         if (Krita.instance().activeWindow() is None
-            or Krita.instance().activeWindow().activeView() is None
-            or Krita.instance().activeWindow().activeView().visible()==False
-            or Krita.instance().activeWindow().activeView().document() is None):
+           or Krita.instance().activeWindow().activeView() is None
+           or Krita.instance().activeWindow().activeView().visible() is False
+           or Krita.instance().activeWindow().activeView().document() is None):
             # why if no document is opened, there's an active view?
             # need to check if it's normal or not
             WDialogMessage.display(self.__bbsName+' - '+i18n(f'Ooops sorry!'),
                                    f'''<p>{i18n("There's no active document")}</p><p>{i18n("A document must be active to configure plugin...")}</p><p>
-                                   <i>{i18n("It's sounds weird I know, even me I'm not happy with that but there's technical things with brushes and then I currently don't have choice in implementation...")}<br><br>Grum999</i></p>''',
-                                   minSize=QSize(500,0))
+                                   <i>{i18n("It's sounds weird I know, even me I'm not happy with that but there's technical things with brushes and then "
+                                            "I currently don't have choice in implementation...")}<br><br>Grum999</i></p>''',
+                                   minSize=QSize(500, 0))
             return
 
         BBSSettings.load()
 
         # current active view
-        self.__activeView=Krita.instance().activeWindow().activeView()
+        self.__activeView = Krita.instance().activeWindow().activeView()
 
         # keep in memory current view configuration to restore on dialog close
-        self.__activeViewCurrentConfig={}
+        self.__activeViewCurrentConfig = {}
 
         # list of defined brushes
-        self.__brushes=BBSBrushes()
+        self.__brushes = BBSBrushes()
 
         # keep a saved view of current brush shortcuts
-        self.__savedShortcuts={}
-        self.__createdShortcuts=[]
+        self.__savedShortcuts = {}
+        self.__createdShortcuts = []
 
         self.setModal(True)
         self.setWindowTitle(i18n(f'{bbsName} v{bbsVersion}'))
-        self.setWindowFlags(Qt.Dialog|Qt.WindowTitleHint)
+        self.setWindowFlags(Qt.Dialog | Qt.WindowTitleHint)
 
         self.__saveViewConfig()
         self.__initialiseUi()
@@ -113,7 +115,7 @@ class BBSMainWindow(EDialog):
         self.__saveShortcutConfig()
         self.__updateBrushUi()
 
-        self.__result=self.exec()
+        self.__result = self.exec()
 
     def showEvent(self, event):
         """Dialog is visible"""
@@ -145,9 +147,12 @@ class BBSMainWindow(EDialog):
         menuBrushScratchpadColor = QMenu(self.tbBrushScratchpadColor)
         menuBrushScratchpadColor.addAction(self.__actionSelectBrushScratchpadColor)
 
-        self.__actionSelectCurrentBrush=QAction(QIcon(QPixmap.fromImage(self.__activeViewCurrentConfig['brushPreset'].image())), i18n(f"Current painting brush ({self.__activeViewCurrentConfig['brushPreset'].name()})"), self)
+        self.__actionSelectBrushScratchpadColorFg = WMenuColorPicker()
+        self.__actionSelectCurrentBrush = QAction(QIcon(QPixmap.fromImage(self.__activeViewCurrentConfig['brushPreset'].image())),
+                                                  i18n(f"Current painting brush ({self.__activeViewCurrentConfig['brushPreset'].name()})"),
+                                                  self)
         self.__actionSelectCurrentBrush.triggered.connect(self.__actionBrushAddCurrentBrushPreset)
-        self.__actionSelectChoosenBrush=WMenuBrushesPresetSelector()
+        self.__actionSelectChoosenBrush = WMenuBrushesPresetSelector()
         self.__actionSelectChoosenBrush.presetChooser().presetClicked.connect(self.__actionBrushAddChoosenBrushPreset)
 
         self.__menuBrushAdd = QMenu(self.tbBrushAdd)
@@ -169,12 +174,12 @@ class BBSMainWindow(EDialog):
         self.hsBrushesThumbSize.valueChanged.connect(self.__brushesSizeIndexSliderChanged)
 
         # -- button mode
-        if BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_DEFAULT_SELECTIONMODE)==BBSSettingsValues.DEFAULT_SELECTIONMODE_FIRST_FROM_LIST:
+        if BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_DEFAULT_SELECTIONMODE) == BBSSettingsValues.DEFAULT_SELECTIONMODE_FIRST_FROM_LIST:
             self.rbFirstFromList.setChecked(True)
         else:
             self.rbLastSelected.setChecked(True)
 
-        if BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_DEFAULT_MODIFICATIONMODE)==BBSSettingsValues.DEFAULT_MODIFICATIONMODE_IGNORE:
+        if BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_DEFAULT_MODIFICATIONMODE) == BBSSettingsValues.DEFAULT_MODIFICATIONMODE_IGNORE:
             self.rbModificationModeIgnore.setChecked(True)
         else:
             self.rbModificationModeKeep.setChecked(True)
@@ -186,11 +191,11 @@ class BBSMainWindow(EDialog):
         self.tvBrushes.iconSizeIndexChanged.connect(self.__brushesSizeIndexChanged)
 
         # -- scratchpad initialisation
-        self.__scratchpadTestBrush=Scratchpad(self.__activeView, QColor(Qt.white), self)
+        self.__scratchpadTestBrush = Scratchpad(self.__activeView, self.__scratchpadDefaultBgColor, self)
         self.__scratchpadTestBrush.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.__scratchpadTestBrush.linkCanvasZoom(False)
         self.__scratchpadTestBrush.setModeManually(False)
-        #self.__scratchpadTestBrush.setMode('painting') -- bug if set? (don't remember why commented ^_^')
+        # self.__scratchpadTestBrush.setMode('painting') -- bug if set? (don't remember why commented ^_^')
         self.wBrushScratchpad.layout().addWidget(self.__scratchpadTestBrush)
 
         # -- dialog box bottom buttons
@@ -198,26 +203,26 @@ class BBSMainWindow(EDialog):
         self.pbCancel.clicked.connect(self.__rejectChange)
 
         # -- dialog box geometry
-        size=QSize(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_WINDOW_SIZE_WIDTH), BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_WINDOW_SIZE_HEIGHT))
-        if size.width()<=0:
+        size = QSize(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_WINDOW_SIZE_WIDTH), BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_WINDOW_SIZE_HEIGHT))
+        if size.width() <= 0:
             size.setWidth(self.width())
-        if size.height()<=0:
+        if size.height() <= 0:
             size.setHeight(self.height())
         self.resize(size)
 
-        position=QPoint(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_WINDOW_POSITION_X), BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_WINDOW_POSITION_Y))
-        if position.x()!=-1 and position.y()!=1:
+        position = QPoint(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_WINDOW_POSITION_X), BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_WINDOW_POSITION_Y))
+        if position.x() != -1 and position.y() != 1:
             self.move(position)
 
         self.splitterBrushes.setSizes(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_BRUSHES_SPLITTER_POSITION))
 
     def __loadBrushes(self):
         """Load brush configuration from settings"""
-        nbBrushes=BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_LIST_COUNT)
-        brushes=BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_LIST_BRUSHES)
+        nbBrushes = BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_LIST_COUNT)
+        brushes = BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_LIST_BRUSHES)
         self.__brushes.beginUpdate()
         for brushNfo in brushes:
-            brush=BBSBrush()
+            brush = BBSBrush()
             if brush.importData(brushNfo):
                 self.__brushes.add(brush)
         self.__brushes.endUpdate()
@@ -229,43 +234,43 @@ class BBSMainWindow(EDialog):
         in account shortcut modification made on brush)
         """
         for brushId in self.__brushes.idList():
-            action=Krita.instance().action(f'bulibrushswitch_brush_{brushId.strip("{}")}')
+            action = Krita.instance().action(f'bulibrushswitch_brush_{brushId.strip("{}")}')
             if action:
-                self.__savedShortcuts[brushId]=action.shortcut()
+                self.__savedShortcuts[brushId] = action.shortcut()
 
     def __restoreShortcutConfig(self):
         """Restore current shortcut configuration"""
         # for potential new action created, remove designed shortcut
         for brushId in self.__createdShortcuts:
-            action=BBSSettings.brushAction(brushId)
+            action = BBSSettings.brushAction(brushId)
             if action:
                 action.setShortcut(QKeySequence())
 
-        # restore initial shortcuts
+        # restore initial shortcuts
         for brushId in self.__savedShortcuts:
-            action=BBSSettings.brushAction(brushId)
+            action = BBSSettings.brushAction(brushId)
             if action:
                 action.setShortcut(self.__savedShortcuts[brushId])
 
     def __saveViewConfig(self):
         """Save current Krita active view properties"""
-        self.__activeViewCurrentConfig['brushSize']=self.__activeView.brushSize()
-        self.__activeViewCurrentConfig['brushPreset']=EKritaBrushPreset.getPreset(self.__activeView.currentBrushPreset())
+        self.__activeViewCurrentConfig['brushSize'] = self.__activeView.brushSize()
+        self.__activeViewCurrentConfig['brushPreset'] = EKritaBrushPreset.getPreset(self.__activeView.currentBrushPreset())
 
-        self.__activeViewCurrentConfig['fgColor']=self.__activeView.foregroundColor()
-        self.__activeViewCurrentConfig['bgColor']=self.__activeView.backgroundColor()
+        self.__activeViewCurrentConfig['fgColor'] = self.__activeView.foregroundColor()
+        self.__activeViewCurrentConfig['bgColor'] = self.__activeView.backgroundColor()
 
-        self.__activeViewCurrentConfig['blendingMode']=self.__activeView.currentBlendingMode()
-        #self.__activeViewCurrentConfig['gradient']=self.__activeView.currentGradient()
-        #self.__activeViewCurrentConfig['pattern']=self.__activeView.currentPattern()
+        self.__activeViewCurrentConfig['blendingMode'] = self.__activeView.currentBlendingMode()
+        #1 self.__activeViewCurrentConfig['gradient'] = self.__activeView.currentGradient()
+        # self.__activeViewCurrentConfig['pattern'] = self.__activeView.currentPattern()
 
-        self.__activeViewCurrentConfig['paintingOpacity']=self.__activeView.paintingOpacity()
-        self.__activeViewCurrentConfig['paintingFlow']=self.__activeView.paintingFlow()
+        self.__activeViewCurrentConfig['paintingOpacity'] = self.__activeView.paintingOpacity()
+        self.__activeViewCurrentConfig['paintingFlow'] = self.__activeView.paintingFlow()
 
         # don't know why, but zoomLevel() and setZoomLevel() don't use same value
         # https://krita-artists.org/t/canvas-class-what-does-zoomlevel-returns-compared-to-setzoomlevel-manual-link-inside/15702/3?u=grum999
         # need to apply a factor to be sure to reapply the right zoom
-        self.__activeViewCurrentConfig['zoom']=self.__activeView.canvas().zoomLevel()/(self.__activeView.document().resolution()*1/72)
+        self.__activeViewCurrentConfig['zoom'] = self.__activeView.canvas().zoomLevel()/(self.__activeView.document().resolution()*1/72)
 
     def __restoreViewConfig(self):
         """Restore view properties"""
@@ -277,8 +282,8 @@ class BBSMainWindow(EDialog):
 
         self.__activeView.setCurrentBlendingMode(self.__activeViewCurrentConfig['blendingMode'])
         # crash on gradient?
-        #self.__activeView.setCurrentGradient(self.__activeViewCurrentConfig['gradient'])
-        #self.__activeView.setCurrentPattern(self.__activeViewCurrentConfig['pattern'])
+        # self.__activeView.setCurrentGradient(self.__activeViewCurrentConfig['gradient'])
+        # self.__activeView.setCurrentPattern(self.__activeViewCurrentConfig['pattern'])
 
         self.__activeView.setPaintingOpacity(self.__activeViewCurrentConfig['paintingOpacity'])
         self.__activeView.setPaintingFlow(self.__activeViewCurrentConfig['paintingFlow'])
@@ -325,10 +330,10 @@ class BBSMainWindow(EDialog):
 
     def __actionBrushAdd(self):
         """Add a new brush in list (from current view brush)"""
-        brush=BBSBrush()
+        brush = BBSBrush()
         brush.fromCurrentKritaBrush(self.__activeView)
-        options=BBSBrushesEditor.edit(self.__bbsName+' - '+i18n('Add brush'), brush)
-        if not options is None:
+        options = BBSBrushesEditor.edit(self.__bbsName+' - '+i18n('Add brush'), brush)
+        if options is not None:
             self.__applyBrushOptions(brush, options)
             self.__createdShortcuts.append(brush.id())
             self.__brushes.add(brush)
@@ -336,69 +341,69 @@ class BBSMainWindow(EDialog):
 
     def __actionBrushEdit(self):
         """Edit brush from list"""
-        brushes=self.tvBrushes.selectedItems()
+        brushes = self.tvBrushes.selectedItems()
         if len(brushes):
-            # a brush is selected
-            brush=brushes[0]
-            options=BBSBrushesEditor.edit(self.__bbsName+' - '+i18n(f'Edit brush'), brush)
-            if not options is None:
+            # a brush is selected
+            brush = brushes[0]
+            options = BBSBrushesEditor.edit(self.__bbsName+' - '+i18n(f'Edit brush'), brush)
+            if options is not None:
                 self.__applyBrushOptions(brush, options)
                 self.__brushes.update(brush)
                 self.__updateBrushUi()
 
     def __actionBrushDelete(self):
         """Remove brush from list"""
-        brushes=self.tvBrushes.selectedItems()
+        brushes = self.tvBrushes.selectedItems()
         if len(brushes):
-            # a brush is selected
-            brush=brushes[0]
+            # a brush is selected
+            brush = brushes[0]
 
-            brushDescription="<br><br>"+brush.information(BBSBrush.INFO_WITH_BRUSH_DETAILS|BBSBrush.INFO_WITH_BRUSH_OPTIONS)+"<br><br>"
+            brushDescription = "<br><br>"+brush.information(BBSBrush.INFO_WITH_BRUSH_DETAILS | BBSBrush.INFO_WITH_BRUSH_OPTIONS)+"<br><br>"
 
             if WDialogBooleanInput.display(self.__bbsName+' - '+i18n(f'Remove brush'),
                                            i18n(f"<b>Following brush will removed from user list</b>{brushDescription}<b>Do you confirm action?</b>"),
-                                           minSize=QSize(950,400)):
+                                           minSize=QSize(950, 400)):
                 BBSSettings.setShortcut(brush, QKeySequence())
                 self.__brushes.remove(brush)
                 self.__updateBrushUi()
 
     def __actionBrushMoveFirst(self):
         """Move brush at first position in list"""
-        brushes=self.tvBrushes.selectedItems()
+        brushes = self.tvBrushes.selectedItems()
         if len(brushes):
-            # a brush is selected
+            # a brush is selected
             self.__brushes.moveItemAtFirst(brushes[0])
             self.__updateBrushUi()
 
     def __actionBrushMoveLast(self):
         """Move brush at last position in list"""
-        brushes=self.tvBrushes.selectedItems()
+        brushes = self.tvBrushes.selectedItems()
         if len(brushes):
-            # a brush is selected
+            # a brush is selected
             self.__brushes.moveItemAtLast(brushes[0])
             self.__updateBrushUi()
 
     def __actionBrushMoveUp(self):
         """Move brush at previous position in list"""
-        brushes=self.tvBrushes.selectedItems()
+        brushes = self.tvBrushes.selectedItems()
         if len(brushes):
-            # a brush is selected
+            # a brush is selected
             self.__brushes.moveItemAtPrevious(brushes[0])
             self.__updateBrushUi()
 
     def __actionBrushMoveDown(self):
         """Move brush at next position in list"""
-        brushes=self.tvBrushes.selectedItems()
+        brushes = self.tvBrushes.selectedItems()
         if len(brushes):
-            # a brush is selected
+            # a brush is selected
             self.__brushes.moveItemAtNext(brushes[0])
             self.__updateBrushUi()
 
     def __brushesSelectionChanged(self, selected, deselected):
         """Selection in treeview has changed, update UI"""
         self.__updateBrushUi()
-        selectedBrushes=self.tvBrushes.selectedItems()
-        if len(selectedBrushes)==1:
+        selectedBrushes = self.tvBrushes.selectedItems()
+        if len(selectedBrushes) == 1:
             if selectedBrushes[0].found():
                 selectedBrushes[0].toCurrentKritaBrush()
 
@@ -414,25 +419,25 @@ class BBSMainWindow(EDialog):
 
     def __updateBrushUi(self):
         """Update brushes UI (enable/disable buttons...)"""
-        nbSelectedBrush=self.tvBrushes.nbSelectedItems()
-        self.tbBrushEdit.setEnabled(nbSelectedBrush==1)
-        self.tbBrushDelete.setEnabled(nbSelectedBrush==1)
+        nbSelectedBrush = self.tvBrushes.nbSelectedItems()
+        self.tbBrushEdit.setEnabled(nbSelectedBrush == 1)
+        self.tbBrushDelete.setEnabled(nbSelectedBrush == 1)
 
-        brushes=self.tvBrushes.selectedItems()
+        brushes = self.tvBrushes.selectedItems()
         if len(brushes):
-            # a brush is selected
-            brush=brushes[0]
-            self.tbBrushMoveFirst.setEnabled(brush.position()>0)
-            self.tbBrushMoveLast.setEnabled(brush.position()<self.__brushes.length()-1)
-            self.tbBrushMoveUp.setEnabled(brush.position()>0)
-            self.tbBrushMoveDown.setEnabled(brush.position()<self.__brushes.length()-1)
+            # a brush is selected
+            brush = brushes[0]
+            self.tbBrushMoveFirst.setEnabled(brush.position() > 0)
+            self.tbBrushMoveLast.setEnabled(brush.position() < self.__brushes.length()-1)
+            self.tbBrushMoveUp.setEnabled(brush.position() > 0)
+            self.tbBrushMoveDown.setEnabled(brush.position() < self.__brushes.length()-1)
         else:
             self.tbBrushMoveFirst.setEnabled(False)
             self.tbBrushMoveLast.setEnabled(False)
             self.tbBrushMoveUp.setEnabled(False)
             self.tbBrushMoveDown.setEnabled(False)
 
-        if self.__brushes.length()>0:
+        if self.__brushes.length() > 0:
             self.pbOk.setEnabled(True)
             self.pbOk.setToolTip("")
         else:
@@ -495,7 +500,7 @@ class BBSMainWindow(EDialog):
         for brushId in self.__brushes.idList():
             # don't kwow why, it seems that from here, some actions shortcut  are lost??
             # need to reapply them...
-            brush=self.__brushes.get(brushId)
+            brush = self.__brushes.get(brushId)
             if brush:
                 BBSSettings.setShortcut(brush, brush.shortcut())
 

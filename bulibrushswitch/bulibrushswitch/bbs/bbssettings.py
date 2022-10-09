@@ -1,26 +1,28 @@
-#-----------------------------------------------------------------------------
-# BuliBrushSwitch
-# Copyright (C) 2021 - Grum999
 # -----------------------------------------------------------------------------
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# Buli Brush Switch
+# Copyright (C) 2011-2022 - Grum999
+# -----------------------------------------------------------------------------
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU General Public License for more details.
+# https://spdx.org/licenses/GPL-3.0-or-later.html
+# -----------------------------------------------------------------------------
+# A Krita plugin designed to manage brushes switch easy
+# -----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
+# The bbssettings module provides classes used to manage plugin settings
+# --> this module is a core module for plugin
 #
-# You should have received a copy of the GNU General Public License
-# along with this program.
-# If not, see https://www.gnu.org/licenses/
+# Main classes from this module
+#
+# - BBSSettings:
+#       Allows to easily manage settings
+#       (read, write, default values, allowed values, ...)
+#
 # -----------------------------------------------------------------------------
-# A Krita plugin designed to export as JPEG with a preview of final result
-# -----------------------------------------------------------------------------
+
 
 from enum import Enum
-
 
 import PyQt5.uic
 from PyQt5.Qt import *
@@ -72,34 +74,11 @@ class BBSSettingsValues(object):
     DEFAULT_MODIFICATIONMODE_IGNORE = 'ignoreModification'
     DEFAULT_MODIFICATIONMODE_KEEP = 'keepModification'
 
-    POPUP_BRUSHES_VIEWMODE_LIST=0
-    POPUP_BRUSHES_VIEWMODE_ICON=1
+    POPUP_BRUSHES_VIEWMODE_LIST = 0
+    POPUP_BRUSHES_VIEWMODE_ICON = 1
 
 
 class BBSSettingsKey(SettingsKey):
-    CONFIG_EDITOR_WINDOW_POSITION_X=                                            'config.editor.window.position.x'
-    CONFIG_EDITOR_WINDOW_POSITION_Y=                                            'config.editor.window.position.y'
-    CONFIG_EDITOR_WINDOW_SIZE_WIDTH=                                            'config.editor.window.size.width'
-    CONFIG_EDITOR_WINDOW_SIZE_HEIGHT=                                           'config.editor.window.size.height'
-
-    CONFIG_EDITOR_BRUSHES_ZOOMLEVEL=                                            'config.editor.brushes.list.zoomLevel'
-    CONFIG_EDITOR_BRUSHES_SPLITTER_POSITION=                                    'config.editor.brushes.list.splitterPosition'
-
-    CONFIG_EDITOR_TEXT_COLORPICKER_COMPACT=                                     'config.editor.text.colorPicker.compact'
-    CONFIG_EDITOR_TEXT_COLORPICKER_PALETTE_VISIBLE=                             'config.editor.text.colorPicker.palette.visible'
-    CONFIG_EDITOR_TEXT_COLORPICKER_PALETTE_DEFAULT=                             'config.editor.text.colorPicker.palette.default'
-    CONFIG_EDITOR_TEXT_COLORPICKER_CWHEEL_VISIBLE=                              'config.editor.text.colorPicker.colorWheel.visible'
-    CONFIG_EDITOR_TEXT_COLORPICKER_CWHEEL_CPREVIEW=                             'config.editor.text.colorPicker.colorWheel.colorPreview'
-    CONFIG_EDITOR_TEXT_COLORPICKER_CCOMBINATION=                                'config.editor.text.colorPicker.colorCombination'
-    CONFIG_EDITOR_TEXT_COLORPICKER_CCSS=                                        'config.editor.text.colorPicker.colorCss.visible'
-    CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_RGB_VISIBLE=                         'config.editor.text.colorPicker.colorSlider.rgb.visible'
-    CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_RGB_ASPCT=                           'config.editor.text.colorPicker.colorSlider.rgb.asPct'
-    CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_CMYK_VISIBLE=                        'config.editor.text.colorPicker.colorSlider.cmyk.visible'
-    CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_CMYK_ASPCT=                          'config.editor.text.colorPicker.colorSlider.cmyk.asPct'
-    CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_HSL_VISIBLE=                         'config.editor.text.colorPicker.colorSlider.hsl.visible'
-    CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_HSL_ASPCT=                           'config.editor.text.colorPicker.colorSlider.hsl.asPct'
-    CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_HSV_VISIBLE=                         'config.editor.text.colorPicker.colorSlider.hsv.visible'
-    CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_HSV_ASPCT=                           'config.editor.text.colorPicker.colorSlider.hsv.asPct'
 
     CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_COMPACT=                               'config.editor.scratchpad.colorPicker.compact'
     CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_PALETTE_VISIBLE=                       'config.editor.scratchpad.colorPicker.palette.visible'
@@ -117,10 +96,34 @@ class BBSSettingsKey(SettingsKey):
     CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSV_VISIBLE=                   'config.editor.scratchpad.colorPicker.colorSlider.hsv.visible'
     CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSV_ASPCT=                     'config.editor.scratchpad.colorPicker.colorSlider.hsv.asPct'
 
-    CONFIG_UI_POPUP_WIDTH=                                                      'config.ui.popup.width'
-    CONFIG_UI_POPUP_HEIGHT=                                                     'config.ui.popup.height'
-    CONFIG_UI_POPUP_BRUSHES_ZOOMLEVEL=                                          'config.ui.popup.brushes.list.zoomLevel'
-    CONFIG_UI_POPUP_BRUSHES_VIEWMODE=                                           'config.ui.popup.brushes.list.viewMode'
+    CONFIG_EDITOR_WINDOW_POSITION_X =                                           'config.editor.window.position.x'
+    CONFIG_EDITOR_WINDOW_POSITION_Y =                                           'config.editor.window.position.y'
+    CONFIG_EDITOR_WINDOW_SIZE_WIDTH =                                           'config.editor.window.size.width'
+    CONFIG_EDITOR_WINDOW_SIZE_HEIGHT =                                          'config.editor.window.size.height'
+
+    CONFIG_EDITOR_BRUSHES_ZOOMLEVEL =                                           'config.editor.brushes.list.zoomLevel'
+    CONFIG_EDITOR_BRUSHES_SPLITTER_POSITION =                                   'config.editor.brushes.list.splitterPosition'
+
+    CONFIG_EDITOR_TEXT_COLORPICKER_COMPACT =                                    'config.editor.text.colorPicker.compact'
+    CONFIG_EDITOR_TEXT_COLORPICKER_PALETTE_VISIBLE =                            'config.editor.text.colorPicker.palette.visible'
+    CONFIG_EDITOR_TEXT_COLORPICKER_PALETTE_DEFAULT =                            'config.editor.text.colorPicker.palette.default'
+    CONFIG_EDITOR_TEXT_COLORPICKER_CWHEEL_VISIBLE =                             'config.editor.text.colorPicker.colorWheel.visible'
+    CONFIG_EDITOR_TEXT_COLORPICKER_CWHEEL_CPREVIEW =                            'config.editor.text.colorPicker.colorWheel.colorPreview'
+    CONFIG_EDITOR_TEXT_COLORPICKER_CCOMBINATION =                               'config.editor.text.colorPicker.colorCombination'
+    CONFIG_EDITOR_TEXT_COLORPICKER_CCSS =                                       'config.editor.text.colorPicker.colorCss.visible'
+    CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_RGB_VISIBLE =                        'config.editor.text.colorPicker.colorSlider.rgb.visible'
+    CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_RGB_ASPCT =                          'config.editor.text.colorPicker.colorSlider.rgb.asPct'
+    CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_CMYK_VISIBLE =                       'config.editor.text.colorPicker.colorSlider.cmyk.visible'
+    CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_CMYK_ASPCT =                         'config.editor.text.colorPicker.colorSlider.cmyk.asPct'
+    CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_HSL_VISIBLE =                        'config.editor.text.colorPicker.colorSlider.hsl.visible'
+    CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_HSL_ASPCT =                          'config.editor.text.colorPicker.colorSlider.hsl.asPct'
+    CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_HSV_VISIBLE =                        'config.editor.text.colorPicker.colorSlider.hsv.visible'
+    CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_HSV_ASPCT =                          'config.editor.text.colorPicker.colorSlider.hsv.asPct'
+
+    CONFIG_UI_POPUP_WIDTH =                                                     'config.ui.popup.width'
+    CONFIG_UI_POPUP_HEIGHT =                                                    'config.ui.popup.height'
+    CONFIG_UI_POPUP_BRUSHES_ZOOMLEVEL =                                         'config.ui.popup.brushes.list.zoomLevel'
+    CONFIG_UI_POPUP_BRUSHES_VIEWMODE =                                          'config.ui.popup.brushes.list.viewMode'
 
     CONFIG_BRUSHES_LIST_COUNT =                                                 'config.brushes.list.count'
     CONFIG_BRUSHES_LIST_BRUSHES =                                               'config.brushes.list.brushes'
@@ -136,7 +139,7 @@ class BBSSettings(Settings):
     Configuration is saved as JSON file
     """
 
-    DEFAULT_ACTIONS=[
+    DEFAULT_ACTIONS = [
             'bulibrushswitch_settings',
             'bulibrushswitch_activate_default',
             'bulibrushswitch_deactivate',
@@ -150,22 +153,6 @@ class BBSSettings(Settings):
             pluginId = 'bulibrushswitch'
 
         rules = [
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_COMPACT,                      True,       SettingsFmt(bool)),
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_PALETTE_VISIBLE,              True,       SettingsFmt(bool)),
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_PALETTE_DEFAULT,              "Default",  SettingsFmt(str)),
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_CWHEEL_VISIBLE,               False,      SettingsFmt(bool)),
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_CWHEEL_CPREVIEW,              True,       SettingsFmt(bool)),
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_CCOMBINATION,                 0,          SettingsFmt(int, [0,1,2,3,4,5])),
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_CCSS,                         False,      SettingsFmt(bool)),
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_RGB_VISIBLE,          False,      SettingsFmt(bool)),
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_RGB_ASPCT,            False,      SettingsFmt(bool)),
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_CMYK_VISIBLE,         False,      SettingsFmt(bool)),
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_CMYK_ASPCT,           False,      SettingsFmt(bool)),
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_HSL_VISIBLE,          False,      SettingsFmt(bool)),
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_HSL_ASPCT,            False,      SettingsFmt(bool)),
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_HSV_VISIBLE,          False,      SettingsFmt(bool)),
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_HSV_ASPCT,            False,      SettingsFmt(bool)),
-
             SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_COMPACT,                False,      SettingsFmt(bool)),
             SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_PALETTE_VISIBLE,        False,      SettingsFmt(bool)),
             SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_PALETTE_DEFAULT,        "Default",  SettingsFmt(str)),
@@ -181,32 +168,55 @@ class BBSSettings(Settings):
             SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSL_ASPCT,      False,      SettingsFmt(bool)),
             SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSV_VISIBLE,    False,      SettingsFmt(bool)),
             SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_CSLIDER_HSV_ASPCT,      False,      SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_COMPACT,                         True,          SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_PALETTE_VISIBLE,                 True,          SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_PALETTE_DEFAULT,                 "Default",     SettingsFmt(str)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_CWHEEL_VISIBLE,                  False,         SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_CWHEEL_CPREVIEW,                 True,          SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_CCOMBINATION,                    0,             SettingsFmt(int, [0, 1, 2, 3, 4, 5])),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_CCSS,                            False,         SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_RGB_VISIBLE,             False,         SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_RGB_ASPCT,               False,         SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_CMYK_VISIBLE,            False,         SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_CMYK_ASPCT,              False,         SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_HSL_VISIBLE,             False,         SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_HSL_ASPCT,               False,         SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_HSV_VISIBLE,             False,         SettingsFmt(bool)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_CSLIDER_HSV_ASPCT,               False,         SettingsFmt(bool)),
 
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_BRUSHES_ZOOMLEVEL,                             3,          SettingsFmt(int, [0,1,2,3,4])),
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_BRUSHES_SPLITTER_POSITION,                     [1000,500], SettingsFmt(int), SettingsFmt(int)),
 
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_WINDOW_POSITION_X,                             -1,         SettingsFmt(int)),
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_WINDOW_POSITION_Y,                             -1,         SettingsFmt(int)),
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_WINDOW_SIZE_WIDTH,                             -1,         SettingsFmt(int)),
-            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_WINDOW_SIZE_HEIGHT,                            -1,         SettingsFmt(int)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLOR_BG,                              '#ffffff',     SettingsFmt(str)),
 
-            SettingsRule(BBSSettingsKey.CONFIG_UI_POPUP_WIDTH,                                       -1,         SettingsFmt(int)),
-            SettingsRule(BBSSettingsKey.CONFIG_UI_POPUP_HEIGHT,                                      -1,         SettingsFmt(int)),
-            SettingsRule(BBSSettingsKey.CONFIG_UI_POPUP_BRUSHES_ZOOMLEVEL,                           3,          SettingsFmt(int, [0,1,2,3,4])),
-            SettingsRule(BBSSettingsKey.CONFIG_UI_POPUP_BRUSHES_VIEWMODE,                            BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_LIST,
-                                                                                                                 SettingsFmt(int, [BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_LIST,
-                                                                                                                                   BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_ICON])),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_BRUSHES_ZOOMLEVEL,                                3,             SettingsFmt(int, [0, 1, 2, 3, 4])),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_BRUSHES_SPLITTER_POSITION,                        [1000, 500],   SettingsFmt(int), SettingsFmt(int)),
 
-            SettingsRule(BBSSettingsKey.CONFIG_BRUSHES_LIST_COUNT,                                   0,          SettingsFmt(int, (0, None))),
-            SettingsRule(BBSSettingsKey.CONFIG_BRUSHES_LIST_BRUSHES,                                 [],         SettingsFmt(list)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_WINDOW_POSITION_X,                                -1,            SettingsFmt(int)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_WINDOW_POSITION_Y,                                -1,            SettingsFmt(int)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_WINDOW_SIZE_WIDTH,                                -1,            SettingsFmt(int)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_WINDOW_SIZE_HEIGHT,                               -1,            SettingsFmt(int)),
 
-            SettingsRule(BBSSettingsKey.CONFIG_BRUSHES_LAST_SELECTED,                                '',         SettingsFmt(str)),
-            SettingsRule(BBSSettingsKey.CONFIG_BRUSHES_DEFAULT_SELECTIONMODE,                        BBSSettingsValues.DEFAULT_SELECTIONMODE_FIRST_FROM_LIST,
-                                                                                                                 SettingsFmt(str, [BBSSettingsValues.DEFAULT_SELECTIONMODE_FIRST_FROM_LIST,
-                                                                                                                                   BBSSettingsValues.DEFAULT_SELECTIONMODE_LAST_SELECTED])),
-            SettingsRule(BBSSettingsKey.CONFIG_BRUSHES_DEFAULT_MODIFICATIONMODE,                     BBSSettingsValues.DEFAULT_MODIFICATIONMODE_IGNORE,
-                                                                                                                 SettingsFmt(str, [BBSSettingsValues.DEFAULT_MODIFICATIONMODE_IGNORE,
-                                                                                                                                   BBSSettingsValues.DEFAULT_MODIFICATIONMODE_KEEP])),
+            SettingsRule(BBSSettingsKey.CONFIG_UI_POPUP_WIDTH,                                          -1,            SettingsFmt(int)),
+            SettingsRule(BBSSettingsKey.CONFIG_UI_POPUP_HEIGHT,                                         -1,            SettingsFmt(int)),
+            SettingsRule(BBSSettingsKey.CONFIG_UI_POPUP_BRUSHES_ZOOMLEVEL,                              3,             SettingsFmt(int, [0, 1, 2, 3, 4])),
+            SettingsRule(BBSSettingsKey.CONFIG_UI_POPUP_BRUSHES_VIEWMODE,                               BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_LIST,
+                                                                                                                       SettingsFmt(int,
+                                                                                                                                   [BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_LIST,
+                                                                                                                                    BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_ICON])),
+
+            SettingsRule(BBSSettingsKey.CONFIG_BRUSHES_LIST_COUNT,                                      0,             SettingsFmt(int, (0, None))),
+            SettingsRule(BBSSettingsKey.CONFIG_BRUSHES_LIST_BRUSHES,                                    [],            SettingsFmt(list)),
+
+            SettingsRule(BBSSettingsKey.CONFIG_BRUSHES_LAST_SELECTED,                                   '',            SettingsFmt(str)),
+            SettingsRule(BBSSettingsKey.CONFIG_BRUSHES_DEFAULT_SELECTIONMODE,                           BBSSettingsValues.DEFAULT_SELECTIONMODE_FIRST_FROM_LIST,
+                                                                                                                       SettingsFmt(
+                                                                                                                           str,
+                                                                                                                           [BBSSettingsValues.DEFAULT_SELECTIONMODE_FIRST_FROM_LIST,
+                                                                                                                            BBSSettingsValues.DEFAULT_SELECTIONMODE_LAST_SELECTED])),
+            SettingsRule(BBSSettingsKey.CONFIG_BRUSHES_DEFAULT_MODIFICATIONMODE,                        BBSSettingsValues.DEFAULT_MODIFICATIONMODE_IGNORE,
+                                                                                                                       SettingsFmt(
+                                                                                                                            str,
+                                                                                                                            [BBSSettingsValues.DEFAULT_MODIFICATIONMODE_IGNORE,
+                                                                                                                             BBSSettingsValues.DEFAULT_MODIFICATIONMODE_KEEP])),
         ]
 
         super(BBSSettings, self).__init__(pluginId, rules)
@@ -221,10 +231,10 @@ class BBSSettings(Settings):
             #   "a) Eraser Circle"
             #   "a) Eraser Small"
             #   "a) Eraser Soft"
-            defaultEraserList=["a) Eraser Circle", "a) Eraser Small", "a) Eraser Soft"]
+            defaultEraserList = ["a) Eraser Circle", "a) Eraser Small", "a) Eraser Soft"]
             for eraserName in defaultEraserList:
-                preset=EKritaBrushPreset.getPreset(eraserName)
-                if preset and preset.name()==eraserName:
+                preset = EKritaBrushPreset.getPreset(eraserName)
+                if preset and preset.name() == eraserName:
                     return preset
 
             # just return the first available brush
@@ -236,15 +246,15 @@ class BBSSettings(Settings):
         # - Check if at least brushes are valid
         #       If no valid brush found, add a default one
         #
-        # Except when plugin is executed for first time, it shouldn't occurs...
-        brushes=self.option(BBSSettingsKey.CONFIG_BRUSHES_LIST_BRUSHES)
-        if len(brushes)==0:
-            # note: we normaly here have a dictionary, not a BBSBrush
-            brushName=getFirstValidBrush()
+        # Except when plugin is executed for first time, it shouldn't occurs...
+        brushes = self.option(BBSSettingsKey.CONFIG_BRUSHES_LIST_BRUSHES)
+        if len(brushes) == 0:
+            # note: we normaly here have a dictionary, not a BBSBrush
+            brushName = getFirstValidBrush()
 
             # build default configurations
-            if brushName.name()=='a) Eraser Circle':
-                brushDict={
+            if brushName.name() == 'a) Eraser Circle':
+                brushDict = {
                         "blendingMode": "erase",
                         "color": "",
                         "colorBg": "",
@@ -261,8 +271,8 @@ class BBSSettings(Settings):
                         "shortcut": '',
                         "uuid": '1367df61-b0e2-4304-9b51-ff04c102659e'
                     }
-            elif brushName.name()=='a) Eraser Small':
-                brushDict={
+            elif brushName.name() == 'a) Eraser Small':
+                brushDict = {
                         "blendingMode": "erase",
                         "color": "",
                         "colorBg": "",
@@ -279,8 +289,8 @@ class BBSSettings(Settings):
                         "shortcut": '',
                         "uuid": '1367df61-b0e2-4304-9b51-ff04c102659e'
                     }
-            elif brushName.name()=='a) Eraser Soft':
-                brushDict={
+            elif brushName.name() == 'a) Eraser Soft':
+                brushDict = {
                         "blendingMode": "erase",
                         "color": "",
                         "colorBg": "",
@@ -309,7 +319,7 @@ class BBSSettings(Settings):
                 # (users for which default erasers brushes have been removed... X_X)
                 #
                 # just build "something"
-                brushDict={
+                brushDict = {
                         "blendingMode": "normal",
                         "color": "#000000",
                         "colorBg": "",
@@ -332,40 +342,39 @@ class BBSSettings(Settings):
 
     def configurationSavedEvent(self, fileSaved):
         """When saving configuration, also save .action file for shortcuts"""
-        directory=Krita.instance().readSetting('', 'ResourceDirectory', QStandardPaths.writableLocation(QStandardPaths.AppDataLocation))
-        actionsDirectory=os.path.normpath(os.path.join(directory, "actions"))
+        directory = Krita.instance().readSetting('', 'ResourceDirectory', QStandardPaths.writableLocation(QStandardPaths.AppDataLocation))
+        actionsDirectory = os.path.normpath(os.path.join(directory, "actions"))
 
         if not os.path.isdir(actionsDirectory):
             os.makedirs(actionsDirectory, exist_ok=True)
 
         try:
             with open(os.path.join(os.path.dirname(__file__), 'resources', 'bbs.action'), 'r') as fHandle:
-                fileContent=fHandle.read()
+                fileContent = fHandle.read()
 
         except Exception as e:
             print(e)
             return
 
-
         for actionId in BBSSettings.DEFAULT_ACTIONS:
-            shortcut=''
-            action=Krita.instance().action(actionId)
+            shortcut = ''
+            action = Krita.instance().action(actionId)
 
             if action:
-                shortcut=action.shortcut().toString()
-                fileContent=fileContent.replace(f"{{shortcut_{actionId}}}", shortcut)
+                shortcut = action.shortcut().toString()
+                fileContent = fileContent.replace(f"{{shortcut_{actionId}}}", shortcut)
 
-        actionsList=[]
+        actionsList = []
 
-        fromMarker="    <!--- (user brush definition:start) -->"
-        toMarker="    <!--- (user brush definition:end) -->"
+        fromMarker = "    <!--- (user brush definition:start) -->"
+        toMarker = "    <!--- (user brush definition:end) -->"
 
         for brush in self.option(BBSSettingsKey.CONFIG_BRUSHES_LIST_BRUSHES):
-            actionId=f'bulibrushswitch_brush_{brush["uuid"].strip("{}")}'
-            actionText=BBSSettings.brushActionText(brush['name'], brush['comments'])
-            shortcut=''
+            actionId = f'bulibrushswitch_brush_{brush["uuid"].strip("{}")}'
+            actionText = BBSSettings.brushActionText(brush['name'], brush['comments'])
+            shortcut = ''
             if 'shortcut' in brush:
-                shortcut=brush['shortcut']
+                shortcut = brush['shortcut']
             actionsList.append(f"""
     <Action name="{actionId}">
       <icon></icon>
@@ -382,10 +391,10 @@ class BBSSettings(Settings):
 
         actionsList.append('')
 
-        pStart=fileContent.index(fromMarker)
-        pEnd=fileContent.index(toMarker)
+        pStart = fileContent.index(fromMarker)
+        pEnd = fileContent.index(toMarker)
 
-        fileContent=fileContent[:pStart+len(fromMarker)]+"\n".join(actionsList)+fileContent[pEnd:]
+        fileContent = fileContent[:pStart+len(fromMarker)]+"\n".join(actionsList)+fileContent[pEnd:]
 
         try:
             with open(os.path.join(actionsDirectory, 'bulibrushswitch.action'), 'w') as fHandle:
@@ -399,7 +408,7 @@ class BBSSettings(Settings):
     def getTxtColorPickerLayout():
         """Convert text color picker layout from settings to layout"""
         # build a dummy color picker
-        tmpColorPicker=WColorPicker()
+        tmpColorPicker = WColorPicker()
         tmpColorPicker.setOptionCompactUi(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_COMPACT))
         tmpColorPicker.setOptionShowColorPalette(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_PALETTE_VISIBLE))
         tmpColorPicker.setOptionColorPalette(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_PALETTE_DEFAULT))
@@ -422,7 +431,7 @@ class BBSSettings(Settings):
     def setTxtColorPickerLayout(layout):
         """Convert text color picker layout from settings to layout"""
         # build a dummy color picker
-        tmpColorPicker=WColorPicker()
+        tmpColorPicker = WColorPicker()
         tmpColorPicker.setOptionLayout(layout)
 
         BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_COMPACT, tmpColorPicker.optionCompactUi())
@@ -493,9 +502,9 @@ class BBSSettings(Settings):
 
         Given `brushes` is a BBSBrushes
         """
-        exportedBrushes=[]
+        exportedBrushes = []
         for brushId in brushes.idList():
-            brush=brushes.get(brushId)
+            brush = brushes.get(brushId)
             exportedBrushes.append(brush.exportData())
         BBSSettings.set(BBSSettingsKey.CONFIG_BRUSHES_LIST_BRUSHES, exportedBrushes)
 
@@ -505,14 +514,14 @@ class BBSSettings(Settings):
 
         If not found, create it
         """
-        brushId=brushId.strip("{}")
-        actionId=BBSSettings.brushActionId(brushId)
-        action=Krita.instance().action(actionId)
+        brushId = brushId.strip("{}")
+        actionId = BBSSettings.brushActionId(brushId)
+        action = Krita.instance().action(actionId)
         if action is None and create:
             if window is None:
-                window=Krita.instance().activeWindow()
+                window = Krita.instance().activeWindow()
             if window:
-                action=window.createAction(actionId, BBSSettings.brushActionText(brushName, brushComments), None)
+                action = window.createAction(actionId, BBSSettings.brushActionText(brushName, brushComments), None)
                 action.setData(brushId)
 
         return action
@@ -525,14 +534,14 @@ class BBSSettings(Settings):
     @staticmethod
     def brushActionText(brushName, brushComment):
         """Return title for action for given brush name/comment"""
-        title=f"{i18n('Activate brush:')} {brushName}"
-        comments=stripHtml(brushComment).split('\n')
-        if len(comments)==1 and comments[0].strip()!='':
-            title+=' - '+comments[0]
-        elif len(comments)>1:
+        title = f"{i18n('Activate brush:')} {brushName}"
+        comments = stripHtml(brushComment).split('\n')
+        if len(comments) == 1 and comments[0].strip() != '':
+            title += ' - '+comments[0]
+        elif len(comments) > 1:
             for comment in comments:
-                if comment.strip()!='':
-                    title+=' - '+comment+'[...]'
+                if comment.strip() != '':
+                    title += ' - '+comment+'[...]'
                     break
         return title
 
@@ -542,9 +551,9 @@ class BBSSettings(Settings):
 
         Method placed in settingsz as managing shortcut is part of settings :)
         """
-        window=Krita.instance().activeWindow()
+        window = Krita.instance().activeWindow()
         if window:
-            action=BBSSettings.brushAction(brush.id(), brush.name(), brush.comments(), not shortcut is None)
+            action = BBSSettings.brushAction(brush.id(), brush.name(), brush.comments(), shortcut is not None)
             if action:
                 if shortcut:
                     # assign shortcut
