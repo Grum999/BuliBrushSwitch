@@ -22,6 +22,7 @@
     <file alias="bookmarks_clear">light/32dp/bookmarks_clear.svg</file>
     <file alias="brush">light/32dp/brush.svg</file>
     <file alias="brush_add">light/32dp/brush_add.svg</file>
+    <file alias="brush_color">light/32dp/brush_color.svg</file>
     <file alias="brush_edit">light/32dp/brush_edit.svg</file>
     <file alias="brush_r90">light/32dp/brush_r90.svg</file>
     <file alias="brush_remove">light/32dp/brush_remove.svg</file>
@@ -228,6 +229,7 @@
     <file alias="bookmarks_clear">light/32dp-disabled/bookmarks_clear.svg</file>
     <file alias="brush">light/32dp-disabled/brush.svg</file>
     <file alias="brush_add">light/32dp-disabled/brush_add.svg</file>
+    <file alias="brush_color">light/32dp-disabled/brush_color.svg</file>
     <file alias="brush_edit">light/32dp-disabled/brush_edit.svg</file>
     <file alias="brush_r90">light/32dp-disabled/brush_r90.svg</file>
     <file alias="brush_remove">light/32dp-disabled/brush_remove.svg</file>
