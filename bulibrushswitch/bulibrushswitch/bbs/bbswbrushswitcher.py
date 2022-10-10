@@ -50,7 +50,7 @@ from bulibrushswitch.pktk.modules.edialog import EDialog
 from bulibrushswitch.pktk.modules.about import AboutWindow
 from bulibrushswitch.pktk.modules.ekrita import (EKritaBrushPreset, EKritaPaintTools)
 from bulibrushswitch.pktk.widgets.wseparator import WVLine
-
+from bulibrushswitch.pktk.widgets.wtoolbarbutton import WToolbarButton
 
 from bulibrushswitch.pktk.pktk import *
 
@@ -131,7 +131,7 @@ class BBSWBrushSwitcher(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        self.__tbBrush = QToolButton()
+        self.__tbBrush = WToolbarButton()
         self.__tbBrush.setAutoRaise(True)
         self.__tbBrush.setMinimumSize(32, 32)
         self.__tbBrush.setObjectName("btIcon")
