@@ -190,6 +190,7 @@ _[2022-xx-xx] Version 1.0.0_ *[Show detailed release content](./releases-notes/R
 - Implement - Settings Interface - *Color button when **No color***
 - Fix bug - Settings Interface - *Ignore eraser mode option*
 - Fix bug - Main Interface - *Crash when brushes from disabled bundles are referenced*
+- Fix bug - Main Interface - *Lag/Freeze when changing brush*
 
 _[2021-12-11] Version 0.2.1b_ *[Show detailed release content](./releases-notes/RELEASE-0.2.1b.md)*
 - Fix bug *Invalid plugin initialisation*

@@ -53,3 +53,11 @@ When a brush is linked to a deactivated bundle, brush thumbnail can't be returne
 To avoid this, now display a warning icon:
 ![Popup brushes list](./../screenshots/r1-0-0_mainui-missing_brush.png)
 
+
+## Main Interface - *Lag/Freeze when changing brush*
+[Bug #2](https://github.com/Grum999/BuliBrushSwitch/issues/2)
+
+There was a lag (from ~0.28s to ~1.00s) when changing brush from Buli brush switch
+Switch time was different according to tool.
+
+Now problem is fixed (~0.01s to switch)
