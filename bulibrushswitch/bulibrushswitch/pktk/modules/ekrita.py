@@ -291,12 +291,10 @@ class EKritaPaintTools:
 
         Otherwise return None
         """
-        window = Krita.instance().activeWindow()
-        if window:
-            for id in EKritaPaintTools.__TOOLS:
-                toolButton = window.qwindow().findChild(QToolButton, id)
-                if toolButton and toolButton.isChecked():
-                    return id
+        for id in EKritaPaintTools.__TOOLS:
+            action = Krita.instance().action(id)
+            if action and action.isChecked():
+                return id
         return None
 
 
