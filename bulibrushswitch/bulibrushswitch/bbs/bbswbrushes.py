@@ -957,8 +957,12 @@ class BBSBrushesModel(QAbstractTableModel):
 
             if item:
                 if column == BBSBrushesModel.COLNUM_ICON:
-                    # QIcon
-                    return QIcon(QPixmap.fromImage(item.image()))
+                    image = item.image()
+                    if image:
+                        # QIcon
+                        return QIcon(QPixmap.fromImage(image))
+                    else:
+                        return buildIcon('pktk:warning')
         elif role == Qt.ToolTipRole:
             id = self.__items[row]
             item = self.__brushes.get(id)

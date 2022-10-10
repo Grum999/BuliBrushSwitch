@@ -45,3 +45,11 @@ Option *Ignore eraser mode* was not taken in account (always checked)
 
 Now problem is fixed
 
+## Main Interface - *Crash when brushes from disabled bundles are referenced*
+[Bug #1](https://github.com/Grum999/BuliBrushSwitch/issues/1)
+
+When a brush is linked to a deactivated bundle, brush thumbnail can't be returned and then generate python exception
+
+To avoid this, now display a warning icon:
+![Popup brushes list](./../screenshots/r1-0-0_mainui-missing_brush.png)
+
