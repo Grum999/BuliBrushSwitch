@@ -20,10 +20,18 @@ Review button in Krita toolbar to let it being rendered exactly like the *Brush 
 ## Let user choose scratchpad background color
 [Feature request #4](https://github.com/Grum999/BuliBrushSwitch/issues/4)
 
-
 An additional color button menu has been added; there's now:
     - One button to choose brush color in scratchpad
     - One button to choose background color for scratchpad
 
 ![Popup brushes list](./../screenshots/r1-0-0_mainsettings-scratchpad_bg_color.png)
+
+
+## Color button when *No color*
+[Feature request #6](https://github.com/Grum999/BuliBrushSwitch/issues/6)
+
+Represent the **No color** choice for background color with hatched pattern
+
+![Popup brushes list](./../screenshots/r1-0-0_mainsettings-bg_color_button.png)
+
 

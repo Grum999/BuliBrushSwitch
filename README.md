@@ -187,6 +187,7 @@ To **unselect** a brush from plugin list:
 _[2022-xx-xx] Version 1.0.0_ *[Show detailed release content](./releases-notes/RELEASE-1.0.0.md)*
 - Krita Interface - *Improve toolbar button*
 - Settings Interface - *Let user choose scratchpad background color*
+- Settings Interface - *Color button when **No color***
 
 _[2021-12-11] Version 0.2.1b_ *[Show detailed release content](./releases-notes/RELEASE-0.2.1b.md)*
 - Fix bug *Invalid plugin initialisation*
