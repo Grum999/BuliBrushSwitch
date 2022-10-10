@@ -1495,6 +1495,7 @@ class BBSBrushesEditor(EDialog):
 
         cbBrushBlendingModeItemDelegate = QStyledItemDelegate(self)
         self.cbBrushBlendingMode.setItemDelegate(cbBrushBlendingModeItemDelegate)
+        self.cbBrushBlendingMode.currentIndexChanged.connect(lambda index: self.cbIgnoreEraserMode.setEnabled(self.cbBrushBlendingMode.currentData() != 'erase'))
 
         toolIdList = EKritaPaintTools.idList()
         for index, toolId in enumerate(toolIdList):
@@ -1533,6 +1534,7 @@ class BBSBrushesEditor(EDialog):
 
         if brush.blendingMode() != 'erase':
             # for eraser, eraser mode is ignored
+            self.cbIgnoreEraserMode.setEnabled(True)
             self.cbIgnoreEraserMode.setChecked(brush.ignoreEraserMode())
 
             # for eraser brush, option is not available
@@ -1553,7 +1555,7 @@ class BBSBrushesEditor(EDialog):
             self.btUseSpecificColorBg.setColor(brush.colorBg())
             self.cbUseSpecificColor.toggled.connect(self.__useSpecificColorChanged)
         else:
-            self.cbIgnoreEraserMode.setVisible(False)
+            self.cbIgnoreEraserMode.setEnabled(False)
             self.cbUseSpecificColor.setVisible(False)
             self.btUseSpecificColorFg.setVisible(False)
             self.btUseSpecificColorBg.setVisible(False)
@@ -1711,7 +1713,7 @@ class BBSBrushesEditor(EDialog):
         if self.cbDefaultPaintTool.isChecked():
             returned[BBSBrush.KEY_DEFAULTPAINTTOOL] = self.cbDefaultPaintTools.currentData()
 
-        if self.cbIgnoreEraserMode.isVisible():
+        if self.cbBrushBlendingMode.currentData() != 'erase':
             returned[BBSBrush.KEY_IGNOREERASERMODE] = self.cbIgnoreEraserMode.isChecked()
 
         if self.cbUseSpecificColor.isChecked():

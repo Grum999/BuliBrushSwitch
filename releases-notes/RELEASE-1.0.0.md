@@ -35,3 +35,13 @@ Represent the **No color** choice for background color with hatched pattern
 ![Popup brushes list](./../screenshots/r1-0-0_mainsettings-bg_color_button.png)
 
 
+
+# Fix bugs
+
+## Settings Interface - *Ignore eraser mode option*
+[Bug #10](https://github.com/Grum999/BuliBrushSwitch/issues/10)
+
+Option *Ignore eraser mode* was not taken in account (always checked)
+
+Now problem is fixed
+
