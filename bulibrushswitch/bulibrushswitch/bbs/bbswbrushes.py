@@ -67,6 +67,7 @@ class BBSBrush(QObject):
     KEY_FLOW = 'flow'
     KEY_OPACITY = 'opacity'
     KEY_BLENDINGMODE = 'blendingMode'
+    KEY_PRESERVEALPHA = 'preserveAlpha'
     KEY_COMMENTS = 'comments'
     KEY_IMAGE = 'image'
     KEY_ERASERMODE = 'eraserMode'
@@ -91,6 +92,7 @@ class BBSBrush(QObject):
         self.__flow = 0
         self.__opacity = 0
         self.__blendingMode = ''
+        self.__preserveAlpha = False
         self.__comments = ''
         self.__image = None
         self.__keepUserModifications = True
@@ -183,6 +185,8 @@ class BBSBrush(QObject):
                 self.__brushNfoOptions = (f' {defaultPaintTool}'
                                           f' <tr><td align="left"><b>{i18n("Keep user modifications")}</b></td>'
                                           f'     <td align="right">{yesno(self.__keepUserModifications)}</td><td></td></tr>'
+                                          f' <tr><td align="left"><b>{i18n("Preserve Alpha")}:</b></td>'
+                                          f'     <td align="right">{yesno(self.__preserveAlpha)}</td><td></td></tr>'
                                           f' <tr><td align="left"><b>{i18n("Ignore eraser mode")}:</b></td>'
                                           f'     <td align="right">{yesno(self.__ignoreEraserMode)}</td><td></td></tr>'
                                           f' <tr><td align="left"><b>{i18n("Use specific color")}:</b></td>'
@@ -235,6 +239,7 @@ class BBSBrush(QObject):
         self.__flow = view.paintingFlow()
         self.__opacity = view.paintingOpacity()
         self.__blendingMode = view.currentBlendingMode()
+        self.__preserveAlpha = Krita.instance().action('preserve_alpha').isChecked()
         self.__image = brush.image()
 
         if saveColor:
@@ -287,6 +292,7 @@ class BBSBrush(QObject):
         view.setPaintingFlow(self.__flow)
         view.setPaintingOpacity(self.__opacity)
         view.setCurrentBlendingMode(self.__blendingMode)
+        Krita.instance().action('preserve_alpha').setChecked(self.__preserveAlpha)
 
         if self.__colorFg is not None and loadColor:
             # use specific color
@@ -306,8 +312,7 @@ class BBSBrush(QObject):
         #   it's already set to the right value for given brush (True for eraser brush, False otherwise)
         # - if __ignoreEraserMode is False, then use __eraserMode value
         #   it contains the last value set for given brush
-        action = Krita.instance().action('erase_action')
-        action.setChecked(self.__eraserMode)
+        Krita.instance().action('erase_action').setChecked(self.__eraserMode)
 
         return True
 
@@ -329,6 +334,7 @@ class BBSBrush(QObject):
                 BBSBrush.KEY_FLOW: self.__flow,
                 BBSBrush.KEY_OPACITY: self.__opacity,
                 BBSBrush.KEY_BLENDINGMODE: self.__blendingMode,
+                BBSBrush.KEY_PRESERVEALPHA: self.__preserveAlpha,
                 BBSBrush.KEY_ERASERMODE: self.__eraserMode,
                 BBSBrush.KEY_COMMENTS: self.__comments,
                 BBSBrush.KEY_KEEPUSERMODIFICATIONS: self.__keepUserModifications,
@@ -363,6 +369,8 @@ class BBSBrush(QObject):
                 self.setOpacity(value[BBSBrush.KEY_OPACITY])
             if BBSBrush.KEY_BLENDINGMODE in value:
                 self.setBlendingMode(value[BBSBrush.KEY_BLENDINGMODE])
+            if BBSBrush.KEY_PRESERVEALPHA in value:
+                self.setPreserveAlpha(value[BBSBrush.KEY_PRESERVEALPHA])
             if BBSBrush.KEY_COMMENTS in value:
                 self.setComments(value[BBSBrush.KEY_COMMENTS])
             if BBSBrush.KEY_KEEPUSERMODIFICATIONS in value:
@@ -449,6 +457,16 @@ class BBSBrush(QObject):
             self.__blendingMode = value
             self.__fingerPrint = ''
             self.__updated('blendingMode')
+
+    def preserveAlpha(self):
+        """Preserve alpha mode"""
+        return self.__preserveAlpha
+
+    def setPreserveAlpha(self, value):
+        """Set preserve alpha mode"""
+        if value != self.__preserveAlpha and isinstance(value, bool):
+            self.__preserveAlpha = value
+            self.__updated('preserveAlpha')
 
     def comments(self):
         """Return current comment for brush"""
@@ -1501,6 +1519,8 @@ class BBSBrushesEditor(EDialog):
         self.cbBrushBlendingMode.setItemDelegate(cbBrushBlendingModeItemDelegate)
         self.cbBrushBlendingMode.currentIndexChanged.connect(lambda index: self.cbIgnoreEraserMode.setEnabled(self.cbBrushBlendingMode.currentData() != 'erase'))
 
+        self.cbPreserveAlpha.setChecked(brush.preserveAlpha())
+
         toolIdList = EKritaPaintTools.idList()
         for index, toolId in enumerate(toolIdList):
             self.cbDefaultPaintTools.addItem(EKritaPaintTools.name(toolId), toolId)
@@ -1705,6 +1725,7 @@ class BBSBrushesEditor(EDialog):
                 BBSBrush.KEY_OPACITY: self.dsbBrushOpacity.value()/100,
                 BBSBrush.KEY_FLOW: self.dsbBrushFlow.value()/100,
                 BBSBrush.KEY_BLENDINGMODE: self.cbBrushBlendingMode.currentData(),
+                BBSBrush.KEY_PRESERVEALPHA: self.cbPreserveAlpha.isChecked(),
                 BBSBrush.KEY_COMMENTS: self.wtComments.toHtml(),
                 BBSBrush.KEY_KEEPUSERMODIFICATIONS: self.cbKeepUserModifications.isChecked(),
                 BBSBrush.KEY_IGNOREERASERMODE: True,
