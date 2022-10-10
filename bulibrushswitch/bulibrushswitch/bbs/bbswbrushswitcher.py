@@ -439,6 +439,13 @@ class BBSWBrushSwitcher(QWidget):
         applyBrushColor = True
         applyBrushTool = True
 
+        if selectedBrush is None:
+            # "deactivate" current brush
+            self.__disconnectResourceSignal()
+
+            # keep user modification made on current brush, if needed
+            self.__keepUserModif()
+
         if self.__selectedBrush:
             # restore original Krita's brush properties if available
             if self.__selectedBrush.colorFg() is None:
@@ -479,9 +486,6 @@ class BBSWBrushSwitcher(QWidget):
                 # case when not asked: brush as been changed outside plugin
                 # in this case don't need to restore brush, and no need to
                 # keep user modification as already processed in __keepUserModif()
-
-                # keep user modification made on current brush, if needed
-                self.__keepUserModif()
 
                 # restore Krita's brush, if asked
                 self.__kritaBrush.toCurrentKritaBrush(None, applyBrushColor, applyBrushTool)
@@ -524,9 +528,6 @@ class BBSWBrushSwitcher(QWidget):
                 # already using brush activated from plugin
                 # temporary disable signal management
                 self.__disconnectResourceSignal()
-
-            # keep user modification made on current brush, if needed
-            self.__keepUserModif()
 
             # apply current asked brush
             self.__setSelectedBrushId(selectedBrushId)

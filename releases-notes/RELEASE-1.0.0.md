@@ -38,12 +38,20 @@ Represent the **No color** choice for background color with hatched pattern
 
 # Fix bugs
 
-## Settings Interface - *Ignore eraser mode option*
+## Brush Settings - *Ignore eraser mode option*
 [Bug #10](https://github.com/Grum999/BuliBrushSwitch/issues/10)
 
 Option *Ignore eraser mode* was not taken in account (always checked)
 
 Now problem is fixed
+
+## Brush Settings - **Keep user modifications*
+[Bug #11](https://github.com/Grum999/BuliBrushSwitch/issues/11)
+
+Option *Keep user modifications* was not taken properly in account when brush was deactivated
+
+Now problem is fixed
+
 
 ## Main Interface - *Crash when brushes from disabled bundles are referenced*
 [Bug #1](https://github.com/Grum999/BuliBrushSwitch/issues/1)
