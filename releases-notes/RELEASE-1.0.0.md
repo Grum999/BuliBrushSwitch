@@ -7,7 +7,7 @@
 
 Review button in Krita toolbar to let it being rendered exactly like the *Brush Preset Chooser* button is.
 
-![Krita toolbar buttons](./../screenshots/r1-0-0_mainsettings-scratchpad_bg_color.png)
+![Krita toolbar buttons](./../screenshots/r1-0-0_kritatoolbar-button-render.png)
 - Left button: Krita *Brush Preset Chooser*
 - Right button: Buli Brush Switch button
 
