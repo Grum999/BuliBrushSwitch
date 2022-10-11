@@ -66,7 +66,8 @@ from PyQt5.QtGui import (
 from PyQt5.QtWidgets import (
         QWidget,
         QToolButton,
-        QListView
+        QListView,
+        QDockWidget
     )
 
 from PyQt5.Qt import (QObject, QMdiArea, QAbstractScrollArea)
@@ -243,15 +244,17 @@ class EKritaPaintToolsId:
     TOOL_ELLIPSE =        'KritaShape/KisToolEllipse'
     TOOL_POLYGON =        'KisToolPolygon'
     TOOL_POLYLINE =       'KisToolPolyline'
-    TOOL_PATH =           'KritaShape/KisToolPath'
+    TOOL_PATH =           'KisToolPath'
     TOOL_PENCIL =         'KisToolPencil'
     TOOL_DYNAMIC_BRUSH =  'KritaShape/KisToolDyna'
     TOOL_MULTI_BRUSH =    'KritaShape/KisToolMultiBrush'
 
 
 class EKritaPaintTools:
-    """Quick access to paint tools"""
+    """Quick access to paint tools
 
+    Note: only pain tools are managed: other tools like selection tools, color picker, assistants, ... are not taken in account
+    """
     __TOOLS = {
             EKritaPaintToolsId.TOOL_BRUSH:           i18n("Freehand Brush Tool"),
             EKritaPaintToolsId.TOOL_LINE:            i18n("Line Tool"),
@@ -291,11 +294,20 @@ class EKritaPaintTools:
 
         Otherwise return None
         """
-        for id in EKritaPaintTools.__TOOLS:
-            action = Krita.instance().action(id)
-            if action and action.isChecked():
-                return id
+        window = Krita.instance().activeWindow()
+        if window:
+            toolbox = window.qwindow().findChild(QDockWidget, 'ToolBox')
+            for id in EKritaPaintTools.__TOOLS:
+                toolButton = toolbox.findChild(QToolButton, id)
+                if toolButton and toolButton.isChecked():
+                    return id
         return None
+
+    @staticmethod
+    def setCurrent(id):
+        """Set current paint tool from given `id`"""
+        if id in EKritaPaintTools.__TOOLS and id != EKritaPaintTools.current():
+            Krita.instance().action(id).trigger()
 
 
 class EKritaBlendingModesId:
