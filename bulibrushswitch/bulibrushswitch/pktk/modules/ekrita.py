@@ -191,9 +191,13 @@ class EKritaBrushPreset:
              https://krita-artists.org/t/it-is-sane-for-a-plugin-to-capture-krita-internal-signal/32475/6
         """
         if EKritaBrushPreset.__presetChooserWidget is None:
-            window=Krita.instance().activeWindow().qwindow()
-            widget=window.findChild(QWidget, 'ResourceChooser')
-            EKritaBrushPreset.__presetChooserWidget=widget.findChild(QListView,'ResourceItemview')
+            window = Krita.instance().activeWindow().qwindow()
+            widget = window.findChild(QWidget, 'wdgPresetChooser')
+            if widget is None:
+                # from krita 5.2 (5.1.5?), name has been changed; if working on previous version, try with original name
+                widget = window.findChild(QWidget, 'ResourceChooser')
+
+            EKritaBrushPreset.__presetChooserWidget = widget.findChild(QListView, 'ResourceItemview')
 
         return EKritaBrushPreset.__presetChooserWidget
 
