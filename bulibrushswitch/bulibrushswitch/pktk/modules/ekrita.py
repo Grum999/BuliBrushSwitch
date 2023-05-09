@@ -210,7 +210,11 @@ class EKritaBrushPreset:
         """
         if EKritaBrushPreset.__presetChooserWidget is None:
             window = Krita.instance().activeWindow().qwindow()
-            widget = window.findChild(QWidget, 'ResourceChooser')
+            widget = window.findChild(QWidget, 'wdgPresetChooser')
+            if widget is None:
+                # from krita 5.2 (5.1.5?), name has been changed; if working on previous version, try with original name
+                widget = window.findChild(QWidget, 'ResourceChooser')
+
             EKritaBrushPreset.__presetChooserWidget = widget.findChild(QListView, 'ResourceItemview')
 
         return EKritaBrushPreset.__presetChooserWidget
