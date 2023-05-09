@@ -179,7 +179,7 @@ To **unselect** a brush from plugin list:
 
 ### What's new?
 
-_[2022-05-09] Version 0.2.2b_ *[Show detailed release content](./releases-notes/RELEASE-0.2.2b.md)*
+_[2023-05-09] Version 0.2.2b_ *[Show detailed release content](./releases-notes/RELEASE-0.2.2b.md)*
 - Fix bug *Krita 5.2.0 Compatibility*
 
 _[2021-12-11] Version 0.2.1b_ *[Show detailed release content](./releases-notes/RELEASE-0.2.1b.md)*
