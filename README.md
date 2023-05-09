@@ -42,7 +42,7 @@ Shortcuts for brushes can be managed directly from plugin or from default Krita'
 ## Download, Install & Execute
 
 ### Download
-+ **[ZIP ARCHIVE - v0.2.1b](https://github.com/Grum999/BuliBrushSwitch/releases/download/0.2.1b/bulibrushswitch.zip)**
++ **[ZIP ARCHIVE - v0.2.2b](https://github.com/Grum999/BuliBrushSwitch/releases/download/0.2.2b/bulibrushswitch.zip)**
 + **[SOURCE](https://github.com/Grum999/BuliBrushSwitch)**
 
 
@@ -64,12 +64,7 @@ Once installed, you should have a new button in toolbar, near the Krita's *Choos
 
 ### Tested platforms
 
-Plugin requires at least Krita 5
-- It has been tested with Krita 5.0.0-beta5 (appimage) on Linux Debian 10
-- It has been *half* tested with Krita 5.0.0-beta5 on Windows 10
-
-- Not yet tested on MacOS
-- Not yet tested on Krita 5.
+Plugin requires at least Krita 5.2.0-alpha (Linux appimage)
 
 ---
 
@@ -183,6 +178,9 @@ To **unselect** a brush from plugin list:
 ## Plugin's life
 
 ### What's new?
+
+_[2022-05-09] Version 0.2.2b_ *[Show detailed release content](./releases-notes/RELEASE-0.2.2b.md)*
+- Fix bug *Krita 5.2.0 Compatibility*
 
 _[2021-12-11] Version 0.2.1b_ *[Show detailed release content](./releases-notes/RELEASE-0.2.1b.md)*
 - Fix bug *Invalid plugin initialisation*
