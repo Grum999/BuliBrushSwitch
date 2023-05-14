@@ -306,6 +306,7 @@ class BBSSettings(Settings):
                         "position": 0,
                         "size": 50.0,
                         "eraserMode": True,
+                        "preserveAlpha": False,
                         "defaultPaintTool": None,
                         "shortcut": '',
                         "uuid": '1367df61-b0e2-4304-9b51-ff04c102659e'
@@ -324,6 +325,7 @@ class BBSSettings(Settings):
                         "position": 0,
                         "size": 25.0,
                         "eraserMode": True,
+                        "preserveAlpha": False,
                         "defaultPaintTool": None,
                         "shortcut": '',
                         "uuid": '1367df61-b0e2-4304-9b51-ff04c102659e'
@@ -342,6 +344,7 @@ class BBSSettings(Settings):
                         "position": 0,
                         "size": 60.0,
                         "eraserMode": True,
+                        "preserveAlpha": False,
                         "defaultPaintTool": None,
                         "shortcut": '',
                         "uuid": '1367df61-b0e2-4304-9b51-ff04c102659e'
@@ -371,6 +374,7 @@ class BBSSettings(Settings):
                         "position": 0,
                         "size": 60.0,
                         "eraserMode": False,
+                        "preserveAlpha": False,
                         "defaultPaintTool": None,
                         "shortcut": '',
                         "uuid": '1367df61-b0e2-4304-9b51-ff04c102659e'

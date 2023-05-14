@@ -313,6 +313,9 @@ class BBSMainWindow(EDialog):
         # need to apply a factor to be sure to reapply the right zoom
         self.__activeViewCurrentConfig['zoom'] = self.__activeView.canvas().zoomLevel()/(self.__activeView.document().resolution()*1/72)
 
+        # not view but... need to be saved/restored
+        self.__activeViewCurrentConfig['preserveAlpha'] = Krita.instance().action('preserve_alpha').isChecked()
+
     def __restoreViewConfig(self):
         """Restore view properties"""
         self.__activeView.setCurrentBrushPreset(self.__activeViewCurrentConfig['brushPreset'])
@@ -330,6 +333,9 @@ class BBSMainWindow(EDialog):
         self.__activeView.setPaintingFlow(self.__activeViewCurrentConfig['paintingFlow'])
 
         self.__activeView.canvas().setZoomLevel(self.__activeViewCurrentConfig['zoom'])
+
+        # not view but... need to be saved/restored
+        Krita.instance().action('preserve_alpha').setChecked(self.__activeViewCurrentConfig['preserveAlpha'])
 
     def __actionBrushScratchpadSetColorFg(self, color):
         """Set brush testing scratchpad color"""
@@ -353,6 +359,7 @@ class BBSMainWindow(EDialog):
         self.__activeView.setCurrentBlendingMode(self.__activeViewCurrentConfig['blendingMode'])
         self.__activeView.setPaintingOpacity(self.__activeViewCurrentConfig['paintingOpacity'])
         self.__activeView.setPaintingFlow(self.__activeViewCurrentConfig['paintingFlow'])
+        Krita.instance().action('preserve_alpha').setChecked(self.__activeViewCurrentConfig['preserveAlpha'])
         self.__actionBrushAdd()
 
     def __actionBrushAddChoosenBrushPreset(self, resource):
@@ -370,6 +377,7 @@ class BBSMainWindow(EDialog):
         brush.setColorBg(options[BBSBrush.KEY_COLOR_BG])
         brush.setDefaultPaintTool(options[BBSBrush.KEY_DEFAULTPAINTTOOL])
         brush.setBlendingMode(options[BBSBrush.KEY_BLENDINGMODE])
+        brush.setPreserveAlpha(options[BBSBrush.KEY_PRESERVEALPHA])
         brush.setSize(options[BBSBrush.KEY_SIZE])
         brush.setOpacity(options[BBSBrush.KEY_OPACITY])
         brush.setFlow(options[BBSBrush.KEY_FLOW])
