@@ -33,11 +33,18 @@ from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
 from PyQt5.QtWidgets import (
-        QToolButton,
+        QToolButton
+    )
+from PyQt5.QtGui import (
+        QPixmap,
+        QPainter,
+        QIcon,
+        QRegion
     )
 
+
 class WToolbarButton(QToolButton):
-    """A button to choose color"""
+    """A button for Krita toolbar"""
 
     BORDER = 3
 
@@ -50,7 +57,7 @@ class WToolbarButton(QToolButton):
         self.__iconWidth = self.width() - (WToolbarButton.BORDER * 2)
         self.__iconHeight = self.height() - (WToolbarButton.BORDER * 2)
 
-        self.__pixmapCache = QPixmap(self.__iconWidth * self.devicePixelRatioF(), self.__iconHeight * self.devicePixelRatioF())
+        self.__pixmapCache = QPixmap(round(self.__iconWidth * self.devicePixelRatioF()), round(self.__iconHeight * self.devicePixelRatioF()))
         self.__pixmapCache.setDevicePixelRatio(self.devicePixelRatioF())
         self.__pixmapCache.fill(Qt.transparent)
 

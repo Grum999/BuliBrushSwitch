@@ -1346,7 +1346,7 @@ class GRToken(GRObject):
         super(GRToken, self).__init__()
 
         if not isinstance(tokenType, TokenType):
-            raise EInvalidType(f'Given `tokenType` must be <TokenType>: {tokenType} ({typeof(tokenType)})')
+            raise EInvalidType(f'Given `tokenType` must be <TokenType>: {tokenType} ({type(tokenType)})')
 
         self.__tokenType = tokenType
         self.__possibleValues = []

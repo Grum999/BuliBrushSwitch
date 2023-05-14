@@ -10,7 +10,7 @@
 # -----------------------------------------------------------------------------
 
 # -----------------------------------------------------------------------------
-# The e module provides extended classes and method for Krita
+# The ekrita module provides extended classes and method for Krita
 #
 # Main classes from this module
 #
@@ -22,9 +22,6 @@
 #
 # - EKritaShortcuts:
 #       Provides methods to manage shortcuts
-#
-# - EKritaPaintToolsId & EKritaPaintTools:
-#       Provides methods for quick access to paint tools
 #
 # - EKritaBlendingModesId & EKritaBlendingModes:
 #       Provides methods for quick access to paint tools
@@ -240,80 +237,6 @@ class EKritaShortcuts:
         return returned
 
 
-class EKritaPaintToolsId:
-    """Paint tools Id"""
-    TOOL_BRUSH =          'KritaShape/KisToolBrush'
-    TOOL_LINE =           'KritaShape/KisToolLine'
-    TOOL_RECTANGLE =      'KritaShape/KisToolRectangle'
-    TOOL_ELLIPSE =        'KritaShape/KisToolEllipse'
-    TOOL_POLYGON =        'KisToolPolygon'
-    TOOL_POLYLINE =       'KisToolPolyline'
-    TOOL_PATH =           'KisToolPath'
-    TOOL_PENCIL =         'KisToolPencil'
-    TOOL_DYNAMIC_BRUSH =  'KritaShape/KisToolDyna'
-    TOOL_MULTI_BRUSH =    'KritaShape/KisToolMultiBrush'
-
-
-class EKritaPaintTools:
-    """Quick access to paint tools
-
-    Note: only pain tools are managed: other tools like selection tools, color picker, assistants, ... are not taken in account
-    """
-    __TOOLS = {
-            EKritaPaintToolsId.TOOL_BRUSH:           i18n("Freehand Brush Tool"),
-            EKritaPaintToolsId.TOOL_LINE:            i18n("Line Tool"),
-            EKritaPaintToolsId.TOOL_RECTANGLE:       i18n("Rectangle Tool"),
-            EKritaPaintToolsId.TOOL_ELLIPSE:         i18n("Ellipse Tool"),
-            EKritaPaintToolsId.TOOL_POLYGON:         i18n("Polygon Tool: Shift-mouseclick ends the polygon."),
-            EKritaPaintToolsId.TOOL_POLYLINE:        i18n("Polyline Tool: Shift-mouseclick ends the polyline."),
-            EKritaPaintToolsId.TOOL_PATH:            i18n("Bezier Curve Tool: Shift-mouseclick ends the curve."),
-            EKritaPaintToolsId.TOOL_PENCIL:          i18n("Freehand Path Tool"),
-            EKritaPaintToolsId.TOOL_DYNAMIC_BRUSH:   i18n("Dynamic Brush Tool"),
-            EKritaPaintToolsId.TOOL_MULTI_BRUSH:     i18n("Multibrush Tool")
-        }
-
-    @staticmethod
-    def idList():
-        """Return list of tools identifiers"""
-        return list(EKritaPaintTools.__TOOLS)
-
-    @staticmethod
-    def name(id):
-        """Return (translated) name for paint tools
-
-        None value return 'None' string
-
-        Otherwise Raise an error is tools is not found
-        """
-        if id is None:
-            return i18n('None')
-        elif id in EKritaPaintTools.__TOOLS:
-            return re.sub('\s*:.*', '', EKritaPaintTools.__TOOLS[id])
-        else:
-            raise EInvalidValue("Given `id` is not valid")
-
-    @staticmethod
-    def current():
-        """return id of current paint tool, if any active
-
-        Otherwise return None
-        """
-        window = Krita.instance().activeWindow()
-        if window:
-            toolbox = window.qwindow().findChild(QDockWidget, 'ToolBox')
-            for id in EKritaPaintTools.__TOOLS:
-                toolButton = toolbox.findChild(QToolButton, id)
-                if toolButton and toolButton.isChecked():
-                    return id
-        return None
-
-    @staticmethod
-    def setCurrent(id):
-        """Set current paint tool from given `id`"""
-        if id in EKritaPaintTools.__TOOLS and id != EKritaPaintTools.current():
-            Krita.instance().action(id).trigger()
-
-
 class EKritaBlendingModesId:
     """Blending modes Id"""
     # list from:
@@ -472,6 +395,9 @@ class EKritaBlendingModesId:
     COMPOSITE_FRECT =                            "freeze_reflect"
     COMPOSITE_FHYRD =                            "heat_glow_freeze_reflect_hybrid"
 
+    COMPOSITE_LAMBERT_LIGHTING =                 "lambert_lighting"
+    COMPOSITE_LAMBERT_LIGHTING_GAMMA_2_2 =       "lambert_lighting_gamma2.2"
+
     CATEGORY_ARITHMETIC =                        "arithmetic"
     CATEGORY_BINARY =                            "binary"
     CATEGORY_DARK =                              "dark"
@@ -583,6 +509,8 @@ class EKritaBlendingModes:
                     EKritaBlendingModesId.COMPOSITE_BEHIND,
                     EKritaBlendingModesId.COMPOSITE_GREATER,
                     EKritaBlendingModesId.COMPOSITE_OVERLAY,
+                    EKritaBlendingModesId.COMPOSITE_LAMBERT_LIGHTING,
+                    EKritaBlendingModesId.COMPOSITE_LAMBERT_LIGHTING_GAMMA_2_2,
                     EKritaBlendingModesId.COMPOSITE_ERASE,
                     EKritaBlendingModesId.COMPOSITE_ALPHA_DARKEN,
                     EKritaBlendingModesId.COMPOSITE_HARD_MIX,
@@ -735,6 +663,8 @@ class EKritaBlendingModes:
             EKritaBlendingModesId.COMPOSITE_BEHIND:                     i18nc("Blending mode - Behind", "Behind"),
             EKritaBlendingModesId.COMPOSITE_GREATER:                    i18nc("Blending mode - Greater", "Greater"),
             EKritaBlendingModesId.COMPOSITE_OVERLAY:                    i18nc("Blending mode - Overlay", "Overlay"),
+            EKritaBlendingModesId.COMPOSITE_LAMBERT_LIGHTING:           i18nc("Blending mode - Lambert Lighting (Linear)", "Lambert Lighting (Linear)"),
+            EKritaBlendingModesId.COMPOSITE_LAMBERT_LIGHTING_GAMMA_2_2: i18nc("Blending mode - Lambert Lighting (Gamma 2.2)", "Lambert Lighting (Gamma 2.2)"),
             EKritaBlendingModesId.COMPOSITE_ERASE:                      i18nc("Blending mode - Erase", "Erase"),
             EKritaBlendingModesId.COMPOSITE_ALPHA_DARKEN:               i18nc("Blending mode - Alpha Darken", "Alpha Darken"),
             EKritaBlendingModesId.COMPOSITE_HARD_MIX:                   i18nc("Blending mode - Hard Mix", "Hard Mix"),
@@ -814,7 +744,7 @@ class EKritaBlendingModes:
     @staticmethod
     def categoriesIdList():
         """Return list of available categories"""
-        return list(EKritaBlendingModes.__CATEGORIES)
+        return sorted(list(EKritaBlendingModes.__CATEGORIES))
 
     @staticmethod
     def categoryName(id):
@@ -845,9 +775,49 @@ class EKritaBlendingModes:
     def blendingModeName(id):
         """Return (translated) name for blending mode"""
         if id is None:
-            return []
+            return ""
         elif id in EKritaBlendingModes.__BLENDING_MODES:
             return EKritaBlendingModes.__BLENDING_MODES[id]
+        else:
+            raise EInvalidValue("Given `id` is not valid")
+
+
+class EKritaResizeMethodsId:
+    """Resoze method Id"""
+    BICUBIC =        "Bicubic"
+    HERMITE =        "Hermite"
+    NEARESTNEIBHOR = "NearestNeighbor"
+    BILINEAR =       "Bilinear"
+    BELL =           "Bell"
+    BSPLINE =        "BSpline"
+    LANCZOS3 =       "Lanczos3"
+    MITCHELL =       "Mitchell"
+
+
+class EKritaResizeMethods:
+    __RESIZE_METHODS = {
+            EKritaResizeMethodsId.BICUBIC:        i18nc("Scaling method - Bicubic", "Bicubic"),
+            EKritaResizeMethodsId.HERMITE:        i18nc("Scaling method - Hermite", "Hermite"),
+            EKritaResizeMethodsId.NEARESTNEIBHOR: i18nc("Scaling method - NearestNeighbor", "Nearest Neighbor"),
+            EKritaResizeMethodsId.BILINEAR:       i18nc("Scaling method - Bilinear", "Bilinear"),
+            EKritaResizeMethodsId.BELL:           i18nc("Scaling method - Bell", "Bell"),
+            EKritaResizeMethodsId.BSPLINE:        i18nc("Scaling method - BSpline", "BSpline"),
+            EKritaResizeMethodsId.LANCZOS3:       i18nc("Scaling method - Lanczos3", "Lanczos3"),
+            EKritaResizeMethodsId.MITCHELL:       i18nc("Scaling method - Mitchell", "Mitchell")
+        }
+
+    @staticmethod
+    def resizeMethodIdList():
+        """Return list of available resize methods"""
+        return sorted(list(EKritaResizeMethods.__RESIZE_METHODS))
+
+    @staticmethod
+    def resizeMethodName(id):
+        """Return (translated) name for resize method"""
+        if id is None:
+            return ""
+        elif id in EKritaResizeMethods.__RESIZE_METHODS:
+            return EKritaResizeMethods.__RESIZE_METHODS[id]
         else:
             raise EInvalidValue("Given `id` is not valid")
 

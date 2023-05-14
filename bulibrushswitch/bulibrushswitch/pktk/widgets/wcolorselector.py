@@ -941,19 +941,19 @@ class WColorSlider(QWidget):
                 self.__paintRect -= self.__margins
 
             if self.__optionCursorSize == -1:
-                size = self.__paintRect.height()/2
+                size = self.__paintRect.height()//2
             else:
                 size = self.__optionCursorSize
             if size > self.__optionCursorMaxSize:
                 size = self.__optionCursorMaxSize
             elif size < self.__optionCursorMinSize:
                 size = self.__optionCursorMinSize
-            self.__cursorBSize = size-self.__optionCursorBWidth/2
+            self.__cursorBSize = size-self.__optionCursorBWidth//2
             self.__cursorWSize = size-self.__optionCursorBWidth
 
             if self.__optionMarginV != 0 or self.__optionMarginH != 0:
                 # fix according to cursor size
-                self.__margins = QMargins(max(size, self.__optionMarginH), self.__optionMarginV, max(size, self.__optionMarginH), self.__optionMarginV)
+                self.__margins = QMargins(round(max(size, self.__optionMarginH)), self.__optionMarginV, round(max(size, self.__optionMarginH)), self.__optionMarginV)
                 self.__paintRect = self.rect()-self.__margins
 
             self.__calculateCursorPosition()

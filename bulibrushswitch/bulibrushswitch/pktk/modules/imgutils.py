@@ -226,10 +226,10 @@ def imgBoxSize(imageSize, boxSize):
 
     if boxRatio > imageRatio:
         h = boxSize.height()
-        w = h*imageRatio
+        w = round(h*imageRatio)
     else:
         w = boxSize.width()
-        h = w/imageRatio
+        h = round(w/imageRatio)
 
     return QSize(w, h)
 

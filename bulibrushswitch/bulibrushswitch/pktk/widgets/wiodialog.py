@@ -143,12 +143,12 @@ class WDialogMessage(QDialog):
         document.setHtml(message)
 
         # then define our QTextEdit width taking in account ideal size, maximum and minimum allowed width on screen
-        self._message.setMinimumWidth(max(minW, min(maxW, document.idealWidth())))
+        self._message.setMinimumWidth(round(max(minW, min(maxW, document.idealWidth()))))
 
         # now QTextEdit widget has a width defined, we can retrieve height of document
         # (ie: document's height = as if we don't have scrollbars)
         # add a security margin of +25 pixels
-        height = max(minH, min(maxH, self._message.document().size().height()+25))
+        height = round(max(minH, min(maxH, self._message.document().size().height()+25)))
 
         self._message.setMinimumHeight(height)
 

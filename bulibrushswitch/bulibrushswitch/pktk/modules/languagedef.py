@@ -24,7 +24,6 @@
 # -----------------------------------------------------------------------------
 
 from PyQt5.Qt import *
-from enum import Enum
 
 import re
 
@@ -86,14 +85,14 @@ class LanguageDef:
 class LanguageDefXML(LanguageDef):
     """Extent language definition for XML markup language"""
 
-    class ITokenType(TokenType, Enum):
-        STRING = ('String', 'A STRING value')
-        MARKUP = ('Markup', 'A XML Markup')
+    class ITokenType(TokenType):
+        STRING =    ('String', 'A STRING value')
+        MARKUP =    ('Markup', 'A XML Markup')
         ATTRIBUTE = ('Attribute', 'A node attribute')
-        SETATTR = ('=', 'Set attribute')
-        NUMBER = ('Number', 'A NUMBER value')
-        CDATA = ('Data', 'A CDATA value')
-        VALUE = ('Value', 'A VALUE value')
+        SETATTR =   ('=', 'Set attribute')
+        NUMBER =    ('Number', 'A NUMBER value')
+        CDATA =     ('Data', 'A CDATA value')
+        VALUE =     ('Value', 'A VALUE value')
 
     def __init__(self):
         super(LanguageDefXML, self).__init__([

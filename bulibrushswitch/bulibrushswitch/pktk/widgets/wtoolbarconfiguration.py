@@ -992,7 +992,7 @@ class WToolbarConfiguration(QWidget):
             raise EInvalidType("Given `menubar` must be a <QMenuBar>")
         for menu in menubar.children():
             if isinstance(menu, QMenu):
-                if len(menu.actions()) > 0:
+                if len(menu.actions()) > 0 and menu.objectName() != '':
                     self.addAvailableActionGroup(menu.objectName(), re.sub(r'\&(?!\&)', '', menu.title()))
                     recursiveMenuActions(menu, menu.objectName())
 

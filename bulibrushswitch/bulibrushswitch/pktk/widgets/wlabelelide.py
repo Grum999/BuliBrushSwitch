@@ -108,48 +108,48 @@ class WLabelElide(QLabel):
         painter.setFont(self.font())
 
         if self.__elide == Qt.ElideRight:
-            dRect = QRect(rect.left(), rect.top(), rect.width() - self.__elipsisWidth, rect.height())
+            dRect = QRectF(rect.left(), rect.top(), rect.width() - self.__elipsisWidth, rect.height())
             painter.drawText(dRect, Qt.AlignLeft, self.text())
 
-            dRect = QRect(rect.left() + dRect.width(), rect.top(), self.__elipsisWidth, rect.height())
+            dRect = QRectF(rect.left() + dRect.width(), rect.top(), self.__elipsisWidth, rect.height())
             painter.drawText(dRect, Qt.AlignLeft, self.__elipsisText)
 
-            dRect = QRect(dRect.left() - self.__hElipsisWidth, rect.top(), self.__hElipsisWidth+2, rect.height())
+            dRect = QRectF(dRect.left() - self.__hElipsisWidth, rect.top(), self.__hElipsisWidth+2, rect.height())
             gradient = QLinearGradient(dRect.topLeft(), dRect.topRight())
             gradient.setColorAt(0, QColor(Qt.transparent))
             gradient.setColorAt(1, styleOptions.palette.color(QPalette.Window))
             painter.fillRect(dRect, gradient)
         elif self.__elide == Qt.ElideLeft:
-            dRect = QRect(rect.left() + self.__elipsisWidth, rect.top(), rect.width() - self.__elipsisWidth, rect.height())
+            dRect = QRectF(rect.left() + self.__elipsisWidth, rect.top(), rect.width() - self.__elipsisWidth, rect.height())
             painter.drawText(dRect, Qt.AlignRight, self.text())
 
-            dRect = QRect(rect.left(), rect.top(), self.__elipsisWidth, rect.height())
+            dRect = QRectF(rect.left(), rect.top(), self.__elipsisWidth, rect.height())
             painter.drawText(dRect, Qt.AlignLeft, self.__elipsisText)
 
-            dRect = QRect(dRect.right(), rect.top(), self.__hElipsisWidth, rect.height())
+            dRect = QRectF(dRect.right(), rect.top(), self.__hElipsisWidth, rect.height())
             gradient = QLinearGradient(dRect.topLeft(), dRect.topRight())
             gradient.setColorAt(0, styleOptions.palette.color(QPalette.Window))
             gradient.setColorAt(1, QColor(Qt.transparent))
             painter.fillRect(dRect, gradient)
         elif self.__elide == Qt.ElideMiddle:
             hWidth = (rect.width()-self.__elipsisWidth)//2
-            dRect = QRect(rect.left(), rect.top(), hWidth, rect.height())
+            dRect = QRectF(rect.left(), rect.top(), hWidth, rect.height())
             painter.drawText(dRect, Qt.AlignLeft, self.text())
 
-            dRect = QRect(dRect.right() - self.__hElipsisWidth, rect.top(), self.__hElipsisWidth+2, rect.height())
+            dRect = QRectF(dRect.right() - self.__hElipsisWidth, rect.top(), self.__hElipsisWidth+2, rect.height())
             gradient = QLinearGradient(dRect.topLeft(), dRect.topRight())
             gradient.setColorAt(0, QColor(Qt.transparent))
             gradient.setColorAt(1, styleOptions.palette.color(QPalette.Window))
             painter.fillRect(dRect, gradient)
 
-            dRect = QRect(rect.left() + hWidth + self.__elipsisWidth, rect.top(), hWidth, rect.height())
+            dRect = QRectF(rect.left() + hWidth + self.__elipsisWidth, rect.top(), hWidth, rect.height())
             painter.drawText(dRect, Qt.AlignRight, self.text())
 
-            dRect = QRect(dRect.left(), rect.top(), self.__hElipsisWidth, rect.height())
+            dRect = QRectF(dRect.left(), rect.top(), self.__hElipsisWidth, rect.height())
             gradient = QLinearGradient(dRect.topLeft(), dRect.topRight())
             gradient.setColorAt(0, styleOptions.palette.color(QPalette.Window))
             gradient.setColorAt(1, QColor(Qt.transparent))
             painter.fillRect(dRect, gradient)
 
-            dRect = QRect(rect.left() + hWidth, rect.top(), self.__elipsisWidth, rect.height())
+            dRect = QRectF(rect.left() + hWidth, rect.top(), self.__elipsisWidth, rect.height())
             painter.drawText(dRect, Qt.AlignLeft, self.__elipsisText)

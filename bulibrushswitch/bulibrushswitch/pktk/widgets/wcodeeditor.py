@@ -474,7 +474,7 @@ class WCodeEditor(QPlainTextEdit):
             if block.isVisible() and bottom >= event.rect().top():
                 number = f"{blockNumber + 1}"
                 painter.setPen(self.__optionGutterText.foreground().color())
-                painter.drawText(0, top, self.__lineNumberArea.width(), self.fontMetrics().height(), Qt.AlignRight, number)
+                painter.drawText(QRectF(0, top, self.__lineNumberArea.width(), self.fontMetrics().height()), Qt.AlignRight, number)
 
             block = block.next()
             top = bottom
@@ -555,7 +555,7 @@ class WCodeEditor(QPlainTextEdit):
 
         if self.__optionRightLimitVisible:
             # draw right limit
-            position = round(charWidth * self.__optionRightLimitPosition) + leftOffset
+            position = round(charWidth * self.__optionRightLimitPosition + leftOffset)
             painter.setPen(self.__optionRightLimitColor)
             painter.drawLine(position, rect.top(), position, rect.bottom())
 
@@ -587,12 +587,12 @@ class WCodeEditor(QPlainTextEdit):
                 if self.__optionShowSpaces:
                     # draw spaces
                     for i in range(nbSpacesLeft):
-                        painter.drawText(left, top, charWidth, self.fontMetrics().height(), Qt.AlignLeft, '.')
+                        painter.drawText(QRectF(left, top, charWidth, self.fontMetrics().height()), Qt.AlignLeft, '.')
                         left += charWidth
 
                     left = leftOffset + charWidth * posSpacesRight
                     for i in range(nbSpacesRight):
-                        painter.drawText(left, top, charWidth, self.fontMetrics().height(), Qt.AlignLeft, '.')
+                        painter.drawText(QRectF(left, top, charWidth, self.fontMetrics().height()), Qt.AlignLeft, '.')
                         left += charWidth
 
                 if self.__optionShowIndentLevel:
@@ -625,7 +625,7 @@ class WCodeEditor(QPlainTextEdit):
                         nbChar = 0
                         while nbChar < nbSpacesLeft:
                             position = round(charWidth * nbChar) + leftOffset
-                            painter.drawLine(position, top, position, top + self.blockBoundingRect(block).height() - 1)
+                            painter.drawLine(QLineF(position, top, position, top + self.blockBoundingRect(block).height() - 1))
                             nbChar += self.__optionIndentWidth
                     elif len(block.text().strip()) > 0:
                         previousIndent = 0
@@ -1276,7 +1276,7 @@ class WCodeEditor(QPlainTextEdit):
             fontMetrics = QFontMetrics(doc.defaultFont())
             margins = self.contentsMargins()
 
-            self.setFixedHeight(fontMetrics.lineSpacing() * numberOfRows + (doc.documentMargin() + self.frameWidth()) * 2 + margins.top() + margins.bottom())
+            self.setFixedHeight(round(fontMetrics.lineSpacing() * numberOfRows + (doc.documentMargin() + self.frameWidth()) * 2 + margins.top() + margins.bottom()))
 
     def cursorPosition(self, fromZero=False):
         """Return current cursor position information
@@ -1566,7 +1566,7 @@ class WCECompleterView(QStyledItemDelegate):
         color = style.foreground().color()
 
         # -- completion type
-        rect = QRect(option.rect.left(), option.rect.top(), 2 * option.rect.height(), option.rect.height())
+        rect = QRectF(option.rect.left(), option.rect.top(), 2 * option.rect.height(), option.rect.height())
         if (option.state & QStyle.State_Selected) == QStyle.State_Selected:
             painter.fillRect(rect, QBrush(color.darker(200)))
         else:
@@ -1592,7 +1592,7 @@ class WCECompleterView(QStyledItemDelegate):
         lPosition = option.rect.left() + 2 *  option.rect.height() + 5
         # print(option.state)
         if (option.state & QStyle.State_Selected) == QStyle.State_Selected:
-            rect = QRect(option.rect.left() + 2 * option.rect.height(), option.rect.top(), option.rect.width(), option.rect.height())
+            rect = QRectF(option.rect.left() + 2 * option.rect.height(), option.rect.top(), option.rect.width(), option.rect.height())
             painter.fillRect(rect, option.palette.color(QPalette.AlternateBase))
 
         texts = index.data(WCECompleterModel.VALUE).replace(LanguageDef.SEP_SECONDARY_VALUE, LanguageDef.SEP_PRIMARY_VALUE).split(LanguageDef.SEP_PRIMARY_VALUE)
@@ -1611,7 +1611,7 @@ class WCECompleterView(QStyledItemDelegate):
             painter.setFont(drawingFont)
             fontMetrics = QFontMetrics(drawingFont)
 
-            rect = QRect(lPosition, option.rect.top(), option.rect.width(), option.rect.height())
+            rect = QRectF(lPosition, option.rect.top(), option.rect.width(), option.rect.height())
             painter.drawText(rect, Qt.AlignLeft | Qt.AlignVCenter, text)
 
             if text[-1] == ' ':
