@@ -155,6 +155,7 @@ class BBSSettings(Settings):
 
     Configuration is saved as JSON file
     """
+    __fullSave = True
 
     DEFAULT_ACTIONS = [
             'bulibrushswitch_settings',
@@ -162,6 +163,12 @@ class BBSSettings(Settings):
             'bulibrushswitch_deactivate',
             'bulibrushswitch_show_brushes_list'
         ]
+
+    @classmethod
+    def save(cls, fullSave=True):
+        """save configuration"""
+        cls.__fullSave = fullSave
+        return super().save()
 
     def __init__(self, pluginId=None):
         """Initialise settings"""
@@ -374,6 +381,10 @@ class BBSSettings(Settings):
 
     def configurationSavedEvent(self, fileSaved):
         """When saving configuration, also save .action file for shortcuts"""
+        if not BBSSettings.__fullSave:
+            # no full save, no need to save actions
+            return
+
         directory = Krita.instance().readSetting('', 'ResourceDirectory', QStandardPaths.writableLocation(QStandardPaths.AppDataLocation))
         actionsDirectory = os.path.normpath(os.path.join(directory, "actions"))
 
@@ -431,7 +442,6 @@ class BBSSettings(Settings):
         try:
             with open(os.path.join(actionsDirectory, 'bulibrushswitch.action'), 'w') as fHandle:
                 fHandle.write(fileContent)
-
         except Exception as e:
             print(e)
             return

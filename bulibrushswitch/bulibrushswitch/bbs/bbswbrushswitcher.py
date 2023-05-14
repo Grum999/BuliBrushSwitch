@@ -21,7 +21,6 @@
 #       Pop-out user interface for brush switcher
 #
 # -----------------------------------------------------------------------------
-
 from krita import (
         Krita,
         Window,
@@ -40,7 +39,8 @@ from .bbswbrushes import (
         BBSBrush,
         BBSBrushes,
         BBSWBrushesTv,
-        BBSWBrushesLv
+        BBSWBrushesLv,
+        BBSBrushesModel
     )
 
 from .bbsmainwindow import BBSMainWindow
@@ -48,7 +48,8 @@ from .bbsmainwindow import BBSMainWindow
 from bulibrushswitch.pktk.modules.imgutils import buildIcon
 from bulibrushswitch.pktk.modules.edialog import EDialog
 from bulibrushswitch.pktk.modules.about import AboutWindow
-from bulibrushswitch.pktk.modules.ekrita import (EKritaBrushPreset, EKritaPaintTools)
+from bulibrushswitch.pktk.modules.ekrita import EKritaBrushPreset
+from bulibrushswitch.pktk.modules.ekrita_tools import EKritaTools
 from bulibrushswitch.pktk.widgets.wseparator import WVLine
 from bulibrushswitch.pktk.widgets.wtoolbarbutton import WToolbarButton
 
@@ -150,6 +151,7 @@ class BBSWBrushSwitcher(QWidget):
 
         # list of available brushes
         self.__brushes = BBSBrushes()
+        self.__brushesModel = BBSBrushesModel(self.__brushes)
         self.__actionPopupUi = BBSWBrushSwitcherUi(self, self.__bbsName, self.__bbsVersion)
 
         # current selected brush (used when direct click on __tbBrush button)
@@ -286,7 +288,7 @@ class BBSWBrushSwitcher(QWidget):
                 except Exception:
                     pass
 
-        # appky action shortcuts
+        # apply action shortcuts
         brushes = BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_LIST_BRUSHES)
         self.__brushes.beginUpdate()
         self.__brushes.clear()
@@ -313,6 +315,7 @@ class BBSWBrushSwitcher(QWidget):
 
     def __displayPopupUi(self):
         """Display popup user interface"""
+        self.__keepUserModif()
         action = Krita.instance().action('view_show_canvas_only')
         if action and action.isChecked():
             self.__actionPopupUi.showRelativeTo(QCursor.pos())
@@ -370,7 +373,7 @@ class BBSWBrushSwitcher(QWidget):
     def __keepUserModif(self):
         """Update (or not) user modification to current brush, according to brush settings"""
         if self.__selectedBrush is not None and self.__selectedBrush.keepUserModifications():
-            # a brush fo which modidications has to be kept
+            # a brush for which modidications have to be kept
             if self.__selectedBrush.ignoreEraserMode():
                 pass
 
@@ -387,11 +390,15 @@ class BBSWBrushSwitcher(QWidget):
             self.__selectedBrush.fromCurrentKritaBrush(saveColor=saveColor, saveTool=saveTool)
 
             BBSSettings.setBrushes(self.__brushes)
+            if BBSSettings.modified():
+                # autosave modification settings all the time!
+                # no full save (False): save settings only, no need to save actions files too here
+                BBSSettings.save(False)
 
     def openSettings(self):
         """Open settings dialog box"""
         self.__disableUpdatingShortcutFromAction = True
-        BBSMainWindow(self.__bbsName, self.__bbsVersion, self.__dlgParentWidget)
+        BBSMainWindow(self.__brushesModel, self.__bbsName, self.__bbsVersion, self.__dlgParentWidget)
         self.__disableUpdatingShortcutFromAction = False
 
     def openAbout(self):
@@ -401,6 +408,10 @@ class BBSWBrushSwitcher(QWidget):
     def brushes(self):
         """Return brush list"""
         return self.__brushes
+
+    def brushesModel(self):
+        """Return brush list model"""
+        return self.__brushesModel
 
     def setBrushActivated(self, value, restoreKritaBrush=True):
         """Activate/deactivate current selected brush
@@ -468,7 +479,7 @@ class BBSWBrushSwitcher(QWidget):
 
             if applyBrushTool:
                 if self.__selectedBrushModificationMode == BBSSettingsValues.DEFAULT_MODIFICATIONMODE_KEEP:
-                    currentPaintTool = EKritaPaintTools.current()
+                    currentPaintTool = EKritaTools.current()
 
                     if currentPaintTool and self.__selectedBrush.defaultPaintTool() != currentPaintTool:
                         applyBrushTool = False
@@ -536,16 +547,16 @@ class BBSWBrushSwitcher(QWidget):
 
             # Highlight widget to indicate it's active
             self.setStyleSheet("""
-QToolButton#btIcon {
-    background: palette(Highlight);
-    border-top-left-radius: 2px;
-    border-bottom-left-radius: 2px;
-}
-QToolButton#btArrow{
-    background: palette(Highlight);
-    border-top-right-radius: 2px;
-    border-bottom-right-radius: 2px;
-}
+                QToolButton#btIcon {
+                    background: palette(Highlight);
+                    border-top-left-radius: 2px;
+                    border-bottom-left-radius: 2px;
+                }
+                QToolButton#btArrow{
+                    background: palette(Highlight);
+                    border-top-right-radius: 2px;
+                    border-bottom-right-radius: 2px;
+                }
                 """)
             # need to be aware for brushes change (should occurs when change is made outside plugin)
             self.__connectResourceSignal()
@@ -564,7 +575,7 @@ class BBSWBrushSwitcherUi(QFrame):
         self.__brushSwitcher = brushSwitcher
 
         # list of brushes
-        self.__brushes = brushSwitcher.brushes()
+        self.__brushes = brushSwitcher.brushesModel()
 
         self.setWindowFlags(Qt.Popup | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.setLineWidth(1)

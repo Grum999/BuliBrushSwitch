@@ -45,7 +45,8 @@ from PyQt5.QtWidgets import (
 from .bbswbrushes import (
         BBSBrush,
         BBSBrushes,
-        BBSBrushesEditor
+        BBSBrushesEditor,
+        BBSBrushesModel
     )
 from .bbssettings import (
         BBSSettings,
@@ -67,7 +68,7 @@ from bulibrushswitch.pktk.modules.ekrita import EKritaBrushPreset
 class BBSMainWindow(EDialog):
     """Main BuliBrushSwitch window"""
 
-    def __init__(self, bbsName="BuliBrushSwitch", bbsVersion="testing", parent=None):
+    def __init__(self, brushes=None, bbsName="BuliBrushSwitch", bbsVersion="testing", parent=None):
         super(BBSMainWindow, self).__init__(os.path.join(os.path.dirname(__file__), 'resources', 'bbsmainwindow.ui'), parent)
 
         # plugin name/version
@@ -102,7 +103,15 @@ class BBSMainWindow(EDialog):
         self.__activeViewCurrentConfig = {}
 
         # list of defined brushes
-        self.__brushes = BBSBrushes()
+        if isinstance(brushes, BBSBrushesModel):
+            self.__brushes = brushes.brushes()
+            self.__brushesModel = brushes
+        elif isinstance(brushes, BBSBrushes):
+            self.__brushes = brushes
+            self.__brushesModel = BBSBrushesModel(brushes)
+        else:
+            self.__brushes = BBSBrushes()
+            self.__brushesModel = BBSBrushesModel(self.__brushes)
 
         # keep a saved view of current brush shortcuts
         self.__savedShortcuts = {}
@@ -114,7 +123,6 @@ class BBSMainWindow(EDialog):
 
         self.__saveViewConfig()
         self.__initialiseUi()
-        self.__loadBrushes()
         self.__saveShortcutConfig()
         self.__updateBrushUi()
 
@@ -230,7 +238,7 @@ class BBSMainWindow(EDialog):
 
         # -- brush list
         self.tvBrushes.doubleClicked.connect(self.__actionBrushEdit)
-        self.tvBrushes.setBrushes(self.__brushes)
+        self.tvBrushes.setBrushes(self.__brushesModel)
         self.tvBrushes.setIconSizeIndex(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_BRUSHES_ZOOMLEVEL))
         self.tvBrushes.iconSizeIndexChanged.connect(self.__brushesSizeIndexChanged)
 
@@ -259,17 +267,6 @@ class BBSMainWindow(EDialog):
             self.move(position)
 
         self.splitterBrushes.setSizes(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_BRUSHES_SPLITTER_POSITION))
-
-    def __loadBrushes(self):
-        """Load brush configuration from settings"""
-        nbBrushes = BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_LIST_COUNT)
-        brushes = BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_LIST_BRUSHES)
-        self.__brushes.beginUpdate()
-        for brushNfo in brushes:
-            brush = BBSBrush()
-            if brush.importData(brushNfo):
-                self.__brushes.add(brush)
-        self.__brushes.endUpdate()
 
     def __saveShortcutConfig(self):
         """Save current action shortcuts
@@ -305,7 +302,7 @@ class BBSMainWindow(EDialog):
         self.__activeViewCurrentConfig['bgColor'] = self.__activeView.backgroundColor()
 
         self.__activeViewCurrentConfig['blendingMode'] = self.__activeView.currentBlendingMode()
-        #1 self.__activeViewCurrentConfig['gradient'] = self.__activeView.currentGradient()
+        # self.__activeViewCurrentConfig['gradient'] = self.__activeView.currentGradient()
         # self.__activeViewCurrentConfig['pattern'] = self.__activeView.currentPattern()
 
         self.__activeViewCurrentConfig['paintingOpacity'] = self.__activeView.paintingOpacity()

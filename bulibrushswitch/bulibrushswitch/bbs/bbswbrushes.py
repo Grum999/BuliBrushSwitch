@@ -51,7 +51,8 @@ from bulibrushswitch.pktk.modules.uitheme import UITheme
 from bulibrushswitch.pktk.modules.iconsizes import IconSizes
 from bulibrushswitch.pktk.modules.strutils import stripHtml
 from bulibrushswitch.pktk.modules.imgutils import (warningAreaBrush, qImageToPngQByteArray, bullet, buildIcon)
-from bulibrushswitch.pktk.modules.ekrita import (EKritaBrushPreset, EKritaShortcuts, EKritaPaintTools, EKritaBlendingModes)
+from bulibrushswitch.pktk.modules.ekrita import (EKritaBrushPreset, EKritaShortcuts, EKritaBlendingModes)
+from bulibrushswitch.pktk.modules.ekrita_tools import (EKritaToolsCategory, EKritaTools)
 from bulibrushswitch.pktk.widgets.wtextedit import (WTextEdit, WTextEditDialog, WTextEditBtBarOption)
 from bulibrushswitch.pktk.widgets.wcolorbutton import WColorButton
 from bulibrushswitch.pktk.widgets.wcolorselector import WColorPicker
@@ -124,11 +125,11 @@ class BBSBrush(QObject):
             self.importData(brush.exportData())
 
     def __repr__(self):
-        colorFg = self.colorFg()
-        if colorFg:
-            return f"<BBSBrush({self.__uuid}, {self.__name}, {colorFg.name()})>"
-        else:
-            return f"<BBSBrush({self.__uuid}, {self.__name}, None)>"
+        colorFg = "None"
+        if self.__colorFg:
+            colorFg = self.__colorFg.name()
+
+        return f"<BBSBrush({self.__uuid}, '{self.__name}', {self.__size:0.2f}, {self.__opacity}, {self.__blendingMode}, {self.__defaultPaintTool}, {colorFg})>"
 
     def __updated(self, property):
         """Emit updated signal when a property has been changed"""
@@ -159,7 +160,7 @@ class BBSBrush(QObject):
 
             if self.__defaultPaintTool is not None:
                 defaultPaintTool = f' <tr><td align="left"><b>{i18n("Default paint tool")}</b></td>'\
-                                   f'<td align="right">{EKritaPaintTools.name(self.__defaultPaintTool)}</td><td></td></tr>'
+                                   f'<td align="right">{EKritaTools.name(self.__defaultPaintTool)}</td><td></td></tr>'
             else:
                 defaultPaintTool = ''
 
@@ -199,11 +200,11 @@ class BBSBrush(QObject):
             self.updated.emit(self, property)
 
     def beginUpdate(self):
-        """Start updating note massivelly and then do note emit update"""
+        """Start updating brush massivelly and then do not emit update"""
         self.__emitUpdated += 1
 
     def endUpdate(self):
-        """Start updating note massivelly and then do note emit update"""
+        """Start updating brush massivelly and then do not emit update"""
         self.__emitUpdated -= 1
         if self.__emitUpdated < 0:
             self.__emitUpdated = 0
@@ -245,7 +246,7 @@ class BBSBrush(QObject):
             self.__colorBg = None
 
         if saveTool:
-            current = EKritaPaintTools.current()
+            current = EKritaTools.current()
             if current:
                 self.__defaultPaintTool = current
         else:
@@ -283,6 +284,11 @@ class BBSBrush(QObject):
             self.__kritaBrush = BBSBrush()
             self.__kritaBrush.fromCurrentKritaBrush(view, False, False)
 
+        if self.__defaultPaintTool is not None and loadTool:
+            # as tool already keep is own properties, restore tool before brush properties to ensure that memorized brush properties
+            # are properly applied after
+            EKritaTools.setCurrent(self.__defaultPaintTool)
+
         view.setBrushSize(self.__size)
         view.setPaintingFlow(self.__flow)
         view.setPaintingOpacity(self.__opacity)
@@ -295,11 +301,6 @@ class BBSBrush(QObject):
             # use bg specific color (available only if fg specific color is defined)
             if self.__colorBg is not None:
                 view.setBackGroundColor(ManagedColor.fromQColor(self.__colorBg, view.canvas()))
-
-        if self.__defaultPaintTool is not None and loadTool:
-            action = Krita.instance().action(self.__defaultPaintTool)
-            if action:
-                action.trigger()
 
         # in all case restore eraser mode
         # - if __ignoreEraserMode is True, then force __eraserMode value because
@@ -571,7 +572,7 @@ class BBSBrush(QObject):
 
         Default Paint Tool is activated when brush is selected
         """
-        if defaultPaintTool is None or defaultPaintTool in EKritaPaintTools.idList():
+        if defaultPaintTool is None or defaultPaintTool in EKritaTools.list(EKritaToolsCategory.PAINT):
             self.__defaultPaintTool = defaultPaintTool
             self.__updated('defaultPaintTool')
 
@@ -1120,7 +1121,12 @@ class BBSWBrushesTv(QTreeView):
 
     def setBrushes(self, brushes):
         """Initialise treeview header & model"""
-        self.__model = BBSBrushesModel(brushes)
+        if isinstance(brushes, BBSBrushes):
+            self.__model = BBSBrushesModel(brushes)
+        elif isinstance(brushes, BBSBrushesModel):
+            self.__model = brushes
+        else:
+            raise EInvalidType("Given `brushes` must be <BBSBrushes> or <BBSBrushesModel>")
 
         self.setModel(self.__model)
 
@@ -1235,7 +1241,12 @@ class BBSWBrushesLv(QListView):
 
     def setBrushes(self, brushes):
         """Initialise treeview header & model"""
-        self.__model = BBSBrushesModel(brushes)
+        if isinstance(brushes, BBSBrushes):
+            self.__model = BBSBrushesModel(brushes)
+        elif isinstance(brushes, BBSBrushesModel):
+            self.__model = brushes
+        else:
+            raise EInvalidType("Given `brushes` must be <BBSBrushes> or <BBSBrushesModel>")
 
         self.setModel(self.__model)
 
@@ -1412,7 +1423,6 @@ class BBSBrushesEditor(EDialog):
     The WTextEditDialog doesn't allows to manage color picker configuration then,
     create a dedicated dailog box
     """
-
     @staticmethod
     def edit(title, brush):
         """Open a dialog box to edit brush"""
@@ -1501,9 +1511,9 @@ class BBSBrushesEditor(EDialog):
         self.cbBrushBlendingMode.setItemDelegate(cbBrushBlendingModeItemDelegate)
         self.cbBrushBlendingMode.currentIndexChanged.connect(lambda index: self.cbIgnoreEraserMode.setEnabled(self.cbBrushBlendingMode.currentData() != 'erase'))
 
-        toolIdList = EKritaPaintTools.idList()
+        toolIdList = EKritaTools.list(EKritaToolsCategory.PAINT)
         for index, toolId in enumerate(toolIdList):
-            self.cbDefaultPaintTools.addItem(EKritaPaintTools.name(toolId), toolId)
+            self.cbDefaultPaintTools.addItem(EKritaTools.name(toolId), toolId)
             if toolId == brush.defaultPaintTool():
                 self.cbDefaultPaintTools.setCurrentIndex(index)
         self.cbDefaultPaintTool.toggled.connect(self.cbDefaultPaintTools.setEnabled)
