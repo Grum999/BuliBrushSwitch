@@ -310,7 +310,20 @@ class EKritaTools:
         """Initialise static class"""
         def __toolChanged(id):
             """tool has been changed, emit signal"""
-            EKritaTools.notifier.toolChanged.emit(id, EKritaTools.__TOOLS[id]['widget'].isChecked())
+            def _update():
+                EKritaTools.notifier.toolChanged.emit(id, True)
+
+            if EKritaTools.__TOOLS[id]['widget'].isChecked():
+                # When change is applied, especially when tool is activated, it could be a good thing
+                # to wait 2-3milliseconds before processing anything in triggered event:
+                # - signal is emitted when tool button is toggled
+                # - all tools properties (opacity, tools options, may not be initialized yet
+                #
+                # this short delay should be enought to let krita doing all mandatory stuff without
+                # being noticeable by user
+                QTimer.singleShot(3, _update)
+            else:
+                EKritaTools.notifier.toolChanged.emit(id, False)
 
         def __windowCreated():
             """Executed when a Krita window is created"""
