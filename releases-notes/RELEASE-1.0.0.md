@@ -14,7 +14,6 @@ Review button in Krita toolbar to let it being rendered exactly like the *Brush 
 *(Top: Linux / Bottom: Windows)*
 
 
-
 # Main settings
 
 ## Let user choose scratchpad background color
@@ -28,6 +27,10 @@ An additional color button menu has been added; there's now:
 
 # Brushes settings
 
+## Redesign
+With new options, user interface has been redesigned to be less messy.
+
+
 ## Color button when *No color*
 [Feature request #6](https://github.com/Grum999/BuliBrushSwitch/issues/6)
 
@@ -38,8 +41,16 @@ Represent the **No color** choice for background color with hatched pattern
 
 ## Additional brushes options
 [Feature request #7](https://github.com/Grum999/BuliBrushSwitch/issues/7)
+[Feature request #14](https://github.com/Grum999/BuliBrushSwitch/issues/14)
 
-- Preserve Alpha
+### Take in account the preserve Alpha option
+Allows brush to force use of *preserve Alpha* option
+
+### Ignore tool opacity
+Krita memorize opacity per tool (brush tool, line tool, rectangle tool, ...) rather than per brush.
+This means, when changing a tool, current defined opacity can be modified by new selected tool.
+
+This option allows to ignore tool opacity and force use of defined brush opacity whatever the tool is.
 
 
 # Fix bugs

@@ -378,6 +378,7 @@ class BBSMainWindow(EDialog):
         brush.setDefaultPaintTool(options[BBSBrush.KEY_DEFAULTPAINTTOOL])
         brush.setBlendingMode(options[BBSBrush.KEY_BLENDINGMODE])
         brush.setPreserveAlpha(options[BBSBrush.KEY_PRESERVEALPHA])
+        brush.setIgnoreToolOpacity(options[BBSBrush.KEY_IGNORETOOLOPACITY])
         brush.setSize(options[BBSBrush.KEY_SIZE])
         brush.setOpacity(options[BBSBrush.KEY_OPACITY])
         brush.setFlow(options[BBSBrush.KEY_FLOW])

@@ -69,6 +69,7 @@ class BBSBrush(QObject):
     KEY_OPACITY = 'opacity'
     KEY_BLENDINGMODE = 'blendingMode'
     KEY_PRESERVEALPHA = 'preserveAlpha'
+    KEY_IGNORETOOLOPACITY = 'ignoreToolOpacity'
     KEY_COMMENTS = 'comments'
     KEY_IMAGE = 'image'
     KEY_ERASERMODE = 'eraserMode'
@@ -99,6 +100,7 @@ class BBSBrush(QObject):
         self.__keepUserModifications = True
         self.__eraserMode = False
         self.__ignoreEraserMode = True
+        self.__ignoreToolOpacity = False
         self.__position = -1
         self.__colorFg = None
         self.__colorBg = None
@@ -184,14 +186,22 @@ class BBSBrush(QObject):
                     useSpecificColor = yesno(True)
 
                 self.__brushNfoOptions = (f' {defaultPaintTool}'
-                                          f' <tr><td align="left"><b>{i18n("Keep user modifications")}</b></td>'
-                                          f'     <td align="right">{yesno(self.__keepUserModifications)}</td><td></td></tr>'
-                                          f' <tr><td align="left"><b>{i18n("Preserve Alpha")}:</b></td>'
-                                          f'     <td align="right">{yesno(self.__preserveAlpha)}</td><td></td></tr>'
-                                          f' <tr><td align="left"><b>{i18n("Ignore eraser mode")}:</b></td>'
-                                          f'     <td align="right">{yesno(self.__ignoreEraserMode)}</td><td></td></tr>'
+
                                           f' <tr><td align="left"><b>{i18n("Use specific color")}:</b></td>'
                                           f'     <td align="right">{useSpecificColor}</td><td>{imageNfo}</td></tr>'
+
+                                          f' <tr><td align="left"><b>{i18n("Preserve Alpha")}:</b></td>'
+                                          f'     <td align="right">{yesno(self.__preserveAlpha)}</td><td></td></tr>'
+
+                                          f' <tr><td align="left"><b>{i18n("Ignore tool opacity")}:</b></td>'
+                                          f'     <td align="right">{yesno(self.__ignoreToolOpacity)}</td><td></td></tr>'
+
+                                          f' <tr><td align="left"><b>{i18n("Keep user modifications")}</b></td>'
+                                          f'     <td align="right">{yesno(self.__keepUserModifications)}</td><td></td></tr>'
+
+                                          f' <tr><td align="left"><b>{i18n("Ignore eraser mode")}:</b></td>'
+                                          f'     <td align="right">{yesno(self.__ignoreEraserMode)}</td><td></td></tr>'
+
                                           f' {shortcutText}'
                                           )
 
@@ -345,7 +355,8 @@ class BBSBrush(QObject):
                 BBSBrush.KEY_COLOR_BG: colorBg,
                 BBSBrush.KEY_UUID: self.__uuid.strip("{}"),
                 BBSBrush.KEY_SHORTCUT: self.__shortcut.toString(),
-                BBSBrush.KEY_DEFAULTPAINTTOOL: self.__defaultPaintTool
+                BBSBrush.KEY_DEFAULTPAINTTOOL: self.__defaultPaintTool,
+                BBSBrush.KEY_IGNORETOOLOPACITY: self.__ignoreToolOpacity
             }
 
         return returned
@@ -372,6 +383,8 @@ class BBSBrush(QObject):
                 self.setBlendingMode(value[BBSBrush.KEY_BLENDINGMODE])
             if BBSBrush.KEY_PRESERVEALPHA in value:
                 self.setPreserveAlpha(value[BBSBrush.KEY_PRESERVEALPHA])
+            if BBSBrush.KEY_IGNORETOOLOPACITY in value:
+                self.setIgnoreToolOpacity(value[BBSBrush.KEY_IGNORETOOLOPACITY])
             if BBSBrush.KEY_COMMENTS in value:
                 self.setComments(value[BBSBrush.KEY_COMMENTS])
             if BBSBrush.KEY_KEEPUSERMODIFICATIONS in value:
@@ -493,14 +506,24 @@ class BBSBrush(QObject):
             self.__updated('keepUserModifications')
 
     def ignoreEraserMode(self):
-        """Return current keep user value for brush"""
+        """Return current eraser mode behavior for brush"""
         return self.__ignoreEraserMode
 
     def setIgnoreEraserMode(self, value):
-        """Set current keep user value for brush"""
+        """Set current eraser mode behavior for brush"""
         if value != self.__ignoreEraserMode and isinstance(value, bool):
             self.__ignoreEraserMode = value
             self.__updated('ignoreEraserMode')
+
+    def ignoreToolOpacity(self):
+        """Return current tool opacity behavior for brush"""
+        return self.__ignoreToolOpacity
+
+    def setIgnoreToolOpacity(self, value):
+        """Set current tool opacity behavior for brush"""
+        if value != self.__ignoreToolOpacity and isinstance(value, bool):
+            self.__ignoreToolOpacity = value
+            self.__updated('ignoreToolOpacity')
 
     def image(self):
         """Return brush image"""
@@ -1531,6 +1554,8 @@ class BBSBrushesEditor(EDialog):
 
         self.cbPreserveAlpha.setChecked(brush.preserveAlpha())
 
+        self.cbIgnoreToolOpacity.setChecked(brush.ignoreToolOpacity())
+
         toolIdList = EKritaTools.list(EKritaToolsCategory.PAINT)
         for index, toolId in enumerate(toolIdList):
             self.cbDefaultPaintTools.addItem(EKritaTools.name(toolId), toolId)
@@ -1738,7 +1763,8 @@ class BBSBrushesEditor(EDialog):
                 BBSBrush.KEY_PRESERVEALPHA: self.cbPreserveAlpha.isChecked(),
                 BBSBrush.KEY_COMMENTS: self.wtComments.toHtml(),
                 BBSBrush.KEY_KEEPUSERMODIFICATIONS: self.cbKeepUserModifications.isChecked(),
-                BBSBrush.KEY_IGNOREERASERMODE: True,
+                BBSBrush.KEY_IGNOREERASERMODE: True,    # updated below
+                BBSBrush.KEY_IGNORETOOLOPACITY: self.cbIgnoreToolOpacity.isChecked(),
                 BBSBrush.KEY_SHORTCUT: self.kseShortcut.keySequence(),
                 BBSBrush.KEY_COLOR_FG: None,
                 BBSBrush.KEY_COLOR_BG: None,

@@ -122,6 +122,9 @@ class BBSWBrushSwitcher(QWidget):
         # when settings are saved, need to reload brushes
         BBSSettings.settingsSaved().connect(lambda: self.__reloadBrushes())
 
+        # when tool is changed, need to fix opacity
+        EKritaTools.notifier.toolChanged.connect(self.__kritaToolChanged)
+
         # need it...
         self.__dlgParentWidget = QWidget()
 
@@ -177,6 +180,10 @@ class BBSWBrushSwitcher(QWidget):
         # keep a reference to action "set eraser mode"
         self.__actionEraserMode = Krita.instance().action('erase_action')
         self.__actionEraserMode.triggered.connect(self.__eraserModeActivated)
+
+        # current opacity value
+        # used as a 'cache' value when tool is changed and brush require to ignore tool opacity
+        self.__currentOpacity = 1.0
 
         # keep reference for all actions
         action = Krita.instance().action('bulibrushswitch_settings')
@@ -394,6 +401,16 @@ class BBSWBrushSwitcher(QWidget):
                 # autosave modification settings all the time!
                 # no full save (False): save settings only, no need to save actions files too here
                 BBSSettings.save(False)
+
+    def __kritaToolChanged(self, toolId, activated):
+        if not activated:
+            view = Krita.instance().activeWindow().activeView()
+            if view:
+                self.__currentOpacity = view.paintingOpacity()
+        elif self.__selectedBrush and self.__selectedBrush.ignoreToolOpacity():
+            view = Krita.instance().activeWindow().activeView()
+            if view:
+                view.setPaintingOpacity(self.__currentOpacity)
 
     def openSettings(self):
         """Open settings dialog box"""
