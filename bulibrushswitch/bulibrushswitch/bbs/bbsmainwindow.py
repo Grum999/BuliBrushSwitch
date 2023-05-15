@@ -313,7 +313,7 @@ class BBSMainWindow(EDialog):
         # need to apply a factor to be sure to reapply the right zoom
         self.__activeViewCurrentConfig['zoom'] = self.__activeView.canvas().zoomLevel()/(self.__activeView.document().resolution()*1/72)
 
-        # not view but... need to be saved/restored
+        # not from view but... need to be saved/restored
         self.__activeViewCurrentConfig['preserveAlpha'] = Krita.instance().action('preserve_alpha').isChecked()
 
     def __restoreViewConfig(self):
@@ -334,7 +334,7 @@ class BBSMainWindow(EDialog):
 
         self.__activeView.canvas().setZoomLevel(self.__activeViewCurrentConfig['zoom'])
 
-        # not view but... need to be saved/restored
+        # not from view but... need to be saved/restored
         Krita.instance().action('preserve_alpha').setChecked(self.__activeViewCurrentConfig['preserveAlpha'])
 
     def __actionBrushScratchpadSetColorFg(self, color):
