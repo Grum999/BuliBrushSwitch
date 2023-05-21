@@ -40,6 +40,7 @@ from ..pktk import *
 
 from .extendableenum import ExtendableEnum
 
+
 class TokenType(ExtendableEnum):
     # some default token type
     UNKNOWN = ('Unknown', 'This value is not know in grammar and might not be interpreted')

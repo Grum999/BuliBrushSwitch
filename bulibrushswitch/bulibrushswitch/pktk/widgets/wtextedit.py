@@ -47,12 +47,10 @@ from PyQt5.QtWidgets import (
         QWidget
     )
 from .wcolorselector import WColorPicker
-from .wcolorbutton import (
-                        WColorButton,
-                        QEColor
-                    )
+from .wcolorbutton import WColorButton
 
 from ..modules.imgutils import buildIcon
+from ..modules.colorutils import QEColor
 from ..pktk import *
 
 

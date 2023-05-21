@@ -18,10 +18,6 @@
 #       Widget
 #       The color button
 #
-# - QEColor
-#       Extend the QColor to support the None value
-#       (no color defined != transparent color)
-#
 # -----------------------------------------------------------------------------
 
 from math import ceil
@@ -37,28 +33,8 @@ from PyQt5.QtWidgets import (
     )
 
 from ..modules.imgutils import checkerBoardBrush
+from ..modules.colorutils import QEColor
 from .wmenuitem import WMenuColorPicker
-
-
-class QEColor(QColor):
-    def __init__(self, value=None):
-        super(QEColor, self).__init__(value)
-
-        self.__isNone = (value is None)
-
-    def __deepcopy__(self, memo):
-        """Used by pickle from copy.deepcopy()"""
-        returned = QEColor()
-        returned.setNamedColor(self.name())
-        returned.setNone(self.__isNone)
-        return returned
-
-    def isNone(self):
-        return self.__isNone
-
-    def setNone(self, value):
-        if isinstance(value, bool):
-            self.__isNone = value
 
 
 class WColorButton(QToolButton):

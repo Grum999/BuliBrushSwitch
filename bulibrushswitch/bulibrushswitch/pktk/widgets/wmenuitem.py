@@ -53,6 +53,7 @@ from PyQt5.QtWidgets import (
 
 from krita import PresetChooser
 from .wcolorselector import WColorPicker
+from .wmanagedresourcesselector import WManagedResourcesSelector
 
 
 class WMenuSlider(QWidgetAction):
@@ -258,3 +259,24 @@ class WMenuColorPicker(QWidgetAction):
 
     def colorPicker(self):
         return self.__colorPicker
+
+
+class WMenuManagedResourcesSelector(QWidgetAction):
+    """Encapsulate a WColorPicker as a menu item"""
+    def __init__(self, parent=None):
+        super(WMenuManagedResourcesSelector, self).__init__(parent)
+
+        self.__managedResourcesSelector = WManagedResourcesSelector()
+        self.__managedResourcesSelector.setMinimumSize(500, 500)
+
+        self.__managedResourcesSelector.selectionChanged.connect(self.__closeMenu)
+
+        self.setDefaultWidget(self.__managedResourcesSelector)
+
+    def __closeMenu(self):
+        for parentWidget in self.associatedWidgets():
+            parentWidget.hide()
+
+    def managedResourcesSelector(self):
+        """Direct access to WManagedResourcesSelector to let user tune it if needed"""
+        return self.__managedResourcesSelector

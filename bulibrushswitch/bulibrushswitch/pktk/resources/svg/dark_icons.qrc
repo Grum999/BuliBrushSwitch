@@ -172,6 +172,8 @@
     <file alias="separator_horizontal">dark/32dp/separator_horizontal.svg</file>
     <file alias="separator_vertical">dark/32dp/separator_vertical.svg</file>
     <file alias="sign_divide">dark/32dp/sign_divide.svg</file>
+    <file alias="sign_logical_and">dark/32dp/sign_logical_and.svg</file>
+    <file alias="sign_logical_or">dark/32dp/sign_logical_or.svg</file>
     <file alias="sign_minus">dark/32dp/sign_minus.svg</file>
     <file alias="sign_mult">dark/32dp/sign_mult.svg</file>
     <file alias="sign_plus">dark/32dp/sign_plus.svg</file>
@@ -379,6 +381,8 @@
     <file alias="separator_horizontal">dark/32dp-disabled/separator_horizontal.svg</file>
     <file alias="separator_vertical">dark/32dp-disabled/separator_vertical.svg</file>
     <file alias="sign_divide">dark/32dp-disabled/sign_divide.svg</file>
+    <file alias="sign_logical_and">dark/32dp-disabled/sign_logical_and.svg</file>
+    <file alias="sign_logical_or">dark/32dp-disabled/sign_logical_or.svg</file>
     <file alias="sign_minus">dark/32dp-disabled/sign_minus.svg</file>
     <file alias="sign_mult">dark/32dp-disabled/sign_mult.svg</file>
     <file alias="sign_plus">dark/32dp-disabled/sign_plus.svg</file>

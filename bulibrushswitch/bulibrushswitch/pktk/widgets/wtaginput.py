@@ -211,7 +211,7 @@ class WTagPopupList(QFrame):
         # set layout as "proteced": allows potential inherited class to update
         # layout content if needed
         self._layout = QVBoxLayout()
-        self._layout.setContentsMargins(1,1,1,1)
+        self._layout.setContentsMargins(1, 1, 1, 1)
         self._layout.addWidget(self.__lvTags)
 
         self.setFocusProxy(self.__parent)
@@ -243,7 +243,10 @@ class WTagPopupList(QFrame):
 
         If widget is not from popup or parent, then hide popup, otherwise keep popup visible (is visible)
         """
-        if not(QApplication.focusWidget() == self or QApplication.focusWidget() == self.__parent or QApplication.focusWidget() == self.__parent.lineEdit() or QApplication.focusWidget() == self.__lvTags):
+        if not(QApplication.focusWidget() == self or
+               QApplication.focusWidget() == self.__parent or
+               QApplication.focusWidget() == self.__parent.lineEdit() or
+               QApplication.focusWidget() == self.__lvTags):
             self.hide()
 
     def __updateListViewMinMaxHeight(self):
@@ -304,7 +307,7 @@ class WTagPopupList(QFrame):
                 index = self.__lvTags.currentIndex()
                 if index.isValid():
                     index = self.__proxyModelTags.mapToSource(index)
-                    item = self.__modelTags.item(index.row(),0)
+                    item = self.__modelTags.item(index.row(), 0)
                     if item:
                         self.selectTag(item.data(), not(item.checkState() == Qt.Checked))
                         processed = True
@@ -339,7 +342,7 @@ class WTagPopupList(QFrame):
             self.__parent.lineEdit().installEventFilter(self)
             # selection is important; don't know why but without it, there's no text cursor :-/
             # and even here, cursor is not blinking :-(
-            self.__parent.lineEdit().setSelection(len(self.__parent.lineEdit().text()),1)
+            self.__parent.lineEdit().setSelection(len(self.__parent.lineEdit().text()), 1)
 
             self.__updateListViewMinMaxHeight()
 
@@ -396,15 +399,15 @@ class WTagPopupList(QFrame):
         self.setMinimumWidth(self.__parent.width())
 
         # display under parent
-        screenPosition = self.__parent.mapToGlobal(QPoint(0,self.__parent.height()))
+        screenPosition = self.__parent.mapToGlobal(QPoint(0, self.__parent.height()))
         checkPosition = QPoint(screenPosition)
 
         # need to ensure popup is not "outside" visible screen
         for screen in QGuiApplication.screens():
             screenRect = screen.availableGeometry()
             if screenRect.contains(checkPosition):
-                # we're on the right screen
-                # need to check if window if displayed properly in screen
+                # we're on the right screen
+                # need to check if window if displayed properly in screen
                 relativePosition = screenPosition - screenRect.topLeft()
 
                 if screenPosition.x() < screenRect.left():
@@ -418,7 +421,7 @@ class WTagPopupList(QFrame):
                     screenPosition.setY(screenRect.bottom() - self.height())
 
         if screenPosition.y() < checkPosition.y():
-            screenPosition.setY(self.__parent.mapToGlobal(QPoint(0,-self.height())).y())
+            screenPosition.setY(self.__parent.mapToGlobal(QPoint(0, -self.height())).y())
 
         self.move(screenPosition)
 
@@ -497,7 +500,6 @@ class WTagPopupList(QFrame):
         return returned
 
 
-
 class WTagInput(QWidget):
     """A widget to manage tags inputs"""
     tagAdded = Signal(WTag)               # A tag has been added to list
@@ -505,22 +507,22 @@ class WTagInput(QWidget):
     tagCreated = Signal(WTag)             # A new tag has been created (added to tag list)
     tagSelection = Signal()
 
-    ACCEPT_NEWTAG_NO=   0b00000001  # do not accept tags that are not in available tags list
-    ACCEPT_NEWTAG_YES=  0b00000010  # accept tags that are not in available tags list
-    ACCEPT_NEWTAG_ADD=  0b00000110  # accept tags that are not in available tags list and add them to available list automatically
+    ACCEPT_NEWTAG_NO =   0b00000001  # do not accept tags that are not in available tags list
+    ACCEPT_NEWTAG_YES =  0b00000010  # accept tags that are not in available tags list
+    ACCEPT_NEWTAG_ADD =  0b00000110  # accept tags that are not in available tags list and add them to available list automatically
 
     __TOOLBUTTON_CSS = """
-QToolButton {
-    padding: 0;
-    margin: 0;
-    background-color: transparent;
-}
+        QToolButton {
+            padding: 0;
+            margin: 0;
+            background-color: transparent;
+        }
 
-QToolButton:hover {
-    border: none;
-    border-radius: 4px;
-    background-color: palette(light);
-}
+        QToolButton:hover {
+            border: none;
+            border-radius: 4px;
+            background-color: palette(light);
+        }
         """
 
     def __init__(self, parent=None):
@@ -528,11 +530,11 @@ QToolButton:hover {
 
         # widget layouts
         self.__layout = WFlowLayout()
-        self.__layout.setContentsMargins(3,4,3,4)       # also change setReadOnly if margins are changed
+        self.__layout.setContentsMargins(3, 4, 3, 4)       # also change setReadOnly if margins are changed
 
         # input layout
         self.__layoutInput = QHBoxLayout()
-        self.__layoutInput.setContentsMargins(0,0,0,0)
+        self.__layoutInput.setContentsMargins(0, 0, 0, 0)
         self.__layoutInput.setSpacing(0)
 
         self.__layout.addLayout(self.__layoutInput)
@@ -642,12 +644,12 @@ QToolButton:hover {
                     found = True
                     break
             elif self.__availableTagList[tagValue].lower() == value.lower():
-                    # found value from text
-                    value = tagValue
-                    found = True
-                    break
+                # found value from text
+                value = tagValue
+                found = True
+                break
 
-        if not found and self.__optionAcceptNewTags&WTagInput.ACCEPT_NEWTAG_YES == WTagInput.ACCEPT_NEWTAG_YES:
+        if not found and self.__optionAcceptNewTags & WTagInput.ACCEPT_NEWTAG_YES == WTagInput.ACCEPT_NEWTAG_YES:
             # didn't found value from text
             # but accept text for which value is not defined
             found = True
@@ -821,9 +823,9 @@ QToolButton:hover {
             self.__buttonTags.setVisible(not self.__isReadOnly)
 
             if self.__isReadOnly:
-                self.__layout.setContentsMargins(0,0,0,0)
+                self.__layout.setContentsMargins(0, 0, 0, 0)
             else:
-                self.__layout.setContentsMargins(3,4,3,4)
+                self.__layout.setContentsMargins(3, 4, 3, 4)
 
             for tag in self.__selectedTags:
                 tag.setReadOnly(self.__isReadOnly)
@@ -905,6 +907,7 @@ QToolButton:hover {
 
         self.__startMassUpdate()
         self.clearSelectedTags()
+        self.__tagPopupList.clear()
         self.__availableTagList = {}
         for value in values:
             self.addAvailableTag(value)
@@ -953,6 +956,15 @@ QToolButton:hover {
             return True
         return False
 
+    def clearAvailableTags(self):
+        """Clear all available tags"""
+        self.__startMassUpdate()
+
+        self.clearSelectedTags()
+        self.__availableTagList = {}
+
+        self.__stopMassUpdate()
+
     def selectedTags(self):
         """Return list of selected tags
 
@@ -981,7 +993,7 @@ QToolButton:hover {
         if not isinstance(value, str):
             # not a valid value
             raise EInvalidType("Given `value` must be <str>")
-        elif not(value in self.__availableTagList or self.__optionAcceptNewTags&WTagInput.ACCEPT_NEWTAG_YES == WTagInput.ACCEPT_NEWTAG_YES):
+        elif not(value in self.__availableTagList or self.__optionAcceptNewTags & WTagInput.ACCEPT_NEWTAG_YES == WTagInput.ACCEPT_NEWTAG_YES):
             # value must exist in available list or option __optionAcceptNewTags must be True
             return False
 
@@ -1000,7 +1012,7 @@ QToolButton:hover {
         self.__selectedTags.append(tag)
         self.__tagPopupList.selectTag(value, True)
 
-        if not value in self.__availableTagList and self.__optionAcceptNewTags&WTagInput.ACCEPT_NEWTAG_ADD == WTagInput.ACCEPT_NEWTAG_ADD:
+        if value not in self.__availableTagList and self.__optionAcceptNewTags & WTagInput.ACCEPT_NEWTAG_ADD == WTagInput.ACCEPT_NEWTAG_ADD:
             self.addAvailableTag(value)
 
         if self.__optionAutoSort:
@@ -1019,6 +1031,7 @@ QToolButton:hover {
         """
         wtag = None
         index = -1
+        returned = True
 
         if isinstance(value, str):
             for index, widgetTag in enumerate(self.__selectedTags):
@@ -1027,8 +1040,8 @@ QToolButton:hover {
                     break
 
         if wtag and index > -1:
-            return self.__removeWTag(wtag, index)
+            returned = self.__removeWTag(wtag, index)
 
         self.tagSelection.emit()
 
-        return True
+        return returned
