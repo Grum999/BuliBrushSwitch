@@ -40,13 +40,17 @@ Represent the **No color** choice for background color with hatched pattern
 
 
 ## Additional brushes options
-[Feature request #7](https://github.com/Grum999/BuliBrushSwitch/issues/7)
-[Feature request #14](https://github.com/Grum999/BuliBrushSwitch/issues/14)
 
 ### Take in account the preserve Alpha option
+[Feature request #7](https://github.com/Grum999/BuliBrushSwitch/issues/7)
 Allows brush to force use of *preserve Alpha* option
 
+### Gradient color
+[Feature request #8](https://github.com/Grum999/BuliBrushSwitch/issues/8)
+Some brushes can use a gradient as source color, so let user define a specific gradient for brush, like it's already made for foreground and background colors.
+
 ### Ignore tool opacity
+[Feature request #14](https://github.com/Grum999/BuliBrushSwitch/issues/14)
 Krita memorize opacity per tool (brush tool, line tool, rectangle tool, ...) rather than per brush.
 This means, when changing a tool, current defined opacity can be modified by new selected tool.
 

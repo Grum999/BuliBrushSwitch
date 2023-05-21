@@ -183,7 +183,9 @@ _[2022-xx-xx] Version 1.0.0_ *[Show detailed release content](./releases-notes/R
 - Implement - Krita Interface - *Improve toolbar button*
 - Implement - Main Settings - *Let user choose scratchpad background color*
 - Implement - Brush Settings - *Color button when **No color***
-- Implement - Brush Settings - *Additional brushes options*
+- Implement - Brush Settings - *Take in account the preserve Alpha option*
+- Implement - Brush Settings - *Gradient color*
+- Implement - Brush Settings - *Ignore tool opacity*
 - Fix bug - Brush Settings - *Keep user modifications*
 - Fix bug - Brush Settings - *Ignore eraser mode option*
 - Fix bug - Main Interface - *Crash when brushes from disabled bundles are referenced*

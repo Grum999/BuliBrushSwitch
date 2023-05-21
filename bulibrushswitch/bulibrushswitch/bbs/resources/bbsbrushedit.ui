@@ -458,6 +458,29 @@
                 </property>
                </widget>
               </item>
+              <item>
+               <widget class="WManagedResourcesButton" name="btUseSpecificColorGradient">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Background color&lt;/p&gt;&lt;p&gt;(Set &lt;span style=&quot; font-weight:600; font-style:italic;&quot;&gt;No color &lt;/span&gt;to use default background color)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="text">
+                 <string>...</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_3">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
              </layout>
             </item>
             <item row="2" column="0">
@@ -794,6 +817,11 @@ Also, first line is used to define action name in Krita's shortcut settings dial
    <class>WLogSlider</class>
    <extends>QSlider</extends>
    <header>bulibrushswitch.pktk.widgets.wlogslider</header>
+  </customwidget>
+  <customwidget>
+   <class>WManagedResourcesButton</class>
+   <extends>QToolButton</extends>
+   <header>bulibrushswitch.pktk.widgets.wmanagedresourcesbutton</header>
   </customwidget>
  </customwidgets>
  <resources>

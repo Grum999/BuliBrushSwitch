@@ -375,6 +375,7 @@ class BBSMainWindow(EDialog):
         brush.setIgnoreEraserMode(options[BBSBrush.KEY_IGNOREERASERMODE])
         brush.setColorFg(options[BBSBrush.KEY_COLOR_FG])
         brush.setColorBg(options[BBSBrush.KEY_COLOR_BG])
+        brush.setColorGradient(options[BBSBrush.KEY_COLOR_GRADIENT])
         brush.setDefaultPaintTool(options[BBSBrush.KEY_DEFAULTPAINTTOOL])
         brush.setBlendingMode(options[BBSBrush.KEY_BLENDINGMODE])
         brush.setPreserveAlpha(options[BBSBrush.KEY_PRESERVEALPHA])

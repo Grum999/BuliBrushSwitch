@@ -51,12 +51,18 @@ from bulibrushswitch.pktk.modules.uitheme import UITheme
 from bulibrushswitch.pktk.modules.iconsizes import IconSizes
 from bulibrushswitch.pktk.modules.strutils import stripHtml
 from bulibrushswitch.pktk.modules.imgutils import (warningAreaBrush, qImageToPngQByteArray, bullet, buildIcon)
+from bulibrushswitch.pktk.modules.resutils import (ManagedResourceTypes, ManagedResource, ManagedResourcesModel)
 from bulibrushswitch.pktk.modules.ekrita import (EKritaBrushPreset, EKritaShortcuts, EKritaBlendingModes)
 from bulibrushswitch.pktk.modules.ekrita_tools import (EKritaToolsCategory, EKritaTools)
 from bulibrushswitch.pktk.widgets.wtextedit import (WTextEdit, WTextEditDialog, WTextEditBtBarOption)
 from bulibrushswitch.pktk.widgets.wcolorbutton import WColorButton
 from bulibrushswitch.pktk.widgets.wcolorselector import WColorPicker
 from bulibrushswitch.pktk.widgets.wkeysequenceinput import WKeySequenceInput
+
+
+# module instance of ManagedResourcesModel, dedicated for gradients
+_bbsManagedResourcesGradients = ManagedResourcesModel()
+_bbsManagedResourcesGradients.setResourceType(ManagedResourceTypes.RES_GRADIENTS)
 
 
 class BBSBrush(QObject):
@@ -78,6 +84,7 @@ class BBSBrush(QObject):
     KEY_POSITION = 'position'
     KEY_COLOR_FG = 'color'
     KEY_COLOR_BG = 'colorBg'
+    KEY_COLOR_GRADIENT = 'colorGradient'
     KEY_UUID = 'uuid'
     KEY_SHORTCUT = 'shortcut'
     KEY_DEFAULTPAINTTOOL = 'defaultPaintTool'
@@ -104,6 +111,7 @@ class BBSBrush(QObject):
         self.__position = -1
         self.__colorFg = None
         self.__colorBg = None
+        self.__colorGradient = None
         self.__shortcut = QKeySequence()
         self.__defaultPaintTool = None
 
@@ -179,10 +187,14 @@ class BBSBrush(QObject):
                     imageNfo = ''
                 else:
                     imageNfo = f'&nbsp;<img src="data:image/png;base64,'\
-                               f'{bytes(qImageToPngQByteArray(bullet(16,self.__colorFg,"roundSquare").toImage()).toBase64(QByteArray.Base64Encoding)).decode()}">'
+                               f'{bytes(qImageToPngQByteArray(bullet(16, self.__colorFg,"roundSquare").toImage()).toBase64(QByteArray.Base64Encoding)).decode()}">'
                     if self.__colorBg is not None:
                         imageNfo += f'&nbsp;<img src="data:image/png;base64,'\
-                                    f'{bytes(qImageToPngQByteArray(bullet(16,self.__colorBg,"roundSquare").toImage()).toBase64(QByteArray.Base64Encoding)).decode()}">'
+                                    f'{bytes(qImageToPngQByteArray(bullet(16, self.__colorBg,"roundSquare").toImage()).toBase64(QByteArray.Base64Encoding)).decode()}">'
+                    if self.__colorGradient is not None and self.__colorGradient.id() is not None:
+                        pngQByteArray = qImageToPngQByteArray(self.__colorGradient.thumbnail().scaledToHeight(16, Qt.SmoothTransformation).toImage())
+                        imageNfo += f'&nbsp;<img src="data:image/png;base64,'\
+                                    f'{bytes(pngQByteArray.toBase64(QByteArray.Base64Encoding)).decode()}">'
                     useSpecificColor = yesno(True)
 
                 self.__brushNfoOptions = (f' {defaultPaintTool}'
@@ -230,6 +242,8 @@ class BBSBrush(QObject):
 
         If no view is provided, use current active view
         """
+        global _bbsManagedResourcesGradients
+
         if view is None:
             view = Krita.instance().activeWindow().activeView()
             if view is None:
@@ -256,9 +270,11 @@ class BBSBrush(QObject):
         if saveColor:
             self.__colorFg = view.foregroundColor().colorForCanvas(view.canvas())
             self.__colorBg = view.backgroundColor().colorForCanvas(view.canvas())
+            self.__colorGradient = _bbsManagedResourcesGradients.getResource(view.currentGradient())
         else:
             self.__colorFg = None
             self.__colorBg = None
+            self.__colorGradient = None
 
         if saveTool:
             current = EKritaTools.current()
@@ -318,6 +334,10 @@ class BBSBrush(QObject):
             if self.__colorBg is not None:
                 view.setBackGroundColor(ManagedColor.fromQColor(self.__colorBg, view.canvas()))
 
+        if self.__colorGradient is not None and loadColor:
+            # use specific gradient
+            view.setCurrentGradient(self.__colorGradient.resource())
+
         # in all case restore eraser mode
         # - if __ignoreEraserMode is True, then force __eraserMode value because
         #   it's already set to the right value for given brush (True for eraser brush, False otherwise)
@@ -339,6 +359,11 @@ class BBSBrush(QObject):
         else:
             colorBg = self.__colorBg.name(QColor.HexRgb)
 
+        if self.__colorGradient is None:
+            colorGradient = 0
+        else:
+            colorGradient = self.__colorGradient.id()
+
         returned = {
                 BBSBrush.KEY_NAME: self.__name,
                 BBSBrush.KEY_SIZE: self.__size,
@@ -353,6 +378,7 @@ class BBSBrush(QObject):
                 BBSBrush.KEY_POSITION: self.__position,
                 BBSBrush.KEY_COLOR_FG: colorFg,
                 BBSBrush.KEY_COLOR_BG: colorBg,
+                BBSBrush.KEY_COLOR_GRADIENT: colorGradient,
                 BBSBrush.KEY_UUID: self.__uuid.strip("{}"),
                 BBSBrush.KEY_SHORTCUT: self.__shortcut.toString(),
                 BBSBrush.KEY_DEFAULTPAINTTOOL: self.__defaultPaintTool,
@@ -395,6 +421,8 @@ class BBSBrush(QObject):
                 self.setColorFg(value[BBSBrush.KEY_COLOR_FG])
             if BBSBrush.KEY_COLOR_BG in value:
                 self.setColorBg(value[BBSBrush.KEY_COLOR_BG])
+            if BBSBrush.KEY_COLOR_GRADIENT in value:
+                self.setColorGradient(value[BBSBrush.KEY_COLOR_GRADIENT])
             if BBSBrush.KEY_ERASERMODE in value:
                 self.setEraserMode(value[BBSBrush.KEY_ERASERMODE])
 
@@ -580,6 +608,21 @@ class BBSBrush(QObject):
         if color is None or isinstance(color, QColor) and self.__colorBg != color:
             self.__colorBg = color
             self.__updated('colorBg')
+
+    def colorGradient(self):
+        """Return gradient color"""
+        return self.__colorGradient
+
+    def setColorGradient(self, managedResource):
+        """Set gradient color"""
+        global _bbsManagedResourcesGradients
+
+        managedResource = _bbsManagedResourcesGradients.getResource(managedResource)
+
+        if managedResource is None or isinstance(managedResource, ManagedResource):
+            if self.__colorGradient is None and managedResource is not None or self.__colorGradient != managedResource:
+                self.__colorGradient = managedResource
+                self.__updated('colorGradient')
 
     def eraserMode(self):
         """Return eraser mode"""
@@ -1061,8 +1104,6 @@ class BBSWBrushesTv(QTreeView):
     keyPressed = Signal(int)
     iconSizeIndexChanged = Signal(int, QSize)
 
-    __COLNUM_FULLNFO_MINSIZE = 7
-
     def __init__(self, parent=None):
         super(BBSWBrushesTv, self).__init__(parent)
         self.setAutoScroll(True)
@@ -1130,7 +1171,7 @@ class BBSWBrushesTv(QTreeView):
         self.__delegate.setCSize(0)
 
     def wheelEvent(self, event):
-        """Mange zoom level through mouse wheel"""
+        """Manage zoom level through mouse wheel"""
         if event.modifiers() & Qt.ControlModifier:
             if event.angleDelta().y() > 0:
                 # Zoom in
@@ -1467,6 +1508,10 @@ class BBSBrushesEditor(EDialog):
     @staticmethod
     def edit(title, brush):
         """Open a dialog box to edit brush"""
+        global _bbsManagedResourcesGradients
+
+        _bbsManagedResourcesGradients.updateResources()
+
         widget = QWidget()
         dlgBox = BBSBrushesEditor(title, brush, widget)
 
@@ -1591,6 +1636,9 @@ class BBSBrushesEditor(EDialog):
         self.btUseSpecificColorBg.colorPicker().uiChanged.connect(self.__brushColorPickerUiChanged)
         self.btUseSpecificColorBg.setNoneColor(True)
 
+        self.btUseSpecificColorGradient.setManageNoneResource(True)
+        self.btUseSpecificColorGradient.setManagedResourceType(ManagedResourceTypes.RES_GRADIENTS)
+
         if brush.blendingMode() != 'erase':
             # for eraser, eraser mode is ignored
             self.cbIgnoreEraserMode.setEnabled(True)
@@ -1599,25 +1647,31 @@ class BBSBrushesEditor(EDialog):
             # for eraser brush, option is not available
             colorFg = brush.colorFg()
             colorBg = brush.colorBg()
+            colorGradient = brush.colorGradient()
 
             if colorFg is None:
                 # foreground color define if a specific color is used
                 self.cbUseSpecificColor.setChecked(False)
                 self.btUseSpecificColorFg.setVisible(False)
                 self.btUseSpecificColorBg.setVisible(False)
+                self.btUseSpecificColorGradient.setVisible(False)
             else:
                 self.cbUseSpecificColor.setChecked(True)
                 self.btUseSpecificColorFg.setVisible(True)
                 self.btUseSpecificColorBg.setVisible(True)
+                self.btUseSpecificColorGradient.setVisible(True)
 
             self.btUseSpecificColorFg.setColor(colorFg)
-            self.btUseSpecificColorBg.setColor(brush.colorBg())
+            self.btUseSpecificColorBg.setColor(colorBg)
+            self.btUseSpecificColorGradient.setResource(colorGradient)
+
             self.cbUseSpecificColor.toggled.connect(self.__useSpecificColorChanged)
         else:
             self.cbIgnoreEraserMode.setEnabled(False)
             self.cbUseSpecificColor.setVisible(False)
             self.btUseSpecificColorFg.setVisible(False)
             self.btUseSpecificColorBg.setVisible(False)
+            self.btUseSpecificColorGradient.setVisible(False)
 
         self.pbOk.clicked.connect(self.accept)
         self.pbCancel.clicked.connect(self.reject)
@@ -1654,6 +1708,7 @@ class BBSBrushesEditor(EDialog):
         """Checkbox state for cbUseSpecificColor has changed"""
         self.btUseSpecificColorFg.setVisible(isChecked)
         self.btUseSpecificColorBg.setVisible(isChecked)
+        self.btUseSpecificColorGradient.setVisible(isChecked)
 
     def __brushSizeChanged(self, value, fromSpinBox=True):
         """Size has been changed, update slider/spinbox according to value and source"""
@@ -1768,6 +1823,7 @@ class BBSBrushesEditor(EDialog):
                 BBSBrush.KEY_SHORTCUT: self.kseShortcut.keySequence(),
                 BBSBrush.KEY_COLOR_FG: None,
                 BBSBrush.KEY_COLOR_BG: None,
+                BBSBrush.KEY_COLOR_GRADIENT: None,
                 BBSBrush.KEY_DEFAULTPAINTTOOL: None
             }
 
@@ -1783,5 +1839,7 @@ class BBSBrushesEditor(EDialog):
                 returned[BBSBrush.KEY_COLOR_BG] = None
             else:
                 returned[BBSBrush.KEY_COLOR_BG] = self.btUseSpecificColorBg.color()
+
+            returned[BBSBrush.KEY_COLOR_GRADIENT] = self.btUseSpecificColorGradient.resource().id()
 
         return returned
