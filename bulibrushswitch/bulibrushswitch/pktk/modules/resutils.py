@@ -204,6 +204,9 @@ class ManagedResource(object):
         else:
             return f"<ManagedResource({self.__id}, '{self.__name}', '{self.__fileName}', '{self.__type.value}')>"
 
+    def __eq__(self, other):
+        return other is not None and self.__type == other.__type and self.__id == other.__id
+
     def id(self):
         """return internal Krita's resource Id"""
         return self.__id
@@ -363,16 +366,28 @@ class DBManagedResources(QObject):
             includeStorageInactive = 'AND s.active = 1'
 
         self.__dbQueries[ManagedResourceTypes.RES_GRADIENTS] = QSqlQuery(self.__databaseInstance)
-        self.__dbQueries[ManagedResourceTypes.RES_GRADIENTS].prepare(modelQuery.format(includeDuplicateResources, includeStorageInactive, 'gradients', includeDuplicateResourcesGB))
+        self.__dbQueries[ManagedResourceTypes.RES_GRADIENTS].prepare(modelQuery.format(includeDuplicateResources,
+                                                                                       includeStorageInactive,
+                                                                                       'gradients',
+                                                                                       includeDuplicateResourcesGB))
 
         self.__dbQueries[ManagedResourceTypes.RES_PRESETS] = QSqlQuery(self.__databaseInstance)
-        self.__dbQueries[ManagedResourceTypes.RES_PRESETS].prepare(modelQuery.format(includeDuplicateResources, includeStorageInactive, 'paintoppresets', includeDuplicateResourcesGB))
+        self.__dbQueries[ManagedResourceTypes.RES_PRESETS].prepare(modelQuery.format(includeDuplicateResources,
+                                                                                     includeStorageInactive,
+                                                                                     'paintoppresets',
+                                                                                     includeDuplicateResourcesGB))
 
         self.__dbQueries[ManagedResourceTypes.RES_PALETTES] = QSqlQuery(self.__databaseInstance)
-        self.__dbQueries[ManagedResourceTypes.RES_PALETTES].prepare(modelQuery.format(includeDuplicateResources, includeStorageInactive, 'palettes', includeDuplicateResourcesGB))
+        self.__dbQueries[ManagedResourceTypes.RES_PALETTES].prepare(modelQuery.format(includeDuplicateResources,
+                                                                                      includeStorageInactive,
+                                                                                      'palettes',
+                                                                                      includeDuplicateResourcesGB))
 
         self.__dbQueries[ManagedResourceTypes.RES_PATTERNS] = QSqlQuery(self.__databaseInstance)
-        self.__dbQueries[ManagedResourceTypes.RES_PATTERNS].prepare(modelQuery.format(includeDuplicateResources, includeStorageInactive, 'patterns', includeDuplicateResourcesGB))
+        self.__dbQueries[ManagedResourceTypes.RES_PATTERNS].prepare(modelQuery.format(includeDuplicateResources,
+                                                                                      includeStorageInactive,
+                                                                                      'patterns',
+                                                                                      includeDuplicateResourcesGB))
 
     def databaseFile(self):
         """Return current database file name
@@ -620,11 +635,14 @@ class ManagedResourcesModel(QAbstractTableModel):
         elif resourceType is not None:
             raise EInvalidType("Given `resourceType` must be None or a <ManagedResourceTypes>")
 
+        if self.__resourceType is None:
+            return
+
         self.beginResetModel()
         # query will return resources with their tags
-        query = self.__dbResources.executeQuery(resourceType)
+        query = self.__dbResources.executeQuery(self.__resourceType)
         # get krita resource objects
-        kritaResources = Krita.instance().resources(resourceType.value)
+        kritaResources = Krita.instance().resources(self.__resourceType.value)
 
         self.__items = []
         if query[0]:
@@ -693,6 +711,9 @@ class ManagedResourcesModel(QAbstractTableModel):
 
         If `asIndex` is True, return QModelIndex() in model instead of ManagedResource
         """
+        if resource is None:
+            return None
+
         if not isinstance(resource, (ManagedResource, int, tuple, Resource)):
             raise EInvalidType("Given `resources` is not valid")
 

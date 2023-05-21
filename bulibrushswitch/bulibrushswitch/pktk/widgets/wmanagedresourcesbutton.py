@@ -62,6 +62,7 @@ class WManagedResourcesButton(QToolButton):
         self.__cbBrushDiagPat = QBrush(QColor("#88888888"), Qt.BDiagPattern)
 
         self.__noResourceTooltip = ''
+        self.__resourceTooltip = ''
 
         self.__actionNoResource = QAction(i18n('None'), self)
         self.__actionNoResource.triggered.connect(self.__setManagedResourceNone)
@@ -111,7 +112,7 @@ class WManagedResourcesButton(QToolButton):
         if self.__managedResource.id() is None:
             self.setToolTip(self.__noResourceTooltip)
         else:
-            self.setToolTip(self.__managedResource.tooltip())
+            self.setToolTip(f"{self.__resourceTooltip}<br>{self.__managedResource.tooltip()}")
 
     def sizeHint(self):
         """calculate size hint"""
@@ -193,12 +194,16 @@ class WManagedResourcesButton(QToolButton):
         match resourceType:
             case ManagedResourceTypes.RES_GRADIENTS:
                 self.__noResourceTooltip = i18n('No gradient')
+                self.__resourceTooltip = i18n('Gradient')
             case ManagedResourceTypes.RES_PALETTES:
                 self.__noResourceTooltip = i18n('No palette')
+                self.__resourceTooltip = i18n('Palette')
             case ManagedResourceTypes.RES_PATTERNS:
                 self.__noResourceTooltip = i18n('No pattern')
+                self.__resourceTooltip = i18n('Pattern')
             case ManagedResourceTypes.RES_PRESETS:
                 self.__noResourceTooltip = i18n('No preset')
+                self.__resourceTooltip = i18n('Preset')
 
         self.__actionNoResource.setText(self.__noResourceTooltip)
         self.__actionFromManagedResourcesSelector.managedResourcesSelector().setResourceTypes(resourceType)
