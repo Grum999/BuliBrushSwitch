@@ -370,6 +370,7 @@ class BBSMainWindow(EDialog):
 
     def __applyBrushOptions(self, brush, options):
         """Apply options to brush"""
+        brush.beginUpdate()
         brush.setComments(options[BBSBrush.KEY_COMMENTS])
         brush.setKeepUserModifications(options[BBSBrush.KEY_KEEPUSERMODIFICATIONS])
         brush.setIgnoreEraserMode(options[BBSBrush.KEY_IGNOREERASERMODE])
@@ -384,6 +385,7 @@ class BBSMainWindow(EDialog):
         brush.setOpacity(options[BBSBrush.KEY_OPACITY])
         brush.setFlow(options[BBSBrush.KEY_FLOW])
         brush.setShortcut(options[BBSBrush.KEY_SHORTCUT])
+        brush.endUpdate()
         BBSSettings.setShortcut(brush, options[BBSBrush.KEY_SHORTCUT])
 
     def __actionBrushAdd(self):

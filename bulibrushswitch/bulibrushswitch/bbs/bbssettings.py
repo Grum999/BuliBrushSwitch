@@ -137,6 +137,9 @@ class BBSSettingsKey(SettingsKey):
 
     CONFIG_EDITOR_SCRATCHPAD_COLOR_BG =                                         'config.editor.scratchpad.colorBg'
 
+    CONFIG_EDITOR_GRADIENT_ZOOMLEVEL =                                          'config.editor.gradientButton.list.zoomLevel'
+    CONFIG_EDITOR_GRADIENT_VIEWMODE =                                           'config.editor.gradientButton.list.viewMode'
+
     CONFIG_UI_POPUP_WIDTH =                                                     'config.ui.popup.width'
     CONFIG_UI_POPUP_HEIGHT =                                                    'config.ui.popup.height'
     CONFIG_UI_POPUP_BRUSHES_ZOOMLEVEL =                                         'config.ui.popup.brushes.list.zoomLevel'
@@ -228,6 +231,12 @@ class BBSSettings(Settings):
 
             SettingsRule(BBSSettingsKey.CONFIG_EDITOR_BRUSHES_ZOOMLEVEL,                                3,             SettingsFmt(int, [0, 1, 2, 3, 4])),
             SettingsRule(BBSSettingsKey.CONFIG_EDITOR_BRUSHES_SPLITTER_POSITION,                        [1000, 500],   SettingsFmt(int), SettingsFmt(int)),
+
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_GRADIENT_ZOOMLEVEL,                               3,             SettingsFmt(int, [0, 1, 2, 3, 4, 5, 6])),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_GRADIENT_VIEWMODE,                                BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_LIST,
+                                                                                                                       SettingsFmt(int,
+                                                                                                                                   [BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_LIST,
+                                                                                                                                    BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_ICON])),
 
             SettingsRule(BBSSettingsKey.CONFIG_EDITOR_WINDOW_POSITION_X,                                -1,            SettingsFmt(int)),
             SettingsRule(BBSSettingsKey.CONFIG_EDITOR_WINDOW_POSITION_Y,                                -1,            SettingsFmt(int)),

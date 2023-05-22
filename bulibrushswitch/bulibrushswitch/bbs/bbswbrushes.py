@@ -1522,6 +1522,9 @@ class BBSBrushesEditor(EDialog):
             BBSSettings.setBrushColorPickerLayoutFg(dlgBox.colorPickerLayoutBrushFg())
             BBSSettings.setBrushColorPickerLayoutBg(dlgBox.colorPickerLayoutBrushBg())
 
+            BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_GRADIENT_VIEWMODE, dlgBox.gradientBtnViewMode())
+            BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_GRADIENT_ZOOMLEVEL, dlgBox.gradientBtnIconSizeIndex())
+
             return dlgBox.options()
         else:
             return None
@@ -1638,6 +1641,8 @@ class BBSBrushesEditor(EDialog):
 
         self.btUseSpecificColorGradient.setManageNoneResource(True)
         self.btUseSpecificColorGradient.setManagedResourceType(ManagedResourceTypes.RES_GRADIENTS)
+        self.btUseSpecificColorGradient.managedResourcesSelector().setViewMode(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_GRADIENT_VIEWMODE))
+        self.btUseSpecificColorGradient.managedResourcesSelector().setIconSizeIndex(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_GRADIENT_ZOOMLEVEL))
 
         if brush.blendingMode() != 'erase':
             # for eraser, eraser mode is ignored
@@ -1807,6 +1812,14 @@ class BBSBrushesEditor(EDialog):
     def colorPickerLayoutBrushBg(self):
         """Return color picked layout for background"""
         return self.btUseSpecificColorBg.colorPicker().optionLayout()
+
+    def gradientBtnViewMode(self):
+        """Return gradient button view mode"""
+        return self.btUseSpecificColorGradient.managedResourcesSelector().viewMode()
+
+    def gradientBtnIconSizeIndex(self):
+        """Return gradient button zoom level"""
+        return self.btUseSpecificColorGradient.managedResourcesSelector().iconSizeIndex()
 
     def options(self):
         """Return options from brush editor"""
