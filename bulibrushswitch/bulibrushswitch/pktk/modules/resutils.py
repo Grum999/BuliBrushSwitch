@@ -577,7 +577,7 @@ class ManagedResourcesModel(QAbstractTableModel):
             if not isinstance(resourceImg, QImage):
                 return pixmap
 
-            if resourceType == ManagedResourceTypes.RES_GRADIENTS:
+            if self.__resourceType == ManagedResourceTypes.RES_GRADIENTS:
                 # Gradient resources returns a 2048x1 image size
                 # need to:
                 #   - return a 384x192 thumbnail
@@ -611,7 +611,7 @@ class ManagedResourcesModel(QAbstractTableModel):
                 # ensure pixmap is transparent before starting to paint on it
                 pixmap.fill(Qt.transparent)
 
-                if resourceType == ManagedResourceTypes.RES_PRESETS:
+                if self.__resourceType == ManagedResourceTypes.RES_PRESETS:
                     imgData = imgData.scaled(pixmap.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
                     checkerBoard = None
                 else:
