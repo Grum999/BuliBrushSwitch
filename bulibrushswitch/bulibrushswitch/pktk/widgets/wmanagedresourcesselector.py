@@ -489,7 +489,10 @@ class WManagedResourcesSelector(QWidget):
 
     def setViewMode(self, value):
         """Set current selection mode"""
-        self.lvManagedResources.setViewMode(value)
+        if value == QListView.ListMode:
+            self.__actionViewModeList.setChecked(True)
+        else:
+            self.__actionViewModeIcon.setChecked(True)
 
     def iconSizeIndex(self):
         """Return current view mode"""
