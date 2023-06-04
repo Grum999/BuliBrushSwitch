@@ -771,6 +771,136 @@ class BBSBrush(BBSBaseNode):
             self.__kritaBrushIsRestoring = False
 
 
+class BBSGroup(BBSBaseNode):
+    """A group definition"""
+    KEY_NAME = 'name'
+    KEY_COMMENTS = 'comments'
+    KEY_COLOR = 'color'
+    KEY_SHORTCUT = 'shortcut'
+    KEY_EXPANDED = 'expanded'
+
+    def __init__(self, group=None):
+        super(BBSGroup, self).__init__(None)
+
+        self.__name = ''
+        self.__comments = ''
+        self.__color = WStandardColorSelector.COLOR_NONE
+        self.__expanded = True
+
+        if isinstance(group, BBSGroup):
+            # clone group
+            self.importData(group.exportData())
+        elif isinstance(group, dict):
+            self.importData(group)
+
+    def __repr__(self):
+        return f"<BBSGroup({self.id()}, '{self.__name}')>"
+
+    def applyUpdate(self, property):
+        """Emit updated signal when a property has been changed"""
+        if not self.inUpdate():
+            pass
+
+        super(BBSGroup, self).applyUpdate(property)
+
+    def acceptedChild(self):
+        """Return a list of allowed children types
+
+        Return empty list if node don't accept childs
+        """
+        return (BBSBrush, BBSGroup)
+
+    def exportData(self):
+        """Export group definition as dictionary"""
+        returned = {
+                BBSGroup.KEY_NAME: self.__name,
+                BBSBrush.KEY_POSITION: self.position(),
+                BBSGroup.KEY_COMMENTS: self.__comments,
+                BBSGroup.KEY_COLOR: self.__color,
+                BBSGroup.KEY_UUID: self.id(),
+                BBSGroup.KEY_SHORTCUT: self.shortcut().toString(),
+                BBSGroup.KEY_EXPANDED: self.__expanded
+            }
+
+        return returned
+
+    def importData(self, value):
+        """Import group definition from dictionary"""
+        if not isinstance(value, dict):
+            return False
+
+        self.beginUpdate()
+
+        try:
+            if BBSGroup.KEY_UUID in value:
+                self._setId(value[BBSGroup.KEY_UUID])
+            if BBSGroup.KEY_POSITION in value:
+                self.setPosition(value[BBSGroup.KEY_POSITION])
+            if BBSGroup.KEY_NAME in value:
+                self.setName(value[BBSGroup.KEY_NAME])
+            if BBSGroup.KEY_COMMENTS in value:
+                self.setComments(value[BBSGroup.KEY_COMMENTS])
+            if BBSGroup.KEY_COLOR in value:
+                self.setColor(value[BBSGroup.KEY_COLOR])
+            if BBSGroup.KEY_EXPANDED in value:
+                self.setExpanded(value[BBSGroup.KEY_EXPANDED])
+
+            action = self.action()
+            if action and action.shortcut():
+                self.setShortcut(action.shortcut())
+            isValid = True
+        except Exception as e:
+            print("Unable to import group definition:", e)
+            isValid = False
+
+        self.endUpdate()
+        return isValid
+
+    def name(self):
+        """Return group name"""
+        return self.__name
+
+    def setName(self, value):
+        """Set name"""
+        if value != self.__name:
+            self.__name = value
+            self.__fingerPrint = ''
+            self.applyUpdate('name')
+
+    def comments(self):
+        """Return current comment for group"""
+        return self.__comments
+
+    def setComments(self, value):
+        """Set current comment for group"""
+        if value != self.__comments:
+            if stripHtml(value).strip() != '':
+                self.__comments = value
+            else:
+                self.__comments = ''
+            self.applyUpdate('comments')
+
+    def color(self):
+        """Return color"""
+        return self.__color
+
+    def setColor(self, color):
+        """Set group color"""
+        if WStandardColorSelector.isValidColorIndex(color) and self.__color != color:
+            self.__color = color
+            self.applyUpdate('color')
+
+    def expanded(self):
+        """Return if group is expanded or not"""
+        return self.__expanded
+
+    def setExpanded(self, expanded):
+        """Set if if group is expanded or not"""
+        if isinstance(expanded, bool) and expanded != self.__expanded:
+            self.__expanded = expanded
+            self.applyUpdate('expanded')
+
+
 class BBSBrushes(QObject):
     """Collection of brushes"""
     updated = Signal(BBSBrush, str)
