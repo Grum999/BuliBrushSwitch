@@ -65,10 +65,90 @@ _bbsManagedResourcesGradients = ManagedResourcesModel()
 _bbsManagedResourcesGradients.setResourceType(ManagedResourceTypes.RES_GRADIENTS)
 
 
-class BBSBrush(QObject):
-    """A brush definition"""
+class BBSBaseNode(QObject):
+    """Base class for brushes and groups"""
     updated = Signal(QObject, str)
 
+    KEY_UUID = 'uuid'
+    KEY_POSITION = 'position'
+    KEY_SHORTCUT = 'shortcut'
+
+    def __init__(self, parent=None):
+        super(BBSBaseNode, self).__init__(None)
+        self.__uuid = QUuid.createUuid().toString().strip("{}")
+        self.__emitUpdated = 0
+        self.__position = -1
+        self.__shortcut = QKeySequence()
+
+    def _setId(self, id):
+        """Set unique id """
+        self.__uuid = id.strip("{}")
+
+    def id(self):
+        """Return unique id"""
+        return self.__uuid
+
+    def position(self):
+        """Return brush position in list"""
+        return self.__position
+
+    def setPosition(self, position):
+        """Set brush position"""
+        if isinstance(position, int) and self.__position != position:
+            self.__position = position
+            self.applyUpdate('position')
+
+    def acceptedChild(self):
+        """Return a list of allowed children types
+
+        Return empty list if node don't accept childs
+        """
+        return tuple()
+
+    def applyUpdate(self, property):
+        if self.__emitUpdated == 0:
+            self.updated.emit(self, property)
+
+    def beginUpdate(self):
+        """Start updating massivelly and then do not emit update"""
+        self.__emitUpdated += 1
+
+    def endUpdate(self):
+        """Stop updating massivelly and then emit update"""
+        self.__emitUpdated -= 1
+        if self.__emitUpdated < 0:
+            self.__emitUpdated = 0
+        elif self.__emitUpdated == 0:
+            self.applyUpdate('*')
+
+    def inUpdate(self):
+        """Return if currently in a massive update"""
+        return (self.__emitUpdated != 0)
+
+    def actionId(self):
+        """Return id to use for an action for this brush"""
+        return BBSSettings.brushActionId(self.id())
+
+    def action(self):
+        """Return Krita's action for this brush or none if not found"""
+        return BBSSettings.brushAction(self.id())
+
+    def shortcut(self):
+        """Return brush shortcut"""
+        return self.__shortcut
+
+    def setShortcut(self, shortcut):
+        """Set brush shortcut
+
+        Shortcut is used as an information only to simplify management
+        """
+        if isinstance(shortcut, QKeySequence) and shortcut != self.__shortcut:
+            self.__shortcut = shortcut
+            self.applyUpdate('shortcut')
+
+
+class BBSBrush(BBSBaseNode):
+    """A brush definition"""
     KEY_NAME = 'name'
     KEY_SIZE = 'size'
     KEY_FLOW = 'flow'
@@ -81,12 +161,9 @@ class BBSBrush(QObject):
     KEY_ERASERMODE = 'eraserMode'
     KEY_KEEPUSERMODIFICATIONS = 'keepUserModifications'
     KEY_IGNOREERASERMODE = 'ignoreEraserMode'
-    KEY_POSITION = 'position'
     KEY_COLOR_FG = 'color'
     KEY_COLOR_BG = 'colorBg'
     KEY_COLOR_GRADIENT = 'colorGradient'
-    KEY_UUID = 'uuid'
-    KEY_SHORTCUT = 'shortcut'
     KEY_DEFAULTPAINTTOOL = 'defaultPaintTool'
 
     INFO_COMPACT =                  0b00000001
@@ -113,16 +190,12 @@ class BBSBrush(QObject):
         self.__eraserMode = False
         self.__ignoreEraserMode = True
         self.__ignoreToolOpacity = False
-        self.__position = -1
         self.__colorFg = None
         self.__colorBg = None
         self.__colorGradient = None
-        self.__shortcut = QKeySequence()
         self.__defaultPaintTool = None
 
-        self.__uuid = QUuid.createUuid().toString().strip("{}")
         self.__fingerPrint = ''
-        self.__emitUpdated = 0
 
         self.__brushNfoImg = ''
         self.__brushNfoFull = ''
@@ -140,15 +213,13 @@ class BBSBrush(QObject):
         if isinstance(brush, BBSBrush):
             # clone brush
             self.importData(brush.exportData())
+        elif isinstance(brush, dict):
+            self.importData(brush)
 
     def __repr__(self):
-        colorFg = "None"
-        if self.__colorFg:
-            colorFg = self.__colorFg.name()
+        return f"<BBSBrush({self.id()}, '{self.__name}')>"
 
-        return f"<BBSBrush({self.__uuid}, '{self.__name}', {self.__size:0.2f}, {self.__opacity}, {self.__blendingMode}, {self.__defaultPaintTool}, {colorFg})>"
-
-    def __updated(self, property):
+    def applyUpdate(self, property):
         """Emit updated signal when a property has been changed"""
         def yesno(value):
             if value:
@@ -156,7 +227,7 @@ class BBSBrush(QObject):
             else:
                 return i18n('No')
 
-        if self.__emitUpdated == 0:
+        if not self.inUpdate():
             self.__brushNfoFull = (f' <tr><td align="left"><b>{i18n("Blending mode")}:</b></td><td align="right">{self.__blendingMode}</td><td></td></tr>'
                                    f' <tr><td align="left"><b>{i18n("Size")}:</b></td>         <td align="right">{self.__size:0.2f}px</td><td></td></tr>'
                                    f' <tr><td align="left"><b>{i18n("Opacity")}:</b></td>      <td align="right">{100*self.__opacity:0.2f}%</td><td></td></tr>'
@@ -170,8 +241,9 @@ class BBSBrush(QObject):
             else:
                 self.__brushNfoImg = ''
 
-            if not self.__shortcut.isEmpty():
-                shortcutText = f' <tr><td align="left"><b>{i18n("Shortcut")}</b></td><td align="right">{self.__shortcut.toString()}</td><td></td></tr>'
+            shortcut = self.shortcut()
+            if not shortcut.isEmpty():
+                shortcutText = f' <tr><td align="left"><b>{i18n("Shortcut")}</b></td><td align="right">{shortcut.toString()}</td><td></td></tr>'
             else:
                 shortcutText = ''
 
@@ -228,19 +300,7 @@ class BBSBrush(QObject):
                                                  r"<\1div", re.sub("<!doctype[^>]>|<meta[^>]+>|</?html>|</?head>", "", self.__brushNfoComments, flags=re.I),
                                                  flags=re.I)
 
-            self.updated.emit(self, property)
-
-    def beginUpdate(self):
-        """Start updating brush massivelly and then do not emit update"""
-        self.__emitUpdated += 1
-
-    def endUpdate(self):
-        """Start updating brush massivelly and then do not emit update"""
-        self.__emitUpdated -= 1
-        if self.__emitUpdated < 0:
-            self.__emitUpdated = 0
-        elif self.__emitUpdated == 0:
-            self.__updated('*')
+        super(BBSBrush, self).applyUpdate(property)
 
     def fromCurrentKritaBrush(self, view=None, saveOptions=0):
         """Set brush properties from given view
@@ -386,12 +446,12 @@ class BBSBrush(QObject):
                 BBSBrush.KEY_COMMENTS: self.__comments,
                 BBSBrush.KEY_KEEPUSERMODIFICATIONS: self.__keepUserModifications,
                 BBSBrush.KEY_IGNOREERASERMODE: self.__ignoreEraserMode,
-                BBSBrush.KEY_POSITION: self.__position,
+                BBSBrush.KEY_POSITION: self.position(),
                 BBSBrush.KEY_COLOR_FG: colorFg,
                 BBSBrush.KEY_COLOR_BG: colorBg,
                 BBSBrush.KEY_COLOR_GRADIENT: colorGradient,
-                BBSBrush.KEY_UUID: self.__uuid.strip("{}"),
-                BBSBrush.KEY_SHORTCUT: self.__shortcut.toString(),
+                BBSBrush.KEY_UUID: self.id(),
+                BBSBrush.KEY_SHORTCUT: self.shortcut().toString(),
                 BBSBrush.KEY_DEFAULTPAINTTOOL: self.__defaultPaintTool,
                 BBSBrush.KEY_IGNORETOOLOPACITY: self.__ignoreToolOpacity
             }
@@ -404,9 +464,12 @@ class BBSBrush(QObject):
             return False
 
         self.beginUpdate()
+
         try:
             if BBSBrush.KEY_UUID in value:
-                self.__uuid = value[BBSBrush.KEY_UUID].strip("{}")
+                self._setId(value[BBSBrush.KEY_UUID])
+            if BBSBrush.KEY_POSITION in value:
+                self.setPosition(value[BBSBrush.KEY_POSITION])
             if BBSBrush.KEY_NAME in value:
                 self.setName(value[BBSBrush.KEY_NAME])
             if BBSBrush.KEY_SIZE in value:
@@ -464,7 +527,7 @@ class BBSBrush(QObject):
         if value != self.__name:
             self.__name = value
             self.__fingerPrint = ''
-            self.__updated('name')
+            self.applyUpdate('name')
 
     def size(self):
         """Return brush size"""
@@ -475,7 +538,7 @@ class BBSBrush(QObject):
         if isinstance(value, (int, float)) and value > 0 and self.__size != value:
             self.__size = value
             self.__fingerPrint = ''
-            self.__updated('size')
+            self.applyUpdate('size')
 
     def flow(self):
         """Return brush flow"""
@@ -486,7 +549,7 @@ class BBSBrush(QObject):
         if isinstance(value, (int, float)) and value >= 0 and value <= 1.0 and self.__flow != value:
             self.__flow = value
             self.__fingerPrint = ''
-            self.__updated('flow')
+            self.applyUpdate('flow')
 
     def opacity(self):
         """Return brush opacity"""
@@ -497,7 +560,7 @@ class BBSBrush(QObject):
         if isinstance(value, (int, float)) and value >= 0 and value <= 1.0 and self.__opacity != value:
             self.__opacity = value
             self.__fingerPrint = ''
-            self.__updated('opacity')
+            self.applyUpdate('opacity')
 
     def blendingMode(self):
         """Return blending mode"""
@@ -508,7 +571,7 @@ class BBSBrush(QObject):
         if value != self.__blendingMode:
             self.__blendingMode = value
             self.__fingerPrint = ''
-            self.__updated('blendingMode')
+            self.applyUpdate('blendingMode')
 
     def preserveAlpha(self):
         """Preserve alpha mode"""
@@ -518,7 +581,7 @@ class BBSBrush(QObject):
         """Set preserve alpha mode"""
         if value != self.__preserveAlpha and isinstance(value, bool):
             self.__preserveAlpha = value
-            self.__updated('preserveAlpha')
+            self.applyUpdate('preserveAlpha')
 
     def comments(self):
         """Return current comment for brush"""
@@ -531,7 +594,7 @@ class BBSBrush(QObject):
                 self.__comments = value
             else:
                 self.__comments = ''
-            self.__updated('comments')
+            self.applyUpdate('comments')
 
     def keepUserModifications(self):
         """Return current keep user value for brush"""
@@ -541,7 +604,7 @@ class BBSBrush(QObject):
         """Set current keep user value for brush"""
         if value != self.__keepUserModifications and isinstance(value, bool):
             self.__keepUserModifications = value
-            self.__updated('keepUserModifications')
+            self.applyUpdate('keepUserModifications')
 
     def ignoreEraserMode(self):
         """Return current eraser mode behavior for brush"""
@@ -551,7 +614,7 @@ class BBSBrush(QObject):
         """Set current eraser mode behavior for brush"""
         if value != self.__ignoreEraserMode and isinstance(value, bool):
             self.__ignoreEraserMode = value
-            self.__updated('ignoreEraserMode')
+            self.applyUpdate('ignoreEraserMode')
 
     def ignoreToolOpacity(self):
         """Return current tool opacity behavior for brush"""
@@ -561,7 +624,7 @@ class BBSBrush(QObject):
         """Set current tool opacity behavior for brush"""
         if value != self.__ignoreToolOpacity and isinstance(value, bool):
             self.__ignoreToolOpacity = value
-            self.__updated('ignoreToolOpacity')
+            self.applyUpdate('ignoreToolOpacity')
 
     def image(self):
         """Return brush image"""
@@ -571,17 +634,7 @@ class BBSBrush(QObject):
         """Set brush image"""
         if isinstance(image, QImage) and self.__image != image:
             self.__image = image
-            self.__updated('image')
-
-    def position(self):
-        """Return brush position in list"""
-        return self.__position
-
-    def setPosition(self, position):
-        """Set brush position"""
-        if isinstance(position, int) and self.__position != position:
-            self.__position = position
-            self.__updated('position')
+            self.applyUpdate('image')
 
     def colorFg(self):
         """Return foreground color"""
@@ -599,7 +652,7 @@ class BBSBrush(QObject):
 
         if color is None or isinstance(color, QColor) and self.__colorFg != color:
             self.__colorFg = color
-            self.__updated('colorFg')
+            self.applyUpdate('colorFg')
 
     def colorBg(self):
         """Return background color"""
@@ -617,7 +670,7 @@ class BBSBrush(QObject):
 
         if color is None or isinstance(color, QColor) and self.__colorBg != color:
             self.__colorBg = color
-            self.__updated('colorBg')
+            self.applyUpdate('colorBg')
 
     def colorGradient(self):
         """Return gradient color"""
@@ -630,10 +683,9 @@ class BBSBrush(QObject):
         managedResource = _bbsManagedResourcesGradients.getResource(managedResource)
 
         if managedResource is None or isinstance(managedResource, ManagedResource):
-            if ((self.__colorGradient is None and managedResource is not None or self.__colorGradient is not None and managedResource is None) or
-               self.__colorGradient is not None and managedResource is not None and self.__colorGradient != managedResource):
+            if self.__colorGradient is None and managedResource is not None or self.__colorGradient != managedResource:
                 self.__colorGradient = managedResource
-                self.__updated('colorGradient')
+                self.applyUpdate('colorGradient')
 
     def eraserMode(self):
         """Return eraser mode"""
@@ -643,20 +695,7 @@ class BBSBrush(QObject):
         """Set eraser mode"""
         if isinstance(eraserMode, bool) and self.__eraserMode != eraserMode and not self.__ignoreEraserMode:
             self.__eraserMode = eraserMode
-            self.__updated('eraserMode')
-
-    def shortcut(self):
-        """Return brush shortcut"""
-        return self.__shortcut
-
-    def setShortcut(self, shortcut):
-        """Set brush shortcut
-
-        Shortcut is used as an information only to simplify management
-        """
-        if isinstance(shortcut, QKeySequence):
-            self.__shortcut = shortcut
-            self.__updated('shortcut')
+            self.applyUpdate('eraserMode')
 
     def defaultPaintTool(self):
         """Return brush default Paint Tool"""
@@ -667,21 +706,9 @@ class BBSBrush(QObject):
 
         Default Paint Tool is activated when brush is selected
         """
-        if defaultPaintTool is None or defaultPaintTool in EKritaTools.list(EKritaToolsCategory.PAINT):
+        if defaultPaintTool is None or (defaultPaintTool in EKritaTools.list(EKritaToolsCategory.PAINT) and defaultPaintTool != self.__defaultPaintTool):
             self.__defaultPaintTool = defaultPaintTool
-            self.__updated('defaultPaintTool')
-
-    def id(self):
-        """Return unique id"""
-        return self.__uuid
-
-    def actionId(self):
-        """Return id to use for an action for this brush"""
-        return BBSSettings.brushActionId(self.__uuid)
-
-    def action(self):
-        """Return Krita's action for this brush or none if not found"""
-        return BBSSettings.brushAction(self.id())
+            self.applyUpdate('defaultPaintTool')
 
     def fingerPrint(self):
         """Return finger print for brush"""
