@@ -415,7 +415,7 @@ class BBSWBrushSwitcher(QWidget):
     def openSettings(self):
         """Open settings dialog box"""
         self.__disableUpdatingShortcutFromAction = True
-        BBSMainWindow(self.__brushesModel, self.__bbsName, self.__bbsVersion, self.__dlgParentWidget)
+        returned = BBSMainWindow.open(self.__brushes, self.__bbsName, self.__bbsVersion, self.__dlgParentWidget)
         self.__disableUpdatingShortcutFromAction = False
 
     def openAbout(self):

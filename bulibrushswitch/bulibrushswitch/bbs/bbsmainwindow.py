@@ -68,6 +68,17 @@ from bulibrushswitch.pktk.modules.ekrita import EKritaBrushPreset
 class BBSMainWindow(EDialog):
     """Main BuliBrushSwitch window"""
 
+    @staticmethod
+    def open(brushes=None, bbsName="BuliBrushSwitch", bbsVersion="testing", parent=None):
+        dlgBox = BBSMainWindow(brushes, bbsName, bbsVersion, parent)
+
+        returned = dlgBox.exec()
+
+        if returned == QDialog.Accepted:
+            return dlgBox.brushes()
+        else:
+            return None
+
     def __init__(self, brushes=None, bbsName="BuliBrushSwitch", bbsVersion="testing", parent=None):
         super(BBSMainWindow, self).__init__(os.path.join(os.path.dirname(__file__), 'resources', 'bbsmainwindow.ui'), parent)
 
@@ -103,15 +114,11 @@ class BBSMainWindow(EDialog):
         self.__activeViewCurrentConfig = {}
 
         # list of defined brushes
-        if isinstance(brushes, BBSBrushesModel):
-            self.__brushes = brushes.brushes()
-            self.__brushesModel = brushes
-        elif isinstance(brushes, BBSBrushes):
-            self.__brushes = brushes
-            self.__brushesModel = BBSBrushesModel(brushes)
-        else:
-            self.__brushes = BBSBrushes()
-            self.__brushesModel = BBSBrushesModel(self.__brushes)
+        if not isinstance(brushes, BBSBrushes):
+            raise EInvalidType('Given `brushes` must be BBSBrushes')
+
+        self.__brushes = BBSBrushes(brushes)
+        self.__brushesModel = BBSBrushesModel(self.__brushes)
 
         # keep a saved view of current brush shortcuts
         self.__savedShortcuts = {}
@@ -125,8 +132,6 @@ class BBSMainWindow(EDialog):
         self.__initialiseUi()
         self.__saveShortcutConfig()
         self.__updateBrushUi()
-
-        self.__result = self.exec()
 
     def showEvent(self, event):
         """Dialog is visible"""
@@ -597,8 +602,9 @@ class BBSMainWindow(EDialog):
     def closeEvent(self, event):
         """Window is closed"""
         self.__restoreViewConfig()
-        self.accept()
+        self.__restoreShortcutConfig()
+        self.reject()
 
-    def result(self):
-        """Result is accepted or rejected"""
-        return self.__result
+    def brushes(self):
+        """Return brushes collection"""
+        return self.__brushes

@@ -749,26 +749,23 @@ class BBSBrushes(QObject):
         # value = BNNotes
         self.__brushes = {}
 
-        self.__temporaryDisabled = True
+        self.__inUpdate = 0
 
         # list of added hash
         self.__updateAdd = []
         self.__updateRemove = []
 
         if isinstance(brushes, BBSBrushes):
-            for brushId in brushes.idList():
-                self.add(BBSBrush(brushes.get(brushId)))
-
-        self.__temporaryDisabled = False
+            self.copyFrom(brushes)
 
     def __itemUpdated(self, item, property):
         """A brush have been updated"""
-        if not self.__temporaryDisabled:
+        if self.__inUpdate == 0:
             self.updated.emit(item, property)
 
     def __emitUpdateReset(self):
         """List have been cleared/loaded"""
-        if not self.__temporaryDisabled:
+        if self.__inUpdate == 0:
             self.updateReset.emit()
 
     def __emitUpdateAdded(self):
@@ -776,9 +773,9 @@ class BBSBrushes(QObject):
 
         An empty list mean a complete update
         """
-        items = self.__updateAdd.copy()
-        self.__updateAdd = []
-        if not self.__temporaryDisabled:
+        if self.__inUpdate == 0:
+            items = self.__updateAdd.copy()
+            self.__updateAdd = []
             self.updateAdded.emit(items)
 
     def __emitUpdateRemoved(self):
@@ -786,19 +783,19 @@ class BBSBrushes(QObject):
 
         An empty list mean a complete update
         """
-        items = self.__updateRemove.copy()
-        self.__updateRemove = []
-        if not self.__temporaryDisabled:
+        if self.__inUpdate == 0:
+            items = self.__updateRemove.copy()
+            self.__updateRemove = []
             self.updateRemoved.emit(items)
 
     def __updatePositions(self, idList=None):
         """Recalculate and update positions of item in list"""
-        self.__temporaryDisabled = True
+        self.beginUpdate()
         if idList is None:
             idList = self.idList()
         for index, brushId in enumerate(idList):
             self.__brushes[brushId].setPosition(index)
-        self.__temporaryDisabled = False
+        self.endUpdate()
 
     def length(self):
         """Return number of notes"""
@@ -847,14 +844,10 @@ class BBSBrushes(QObject):
 
     def clear(self):
         """Clear all brushes"""
-        state = self.__temporaryDisabled
-
-        self.__temporaryDisabled = True
+        self.beginUpdate()
         for key in list(self.__brushes.keys()):
             self.remove(self.__brushes[key])
-        self.__temporaryDisabled = state
-        if not self.__temporaryDisabled:
-            self.__emitUpdateReset()
+        self.endUpdate()
 
     def add(self, item):
         """Add Brush to list"""
@@ -873,12 +866,11 @@ class BBSBrushes(QObject):
         removedBrush = None
 
         if isinstance(item, list) and len(item) > 0:
-            self.__temporaryDisabled = True
+            self.beginUpdate()
             for brush in item:
                 self.remove(brush)
-            self.__temporaryDisabled = False
             self.__updatePositions()
-            self.__emitUpdateRemoved()
+            self.endUpdate()
             return True
 
         if isinstance(item, str) and item in self.__brushes:
@@ -887,10 +879,11 @@ class BBSBrushes(QObject):
             removedBrush = self.__brushes.pop(item.id(), None)
 
         if removedBrush is not None:
+            self.beginUpdate()
             removedBrush.updated.disconnect(self.__itemUpdated)
             self.__updateRemove.append(removedBrush.id())
             self.__updatePositions()
-            self.__emitUpdateRemoved()
+            self.endUpdate()
             return True
         return False
 
@@ -906,12 +899,11 @@ class BBSBrushes(QObject):
     def copyFrom(self, brushes):
         """Copy brushes from another brushes"""
         if isinstance(brushes, BBSBrushes):
-            self.__temporaryDisabled = True
+            self.beginUpdate()
             self.clear()
             for brushId in brushes.idList():
                 self.add(BBSBrush(brushes.get(brushId)))
-        self.__temporaryDisabled = False
-        self.__emitUpdateReset()
+            self.endUpdate()
 
     def moveItemAtFirst(self, item):
         """Move given `item` to first position in list"""
@@ -954,18 +946,21 @@ class BBSBrushes(QObject):
 
         No signal will be emitted
         """
-        self.__temporaryDisabled = True
+        self.__inUpdate += 1
 
     def endUpdate(self):
         """Update list finished
 
         Signal will be emitted
         """
-        if len(self.__updateAdd):
-            self.__emitUpdateAdded()
-        if len(self.__updateRemove):
-            self.__emitUpdateRemoved()
-        self.__temporaryDisabled = False
+        self.__inUpdate -= 1
+        if self.__inUpdate < 0:
+            self.__inUpdate = 0
+        elif self.__inUpdate == 0:
+            if len(self.__updateAdd):
+                self.__emitUpdateAdded()
+            if len(self.__updateRemove):
+                self.__emitUpdateRemoved()
 
 
 class BBSBrushesModel(QAbstractTableModel):
