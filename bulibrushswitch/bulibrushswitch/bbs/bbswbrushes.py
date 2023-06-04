@@ -58,7 +58,7 @@ from bulibrushswitch.pktk.widgets.wtextedit import (WTextEdit, WTextEditDialog, 
 from bulibrushswitch.pktk.widgets.wcolorbutton import WColorButton
 from bulibrushswitch.pktk.widgets.wcolorselector import WColorPicker
 from bulibrushswitch.pktk.widgets.wkeysequenceinput import WKeySequenceInput
-
+from bulibrushswitch.pktk.widgets.wstandardcolorselector import WStandardColorSelector
 
 # module instance of ManagedResourcesModel, dedicated for gradients
 _bbsManagedResourcesGradients = ManagedResourcesModel()
@@ -901,364 +901,561 @@ class BBSGroup(BBSBaseNode):
             self.applyUpdate('expanded')
 
 
-class BBSBrushes(QObject):
-    """Collection of brushes"""
-    updated = Signal(BBSBrush, str)
-    updateReset = Signal()
-    updateAdded = Signal(list)
-    updateRemoved = Signal(list)
+class BBSModelNode:
+    """A node for BBSModel"""
 
-    def __init__(self, brushes=None):
-        """Initialize object"""
-        super(BBSBrushes, self).__init__(None)
+    def __init__(self, data, parent=None):
+        if parent is not None and not isinstance(parent, BBSModelNode):
+            raise EInvalidType("Given `parent` must be a <BBSModelNode>")
+        elif not isinstance(data, BBSBaseNode):
+            raise EInvalidType("Given `data` must be a <BBSBaseNode>")
 
-        # store everything in a dictionary
-        # key = id
-        # value = BNNotes
-        self.__brushes = {}
+        self.__parent = parent
+        self.__data = data
 
         self.__inUpdate = 0
 
-        # list of added hash
-        self.__updateAdd = []
-        self.__updateRemove = []
+        # Initialise node childs
+        self.__childs = []
 
-        if isinstance(brushes, BBSBrushes):
-            self.copyFrom(brushes)
-
-    def __itemUpdated(self, item, property):
-        """A brush have been updated"""
-        if self.__inUpdate == 0:
-            self.updated.emit(item, property)
-
-    def __emitUpdateReset(self):
-        """List have been cleared/loaded"""
-        if self.__inUpdate == 0:
-            self.updateReset.emit()
-
-    def __emitUpdateAdded(self):
-        """Emit update signal with list of id to update
-
-        An empty list mean a complete update
-        """
-        if self.__inUpdate == 0:
-            items = self.__updateAdd.copy()
-            self.__updateAdd = []
-            self.updateAdded.emit(items)
-
-    def __emitUpdateRemoved(self):
-        """Emit update signal with list of id to update
-
-        An empty list mean a complete update
-        """
-        if self.__inUpdate == 0:
-            items = self.__updateRemove.copy()
-            self.__updateRemove = []
-            self.updateRemoved.emit(items)
-
-    def __updatePositions(self, idList=None):
-        """Recalculate and update positions of item in list"""
-        self.beginUpdate()
-        if idList is None:
-            idList = self.idList()
-        for index, brushId in enumerate(idList):
-            self.__brushes[brushId].setPosition(index)
-        self.endUpdate()
-
-    def length(self):
-        """Return number of notes"""
-        return len(self.__brushes)
-
-    def idList(self, sortedList=True):
-        """Return list of id"""
-        returned = list(self.__brushes.keys())
-        if sortedList:
-            return sorted(returned, key=lambda brushId: self.__brushes[brushId].position())
+    def __repr__(self):
+        if self.__parent:
+            parent = f"{self.__parent.data().id()}"
         else:
-            return returned
+            parent = "None"
 
-    def get(self, id):
-        """Return brush from id, or None if nothing is found"""
-        if id in self.__brushes:
-            return self.__brushes[id]
-        return None
+        if self.__data:
+            data = f"{self.__data}"
+        else:
+            data = "None"
 
-    def getFromFingerPrint(self, fp):
-        """Return brush from fingerPrint, or None if nothing is found"""
-        for key in list(self.__brushes.keys()):
-            if self.__brushes[key].fingerPrint() == fp:
-                return self.__brushes[key]
-        return None
+        return f"<BBSModelNode(parent:{parent}, data:{data}, childs:{len(self.__childs)})>"
 
-    def getFromName(self, name):
-        """Return brush from name, or None if nothing is found"""
-        for key in list(self.__brushes.keys()):
-            if self.__brushes[key].name() == name:
-                return self.__brushes[key]
-        return None
-
-    def namesList(self, sortedList=True):
-        """Return list of names"""
-        returned = self.idList(sortedList)
-        return [self.__brushes[key].name() for key in returned]
-
-    def exists(self, item):
-        """Return True if item is already in brushes, otherwise False"""
-        if isinstance(item, str):
-            return (item in self.__brushes)
-        elif isinstance(item, BBSBrush):
-            return (item.id() in self.__brushes)
-        return False
-
-    def clear(self):
-        """Clear all brushes"""
-        self.beginUpdate()
-        for key in list(self.__brushes.keys()):
-            self.remove(self.__brushes[key])
-        self.endUpdate()
-
-    def add(self, item):
-        """Add Brush to list"""
-        if isinstance(item, BBSBrush):
-            item.setPosition(9999)
-            item.updated.connect(self.__itemUpdated)
-            self.__updateAdd.append(item.id())
-            self.__brushes[item.id()] = item
-            self.__updatePositions()
-            self.__emitUpdateAdded()
-            return True
-        return False
-
-    def remove(self, item):
-        """Remove Brush from list"""
-        removedBrush = None
-
-        if isinstance(item, list) and len(item) > 0:
-            self.beginUpdate()
-            for brush in item:
-                self.remove(brush)
-            self.__updatePositions()
-            self.endUpdate()
-            return True
-
-        if isinstance(item, str) and item in self.__brushes:
-            removedBrush = self.__brushes.pop(item, None)
-        elif isinstance(item, BBSBrush):
-            removedBrush = self.__brushes.pop(item.id(), None)
-
-        if removedBrush is not None:
-            self.beginUpdate()
-            removedBrush.updated.disconnect(self.__itemUpdated)
-            self.__updateRemove.append(removedBrush.id())
-            self.__updatePositions()
-            self.endUpdate()
-            return True
-        return False
-
-    def update(self, item):
-        """Update brush"""
-        if isinstance(item, BBSBrush):
-            if self.exists(item.id()):
-                self.__itemUpdated(item, '*')
-                self.__updatePositions()
-            return True
-        return False
-
-    def copyFrom(self, brushes):
-        """Copy brushes from another brushes"""
-        if isinstance(brushes, BBSBrushes):
-            self.beginUpdate()
-            self.clear()
-            for brushId in brushes.idList():
-                self.add(BBSBrush(brushes.get(brushId)))
-            self.endUpdate()
-
-    def moveItemAtFirst(self, item):
-        """Move given `item` to first position in list"""
-        return self.moveAtIndex(item, 0)
-
-    def moveItemAtLast(self, item):
-        """Move given `item` to last position in list"""
-        return self.moveAtIndex(item, len(self.__brushes))
-
-    def moveItemAtPrevious(self, item):
-        """Move given `item` to previous position in list"""
-        return self.moveAtIndex(item, 'p')
-
-    def moveItemAtNext(self, item):
-        """Move given `item` to next position in list"""
-        return self.moveAtIndex(item, 'n')
-
-    def moveAtIndex(self, item, indexTo):
-        """Move given `item` to given `indexTo` position in list"""
-        if isinstance(item, BBSBrush):
-            if self.exists(item.id()):
-                brushIdList = self.idList()
-
-                indexFrom = brushIdList.index(item.id())
-
-                if indexTo == 'p' and indexFrom > 0:
-                    indexTo = indexFrom-1
-                elif indexTo == 'n' and indexFrom < len(brushIdList):
-                    indexTo = indexFrom+1
-
-                if indexFrom != indexTo and isinstance(indexTo, int):
-                    brushIdList.insert(indexTo, brushIdList.pop(indexFrom))
-                    self.__updatePositions(brushIdList)
-                    self.updateReset.emit()
-            return True
-        return False
-
-    def beginUpdate(self):
-        """Start to update list
-
-        No signal will be emitted
-        """
+    def __beginUpdate(self):
         self.__inUpdate += 1
 
-    def endUpdate(self):
-        """Update list finished
-
-        Signal will be emitted
-        """
+    def __endUpdate(self):
         self.__inUpdate -= 1
         if self.__inUpdate < 0:
             self.__inUpdate = 0
         elif self.__inUpdate == 0:
-            if len(self.__updateAdd):
-                self.__emitUpdateAdded()
-            if len(self.__updateRemove):
-                self.__emitUpdateRemoved()
+            self.sort()
+
+    def childs(self):
+        """Return list of childs"""
+        return self.__childs
+
+    def child(self, row):
+        """Return child at given position"""
+        if row < 0 or row >= len(self.__childs):
+            return None
+        return self.__childs[row]
+
+    def addChild(self, childNode):
+        """Add a new child """
+        if isinstance(childNode, list):
+            self.__beginUpdate()
+            for childNodeToAdd in childNode:
+                self.addChild(childNodeToAdd)
+            self.__endUpdate()
+        elif not isinstance(childNode, BBSModelNode):
+            raise EInvalidType("Given `childNode` must be a <BBSModelNode>")
+        elif isinstance(childNode.data(), self.__data.acceptedChild()):
+            self.__beginUpdate()
+            childNode.setParent(self)
+            self.__childs.append(childNode)
+            self.__endUpdate()
+
+    def removeChild(self, childNode):
+        """Remove a child
+        Removed child is returned
+        Or None if child is not found
+        """
+        if isinstance(childNode, list):
+            returned = []
+            self.__beginUpdate()
+            for childNodeToRemove in childNode:
+                returned.append(self.removeChild(childNodeToRemove))
+            self.__endUpdate()
+            return returned
+        elif not isinstance(childNode, BBSModelNode):
+            raise EInvalidType("Given `childNode` must be a <BBSModelNode>")
+        else:
+            self.__beginUpdate()
+            try:
+                returned = self.__childs.pop(self.__childs.index(childNode))
+            except Exception:
+                returned = None
+
+            self.__endUpdate()
+            return returned
+
+    def clear(self):
+        """Remove all childs"""
+        self.__beginUpdate()
+        self.__childs = []
+        self.__endUpdate()
+
+    def childCount(self):
+        """Return number of children the current node have"""
+        return len(self.__childs)
+
+    def row(self):
+        """Return position in parent's children list"""
+        returned = 0
+        if self.__parent:
+            returned = self.__parent.childRow(self)
+            if returned < 0:
+                # need to check if -1 can be used
+                returned = -1
+        return returned
+
+    def childRow(self, node):
+        """Return row number for given node
+
+        If node is not found, return -1
+        """
+        try:
+            return self.__childs.index(node)
+        except Exception:
+            return -1
+
+    def columnCount(self):
+        """Return number of column for item"""
+        return 1
+
+    def data(self):
+        """Return data for node
+
+        Content is managed from model
+        """
+        return self.__data
+
+    def parent(self):
+        """Return current parent"""
+        return self.__parent
+
+    def setParent(self, parent):
+        """Set current parent"""
+        if parent is None or isinstance(parent, BBSModelNode):
+            self.__parent = parent
+
+    def setData(self, data):
+        """Set node data"""
+        if not isinstance(data, BBSBaseNode):
+            raise EInvalidType("Given `data` must be a <BBSBaseNode>")
+        self.__data = data
+
+    def sort(self):
+        """Sort children from their position"""
+        #self.__childs.sort(key=lambda item: item.data().position())
+        pass
 
 
-class BBSBrushesModel(QAbstractTableModel):
-    """A model provided for brushes"""
+class BBSModel(QAbstractItemModel):
+    """A model to access brush and groups in an hierarchical tree"""
     updateWidth = Signal()
 
-    ROLE_ID = Qt.UserRole + 1
-    ROLE_BRUSH = Qt.UserRole + 2
-    ROLE_CSIZE = Qt.UserRole + 3
-
     HEADERS = ['Icon', 'Brush', 'Description']
+
     COLNUM_ICON = 0
     COLNUM_BRUSH = 1
     COLNUM_COMMENT = 2
+
     COLNUM_LAST = 2
 
-    def __init__(self, brushes, parent=None):
-        """Initialise list"""
-        super(BBSBrushesModel, self).__init__(parent)
-        self.__brushes = brushes
-        self.__brushes.updated.connect(self.__dataUpdated)
-        self.__brushes.updateReset.connect(self.__dataUpdateReset)
-        self.__brushes.updateAdded.connect(self.__dataUpdatedAdd)
-        self.__brushes.updateRemoved.connect(self.__dataUpdateRemove)
-        self.__items = self.__brushes.idList()
+    ROLE_ID = Qt.UserRole + 1
+    ROLE_DATA = Qt.UserRole + 2
+    ROLE_NODE = Qt.UserRole + 3
+    ROLE_CSIZE = Qt.UserRole + 4
 
-    def __idRow(self, id):
-        """Return row number for a given id; return -1 if not found"""
-        try:
-            return self.__items.index(id)
-        except Exception as e:
-            return -1
+    TYPE_BRUSH = 0b01
+    TYPE_GROUP = 0b10
 
-    def __dataUpdateReset(self):
-        """Data has entirely been changed (reset/reload)"""
-        self.beginResetModel()
-        self.__items = self.__brushes.idList()
-        self.endResetModel()
-        self.updateWidth.emit()
+    def __init__(self, parent=None):
+        """Initialise data model"""
+        super(BBSModel, self).__init__(parent)
 
-    def __dataUpdatedAdd(self, items):
-        """Add a new brush to model"""
-        self.__items = self.__brushes.idList()
-        self.modelReset.emit()
-        self.updateWidth.emit()
+        self.__rootItem = BBSModelNode(BBSGroup({BBSGroup.KEY_UUID: "00000000-0000-0000-0000-000000000000",
+                                                 BBSGroup.KEY_NAME: "root node"
+                                                 }))
+        # maintain an index for Id
+        self.__idIndexes = {}
 
-    def __dataUpdateRemove(self, items):
-        """Remove brush from model"""
-        self.__items = self.__brushes.idList()
-        self.modelReset.emit()
+        # massive updates
+        self.__inMassiveUpdate = 0
 
-    def __dataUpdated(self, item, property):
-        """Update brush in model"""
-        indexS = self.createIndex(self.__idRow(item.id()), 0)
-        indexE = self.createIndex(self.__idRow(item.id()), BBSBrushesModel.COLNUM_LAST)
-        self.dataChanged.emit(indexS, indexE, [Qt.DisplayRole])
+    def __getIdIndex(self, id):
+        def getIdIndexes(id, parent, modelIndexParent):
+            for childRow in range(parent.childCount()):
+                child = parent.child(childRow)
+                data = child.data()
+
+                currentIndex = self.index(childRow, 0, modelIndexParent)
+
+                if data.id() == id:
+                    return currentIndex
+
+                returned = getIdIndexes(id, child, currentIndex)
+                if returned.isValid():
+                    return returned
+            return QModelIndex()
+        return getIdIndexes(id, self.__rootItem, QModelIndex())
+
+    def __updateIdIndex(self):
+        """Build internal dictionnary of all brushes/groups id
+
+        key = id
+        value = index
+        """
+        def getIdIndexes(parent):
+            for childRow in range(parent.childCount()):
+                child = parent.child(childRow)
+                data = child.data()
+
+                if isinstance(data, BBSBrush):
+                    self.__idIndexes[data.id()] = BBSModel.TYPE_BRUSH
+                else:
+                    self.__idIndexes[data.id()] = BBSModel.TYPE_GROUP
+
+                getIdIndexes(child)
+
+        self.__idIndexes = {}
+        getIdIndexes(self.__rootItem)
+
+    def __beginUpdate(self):
+        """Start a massive update"""
+        if self.__inMassiveUpdate == 0:
+            self.beginResetModel()
+        self.__inMassiveUpdate += 1
+
+    def __endUpdate(self):
+        """Start a massive update"""
+        self.__inMassiveUpdate -= 1
+        if self.__inMassiveUpdate == 0:
+            self.__updateIdIndex()
+            self.__updatePositions()
+            self.endResetModel()
+            self.updateWidth.emit()
+
+    def __updatePositions(self):
+        """update items positions"""
+        print('todo: BBSModel.__updatePositions()')
 
     def columnCount(self, parent=QModelIndex()):
-        """Return total number of column"""
-        return BBSBrushesModel.COLNUM_LAST+1
+        """Return total number of column for index"""
+        return BBSModel.COLNUM_LAST+1
 
     def rowCount(self, parent=QModelIndex()):
-        """Return total number of rows"""
-        return self.__brushes.length()
+        """Return total number of rows for index"""
+        if parent.column() > 0:
+            return 0
+
+        if not parent.isValid():
+            parentItem = self.__rootItem
+        else:
+            parentItem = parent.internalPointer()
+
+        return parentItem.childCount()
 
     def data(self, index, role=Qt.DisplayRole):
         """Return data for index+role"""
+        if not index.isValid():
+            print("data() invalid index: ", index)
+            return None
+
+        item = index.internalPointer()
+        if item is None:
+            print("data()--0: internal pointer None", index.row(), index.column())
+            return None
+
+        if role == BBSModel.ROLE_NODE:
+            return item
+
+        data = item.data()  # get BBSBrush or BBSGroup
+
+        if role == BBSModel.ROLE_ID:
+            return data.id()
+        elif role == BBSModel.ROLE_DATA:
+            return data
+        elif role == Qt.DisplayRole:
+            column = index.column()
+            if column == BBSModel.COLNUM_BRUSH:
+                return data.name()
+            elif column == BBSModel.COLNUM_COMMENT:
+                return data.comments()
+
         column = index.column()
         row = index.row()
 
-        if role == Qt.DecorationRole:
-            id = self.__items[row]
-            item = self.__brushes.get(id)
-
-            if item:
-                if column == BBSBrushesModel.COLNUM_ICON:
-                    image = item.image()
+        if isinstance(data, BBSBrush):
+            if role == Qt.DecorationRole:
+                if column == BBSModel.COLNUM_ICON:
+                    image = data.image()
                     if image:
                         # QIcon
                         return QIcon(QPixmap.fromImage(image))
                     else:
                         return buildIcon('pktk:warning')
-        elif role == Qt.ToolTipRole:
-            id = self.__items[row]
-            item = self.__brushes.get(id)
-
-            if item:
-                if not item.found():
-                    return i18n(f"Brush <i><b>{item.name()}</b></i> is not installed and/or activated on this Krita installation")
+            elif role == Qt.ToolTipRole:
+                if not data.found():
+                    return i18n(f"Brush <i><b>{data.name()}</b></i> is not installed and/or activated on this Krita installation")
                 else:
-                    return item.information(BBSBrush.INFO_WITH_BRUSH_DETAILS | BBSBrush.INFO_WITH_BRUSH_OPTIONS)
+                    return data.information(BBSBrush.INFO_WITH_BRUSH_DETAILS | BBSBrush.INFO_WITH_BRUSH_OPTIONS)
 
-        elif role == Qt.DisplayRole:
-            id = self.__items[row]
-            item = self.__brushes.get(id)
-
-            if item:
-                if column == BBSBrushesModel.COLNUM_BRUSH:
-                    return item.name()
-                elif column == BBSBrushesModel.COLNUM_COMMENT:
-                    return item.comments()
-        elif role == BBSBrushesModel.ROLE_ID:
-            return self.__items[row]
-        elif role == BBSBrushesModel.ROLE_BRUSH:
-            id = self.__items[row]
-            return self.__brushes.get(id)
-        # elif role == Qt.SizeHintRole:
-        #    if column == BBSBrushesModel.COLNUM_ICON:
-        #        return
         return None
 
-    def headerData(self, section, orientation, role):
+    def index(self, row, column, parent=None):
+        """Provide indexes for views and delegates to use when accessing data
+
+        If an invalid model index is specified as the parent, it is up to the model to return an index that corresponds to a top-level item in the model.
+        """
+        if not isinstance(parent, QModelIndex) or not self.hasIndex(row, column, parent):
+            return QModelIndex()
+
+        child = None
+        if not parent.isValid():
+            parentNode = self.__rootItem
+        else:
+            parentNode = parent.internalPointer()
+
+        child = parentNode.child(row)
+
+        if child:
+            return self.createIndex(row, column, child)
+        else:
+            print(f"index()--2: invalid child; row: {row}, col: {column}, parent:", parent, "\n.          parentNode:", parentNode, "\n")
+            return QModelIndex()
+
+    def parent(self, index):
+        """return parent (QModelIndex) for given index"""
+        if not index or not index.isValid():
+            returned = QModelIndex()
+            return returned
+
+        if index.internalPointer() is None:
+            # not sure to understand why this case occurs... :-/
+            # print("parent()--2a: ", index, index.internalPointer(), index.internalId())
+            # print("parent()--2b: ", index.row(), index.column(), index.data(), index.isValid())
+            return QModelIndex()
+        childItem = index.internalPointer()
+        childParent = childItem.parent()
+
+        if childParent is None or childParent == self.__rootItem:
+            return QModelIndex()
+
+        return self.createIndex(childParent.row(), 0, childParent)
+
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
+        """Return label for given data section"""
         if role == Qt.DisplayRole and orientation == Qt.Horizontal and section > 0:
-            return BBSBrushesModel.HEADERS[section]
+            return BBSModel.HEADERS[section]
         return None
 
-    def brushes(self):
-        """Expose BBSBrushes object"""
-        return self.__brushes
-
+    # TODO: to check ==> not used?
     def itemSelection(self, item):
-        """Return model index for given brush"""
+        """Return QItemSelection for given item"""
         returned = QItemSelection()
-        if isinstance(item, BBSBrush):
-            index = self.__idRow(item.id())
-            if index > -1:
-                indexS = self.createIndex(index, 0)
-                indexE = self.createIndex(index, BBSBrushesModel.COLNUM_LAST)
+
+        if isinstance(item, BBSBaseNode):
+            index = self.__getIdIndex(item.id())
+            if index.isValid():
+                indexS = self.createIndex(index.row(), 0)
+                indexE = self.createIndex(index.row(), BBSModel.COLNUM_LAST)
                 returned = QItemSelection(indexS, indexE)
+
         return returned
+
+    # TODO: used in bbsmainwindow & bbswbrushswitcher
+    def idIndexes(self, options={}):
+        """Return a dictionnary of all brushes/groups id
+
+        key = id
+        value = index
+
+        Given `options` is a dict that can contains
+            'brushes': True         # if True (default), result contains brushes Id
+            'groups': True          # if True (default), result contains groups Id
+        """
+        if 'brushes' not in options:
+            options['brushes'] = True
+        if 'groups' not in options:
+            options['groups'] = True
+        if 'asIndex' not in options:
+            options['asIndex'] = True
+
+        if not isinstance(options['brushes'], bool):
+            raise EInvalidType("Given `option['brushes'] must be a <bool>")
+        if not isinstance(options['groups'], bool):
+            raise EInvalidType("Given `option['groups'] must be a <bool>")
+        if not isinstance(options['asIndex'], bool):
+            raise EInvalidType("Given `option['asIndex'] must be a <bool>")
+
+        self.__updateIdIndex()
+
+        if not (options['brushes'] or options['groups']):
+            # nonsense but...
+            return {}
+        elif options['brushes'] and options['groups']:
+            # return everything
+            returned = [id for id in self.__idIndexes]
+        elif options['brushes']:
+            # return brushes
+            returned = [id for id in self.__idIndexes if self.__idIndexes[id] == BBSModel.TYPE_BRUSH]
+        elif options['groups']:
+            # return groups
+            returned = [id for id in self.__idIndexes if self.__idIndexes[id] == BBSModel.TYPE_GROUP]
+        else:
+            # should not occurs
+            return {}
+
+        if options['asIndex']:
+            return {id: self.__getIdIndex(id) for id in returned}
+        else:
+            return {id: self.__idIndexes[id] for id in returned}
+
+    # TODO: used bbswbrushswitcher
+    def getFromId(self, id, asIndex=True):
+        """Return brush/group from given Id
+
+        Return None if not found
+        """
+        index = self.__getIdIndex(id)
+        if index.isValid():
+            if asIndex:
+                return index
+            else:
+                return self.data(index, BBSModel.ROLE_DATA)
+        else:
+            return None
+
+    # TODO: used bbswbrushswitcher
+    def getGroupItems(self, groupId=None, asIndex=True):
+        """Return items from given `groupId`
+
+        If `groupId` is None, return items from root
+        If `groupId` is not found, return empty list
+
+        If `asIndex` is True, return items as QModelIndex otherwise return BBSGroup/BBSBrush
+        """
+        returned = []
+        node = None
+        self.__updateIdIndex()
+
+        if groupId is None:
+            node = self.__rootItem
+        elif isinstance(groupId, str):
+            index = self.__getIdIndex(groupId)
+            if index.isValid():
+                data = self.data(index, BBSModel.ROLE_DATA)
+                if isinstance(data, BBSGroup) and data.id() == groupId:
+                    node = self.data(index, BBSModel.ROLE_NODE)
+
+        if node is not None:
+            # get all data, maybe not ordered
+            returned = [childNode.data() for childNode in node.childs()]
+            returned.sort(key=lambda item: item.position())
+
+            if asIndex:
+                returned = [self.__getIdIndex(item.id()) for item in returned]
+        return returned
+
+    def clear(self):
+        """Clear all brushes & groups"""
+        self.remove(self.__rootItem.childs())
+
+    def remove(self, itemToRemove):
+        """Remove item from list
+
+        Given `itemToRemove` can:
+        - a list
+        - an id
+        - an item
+        - a node
+        """
+        if isinstance(itemToRemove, list) and len(itemToRemove) > 0:
+            # a list of item to remove
+            self.__beginUpdate()
+            for item in list(itemToRemove):
+                self.remove(item)
+            self.__endUpdate()
+        elif isinstance(itemToRemove, BBSModelNode):
+            # a node
+            self.__beginUpdate()
+            returned = itemToRemove.parent().removeChild(itemToRemove)
+            self.__endUpdate()
+        elif isinstance(itemToRemove, str):
+            # a string --> assume it's an Id
+            index = self.getFromId(itemToRemove)
+            if index is not None:
+                self.remove(self.data(index, BBSModel.ROLE_NODE))
+        elif isinstance(itemToRemove, BBSBaseNode):
+            self.remove(itemToRemove.id())
+
+    def add(self, itemToAdd, parent=None):
+        """Add item to parent
+
+        If parent is None, item is added to rootNode
+        """
+        if parent is None:
+            parent = self.__rootItem
+
+        if isinstance(parent, BBSModelNode):
+            if isinstance(itemToAdd, list):
+                # a list of item to add
+                self.__beginUpdate()
+                for item in itemToAdd:
+                    self.add(item, parent)
+                self.__endUpdate()
+            elif isinstance(itemToAdd, BBSBaseNode):
+                if isinstance(itemToAdd, parent.data().acceptedChild()):
+                    self.__beginUpdate()
+                    parent.addChild(BBSModelNode(itemToAdd, parent))
+                    self.__endUpdate()
+        elif isinstance(parent, str):
+            # a string --> assume it's an Id
+            index = self.getFromId(parent)
+            if index is not None:
+                self.add(itemToAdd, self.data(index, BBSModel.ROLE_NODE))
+        elif isinstance(parent, BBSBaseNode):
+            self.add(itemToAdd, parent.id())
+
+    def update(self, itemToUpdate):
+        print("BBSModel.update() -- TODO", itemToUpdate)
+
+    def load(self, brushesAndGroups, nodes):
+        """Load model from:
+        - brushes (list of BBSBrush)
+        - groups (list of BBSGroup)
+        - nodes (list defined hierarchy)
+            [id, id, (id, [id, id, (id, [id])])]
+        """
+        def addNodes(idList, parent):
+            toAdd = []
+            for id in idList:
+                if isinstance(id, str):
+                    if id in tmpIdIndex:
+                        toAdd.append(BBSModelNode(tmpIdIndex[id], parent))
+                    else:
+                        raise EInvalidValue(f"Given `id` ({id}) can't be added, index not exist")
+                elif isinstance(id, tuple):
+                    # a group
+                    addNodes(id[1], BBSModelNode(tmpIdIndex[id[0]], parent))
+                else:
+                    raise EInvalidValue(f"Given `id` must be a valid <str>")
+            parent.addChild(toAdd)
+
+        self.__beginUpdate()
+        self.clear()
+        # a dictionary id => BBSBaseNode
+        tmpIdIndex = {brushOrGroup.id(): brushOrGroup for brushOrGroup in brushesAndGroups}
+
+        if len(nodes) == 0:
+            # in this case (probably from a previous version of BBS, create everything at root level
+            nodes = list(tmpIdIndex.keys())
+
+        addNodes(nodes, self.__rootItem)
+        self.__endUpdate()
 
 
 class BBSWBrushesTv(QTreeView):
@@ -1282,7 +1479,7 @@ class BBSWBrushesTv(QTreeView):
         # value at which treeview apply compacted view (-1: never)
         self.__compactIconSizeIndex = -1
 
-        self.__delegate = BBSBrushesModelDelegate(self)
+        self.__delegate = BBSModelDelegate(self)
         self.setItemDelegate(self.__delegate)
 
         self.__iconSize = IconSizes([32, 64, 96, 128, 192])
@@ -1313,15 +1510,15 @@ class BBSWBrushesTv(QTreeView):
 
     def resizeColumns(self):
         """Resize columns"""
-        self.resizeColumnToContents(BBSBrushesModel.COLNUM_ICON)
-        self.resizeColumnToContents(BBSBrushesModel.COLNUM_BRUSH)
+        self.resizeColumnToContents(BBSModel.COLNUM_ICON)
+        self.resizeColumnToContents(BBSModel.COLNUM_BRUSH)
 
-        width = max(self.columnWidth(BBSBrushesModel.COLNUM_BRUSH), self.columnWidth(BBSBrushesModel.COLNUM_ICON))
-        self.setColumnWidth(BBSBrushesModel.COLNUM_BRUSH, round(width*1.25))
+        width = max(self.columnWidth(BBSModel.COLNUM_BRUSH), self.columnWidth(BBSModel.COLNUM_ICON))
+        self.setColumnWidth(BBSModel.COLNUM_BRUSH, round(width*1.25))
 
     def __sectionResized(self, index, oldSize, newSize):
         """When section is resized, update rows height"""
-        if index == BBSBrushesModel.COLNUM_COMMENT and not self.isColumnHidden(BBSBrushesModel.COLNUM_COMMENT):
+        if index == BBSModel.COLNUM_COMMENT and not self.isColumnHidden(BBSModel.COLNUM_COMMENT):
             # update height only if comment section is resized
             self.__delegate.setCSize(newSize)
             for rowNumber in range(self.__model.rowCount()):
@@ -1360,27 +1557,25 @@ class BBSWBrushesTv(QTreeView):
             self.__delegate.setCompactSize(self.__iconSize.index() <= self.__compactIconSizeIndex)
 
             header = self.header()
-            header.resizeSection(BBSBrushesModel.COLNUM_ICON, self.__iconSize.value())
+            header.resizeSection(BBSModel.COLNUM_ICON, self.__iconSize.value())
             self.resizeColumns()
             self.iconSizeIndexChanged.emit(self.__iconSize.index(), self.__iconSize.value(True))
 
-    def setBrushes(self, brushes):
+    def setModel(self, model):
         """Initialise treeview header & model"""
-        if isinstance(brushes, BBSBrushes):
-            self.__model = BBSBrushesModel(brushes)
-        elif isinstance(brushes, BBSBrushesModel):
-            self.__model = brushes
+        if isinstance(model, BBSModel):
+            self.__model = model
         else:
-            raise EInvalidType("Given `brushes` must be <BBSBrushes> or <BBSBrushesModel>")
+            raise EInvalidType("Given `model` must be <BBSModel>")
 
-        self.setModel(self.__model)
+        super(BBSWBrushesTv, self).setModel(self.__model)
 
         # set colums size rules
         header = self.header()
         header.setStretchLastSection(False)
-        header.setSectionResizeMode(BBSBrushesModel.COLNUM_ICON, QHeaderView.Fixed)
-        header.setSectionResizeMode(BBSBrushesModel.COLNUM_BRUSH, QHeaderView.Fixed)
-        header.setSectionResizeMode(BBSBrushesModel.COLNUM_COMMENT, QHeaderView.Stretch)
+        header.setSectionResizeMode(BBSModel.COLNUM_ICON, QHeaderView.Fixed)
+        header.setSectionResizeMode(BBSModel.COLNUM_BRUSH, QHeaderView.Fixed)
+        header.setSectionResizeMode(BBSModel.COLNUM_COMMENT, QHeaderView.Stretch)
 
         self.resizeColumns()
         self.__model.updateWidth.connect(self.resizeColumns)
@@ -1397,8 +1592,8 @@ class BBSWBrushesTv(QTreeView):
         """Return a list of selected brushes items"""
         returned = []
         if self.selectionModel():
-            for item in self.selectionModel().selectedRows(BBSBrushesModel.COLNUM_BRUSH):
-                brush = item.data(BBSBrushesModel.ROLE_BRUSH)
+            for item in self.selectionModel().selectedRows(BBSModel.COLNUM_BRUSH):
+                brush = item.data(BBSModel.ROLE_DATA)
                 if brush is not None:
                     returned.append(brush)
         return returned
@@ -1484,16 +1679,14 @@ class BBSWBrushesLv(QListView):
             self.setIconSize(self.__iconSize.value(True))
             self.iconSizeIndexChanged.emit(self.__iconSize.index(), self.__iconSize.value(True))
 
-    def setBrushes(self, brushes):
+    def setModel(self, model):
         """Initialise treeview header & model"""
-        if isinstance(brushes, BBSBrushes):
-            self.__model = BBSBrushesModel(brushes)
-        elif isinstance(brushes, BBSBrushesModel):
-            self.__model = brushes
+        if isinstance(model, BBSModel):
+            self.__model = model
         else:
-            raise EInvalidType("Given `brushes` must be <BBSBrushes> or <BBSBrushesModel>")
+            raise EInvalidType("Given `model` must be <BBSModel>")
 
-        self.setModel(self.__model)
+        super(BBSWBrushesLv, self).setModel(self.__model)
 
         self.__model.modelAboutToBeReset.connect(self.__modelAboutToBeReset)
         self.__model.modelReset.connect(self.__modelReset)
@@ -1509,7 +1702,7 @@ class BBSWBrushesLv(QListView):
         returned = []
         if self.selectionModel():
             for item in self.selectionModel().selectedIndexes():
-                brush = item.data(BBSBrushesModel.ROLE_BRUSH)
+                brush = item.data(BBSModel.ROLE_DATA)
                 if brush is not None:
                     returned.append(brush)
         return returned
@@ -1519,11 +1712,11 @@ class BBSWBrushesLv(QListView):
         return len(self.selectedItems())
 
 
-class BBSBrushesModelDelegate(QStyledItemDelegate):
+class BBSModelDelegate(QStyledItemDelegate):
     """Extend QStyledItemDelegate class to build improved rendering items"""
     def __init__(self, parent=None):
         """Constructor, nothingspecial"""
-        super(BBSBrushesModelDelegate, self).__init__(parent)
+        super(BBSModelDelegate, self).__init__(parent)
         self.__csize = 0
         self.__compactSize = False
 
@@ -1558,11 +1751,11 @@ class BBSBrushesModelDelegate(QStyledItemDelegate):
 
     def paint(self, painter, option, index):
         """Paint list item"""
-        if index.column() == BBSBrushesModel.COLNUM_BRUSH:
+        if index.column() == BBSModel.COLNUM_BRUSH:
             # render brush information
             self.initStyleOption(option, index)
 
-            brush = index.data(BBSBrushesModel.ROLE_BRUSH)
+            brush = index.data(BBSModel.ROLE_DATA)
             rectTxt = QRect(option.rect.left() + 1, option.rect.top()+4, option.rect.width()-4, option.rect.height()-1)
 
             painter.save()
@@ -1591,11 +1784,11 @@ class BBSBrushesModelDelegate(QStyledItemDelegate):
 
             painter.restore()
             return
-        elif index.column() == BBSBrushesModel.COLNUM_COMMENT:
+        elif index.column() == BBSModel.COLNUM_COMMENT:
             # render comment
             self.initStyleOption(option, index)
 
-            brush = index.data(BBSBrushesModel.ROLE_BRUSH)
+            brush = index.data(BBSModel.ROLE_DATA)
             rectTxt = QRect(option.rect.left(), option.rect.top(), option.rect.width(), option.rect.height())
 
             textDocument = self.__getOptionsInformation(brush)
@@ -1622,7 +1815,7 @@ class BBSBrushesModelDelegate(QStyledItemDelegate):
 
             painter.restore()
             return
-        elif index.column() == BBSBrushesModel.COLNUM_ICON:
+        elif index.column() == BBSModel.COLNUM_ICON:
             # render icon in top-left position of cell
             painter.save()
             if (option.state & QStyle.State_Selected) == QStyle.State_Selected:
@@ -1638,10 +1831,10 @@ class BBSBrushesModelDelegate(QStyledItemDelegate):
         """Calculate size for items"""
         size = QStyledItemDelegate.sizeHint(self, option, index)
 
-        if index.column() == BBSBrushesModel.COLNUM_ICON:
+        if index.column() == BBSModel.COLNUM_ICON:
             return option.decorationSize
-        elif index.column() == BBSBrushesModel.COLNUM_BRUSH:
-            brush = index.data(BBSBrushesModel.ROLE_BRUSH)
+        elif index.column() == BBSModel.COLNUM_BRUSH:
+            brush = index.data(BBSModel.ROLE_DATA)
             textDocument = self.__getBrushInformation(brush)
             textDocument.setDocumentMargin(1)
             textDocument.setDefaultFont(option.font)
@@ -1649,9 +1842,9 @@ class BBSBrushesModelDelegate(QStyledItemDelegate):
             textDocument.setPageSize(QSizeF(4096, 1000))  # set 1000px size height arbitrary
             textDocument.setPageSize(QSizeF(textDocument.idealWidth(), 1000))  # set 1000px size height arbitrary
             size = textDocument.size().toSize()+QSize(8, 8)
-        elif index.column() == BBSBrushesModel.COLNUM_COMMENT:
+        elif index.column() == BBSModel.COLNUM_COMMENT:
             # size for comments cell (width is forced, calculate height of rich text)
-            brush = index.data(BBSBrushesModel.ROLE_BRUSH)
+            brush = index.data(BBSModel.ROLE_DATA)
             textDocument = self.__getOptionsInformation(brush)
             textDocument.setDocumentMargin(1)
             textDocument.setDefaultFont(option.font)

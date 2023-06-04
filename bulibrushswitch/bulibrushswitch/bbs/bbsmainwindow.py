@@ -44,9 +44,8 @@ from PyQt5.QtWidgets import (
 
 from .bbswbrushes import (
         BBSBrush,
-        BBSBrushes,
         BBSBrushesEditor,
-        BBSBrushesModel
+        BBSModel
     )
 from .bbssettings import (
         BBSSettings,
@@ -62,6 +61,7 @@ from bulibrushswitch.pktk.widgets.wcolorselector import WColorPicker
 from bulibrushswitch.pktk.widgets.wiodialog import (WDialogBooleanInput, WDialogMessage)
 
 from bulibrushswitch.pktk.modules.ekrita import EKritaBrushPreset
+from bulibrushswitch.pktk.modules.ekrita_tools import EKritaTools
 
 
 # -----------------------------------------------------------------------------
@@ -69,17 +69,17 @@ class BBSMainWindow(EDialog):
     """Main BuliBrushSwitch window"""
 
     @staticmethod
-    def open(brushes=None, bbsName="BuliBrushSwitch", bbsVersion="testing", parent=None):
-        dlgBox = BBSMainWindow(brushes, bbsName, bbsVersion, parent)
+    def open(bbsName="BuliBrushSwitch", bbsVersion="testing", parent=None):
+        dlgBox = BBSMainWindow(bbsName, bbsVersion, parent)
 
         returned = dlgBox.exec()
 
         if returned == QDialog.Accepted:
-            return dlgBox.brushes()
+            return True
         else:
-            return None
+            return False
 
-    def __init__(self, brushes=None, bbsName="BuliBrushSwitch", bbsVersion="testing", parent=None):
+    def __init__(self, bbsName="BuliBrushSwitch", bbsVersion="testing", parent=None):
         super(BBSMainWindow, self).__init__(os.path.join(os.path.dirname(__file__), 'resources', 'bbsmainwindow.ui'), parent)
 
         # plugin name/version
@@ -113,12 +113,17 @@ class BBSMainWindow(EDialog):
         # keep in memory current view configuration to restore on dialog close
         self.__activeViewCurrentConfig = {}
 
-        # list of defined brushes
-        if not isinstance(brushes, BBSBrushes):
-            raise EInvalidType('Given `brushes` must be BBSBrushes')
+        self.__bbsModel = BBSModel()
 
-        self.__brushes = BBSBrushes(brushes)
-        self.__brushesModel = BBSBrushesModel(self.__brushes)
+        # create BBSBrush object + link action shortcuts
+        brushesAndGroups = []
+        brushesDictList = BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_LIST_BRUSHES)
+        for brushNfo in brushesDictList:
+            brush = BBSBrush()
+            if brush.importData(brushNfo):
+                brushesAndGroups.append(brush)
+
+        self.__bbsModel.load(brushesAndGroups, BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_LIST_NODES))
 
         # keep a saved view of current brush shortcuts
         self.__savedShortcuts = {}
@@ -243,7 +248,7 @@ class BBSMainWindow(EDialog):
 
         # -- brush list
         self.tvBrushes.doubleClicked.connect(self.__actionBrushEdit)
-        self.tvBrushes.setBrushes(self.__brushesModel)
+        self.tvBrushes.setModel(self.__bbsModel)
         self.tvBrushes.setIconSizeIndex(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_BRUSHES_ZOOMLEVEL))
         self.tvBrushes.iconSizeIndexChanged.connect(self.__brushesSizeIndexChanged)
 
@@ -279,24 +284,26 @@ class BBSMainWindow(EDialog):
         During process, we need to udpate action shortcut directly (allows to take
         in account shortcut modification made on brush)
         """
-        for brushId in self.__brushes.idList():
-            action = Krita.instance().action(f'bulibrushswitch_brush_{brushId.strip("{}")}')
+        for itemId in self.__bbsModel.idIndexes():
+            action = Krita.instance().action(f'bulibrushswitch_brush_{itemId}')
             if action:
-                self.__savedShortcuts[brushId] = action.shortcut()
+                self.__savedShortcuts[itemId] = action.shortcut()
+            elif item.id() in self.__savedShortcuts:
+                self.__savedShortcuts.pop(itemId)
 
     def __restoreShortcutConfig(self):
         """Restore current shortcut configuration"""
         # for potential new action created, remove designed shortcut
-        for brushId in self.__createdShortcuts:
-            action = BBSSettings.brushAction(brushId)
+        for itemId in self.__createdShortcuts:
+            action = BBSSettings.brushAction(itemId)
             if action:
                 action.setShortcut(QKeySequence())
 
         # restore initial shortcuts
-        for brushId in self.__savedShortcuts:
-            action = BBSSettings.brushAction(brushId)
+        for itemId in self.__savedShortcuts:
+            action = BBSSettings.brushAction(itemId)
             if action:
-                action.setShortcut(self.__savedShortcuts[brushId])
+                action.setShortcut(self.__savedShortcuts[itemId])
 
     def __saveViewConfig(self):
         """Save current Krita active view properties"""
@@ -321,6 +328,9 @@ class BBSMainWindow(EDialog):
         # not from view but... need to be saved/restored
         self.__activeViewCurrentConfig['preserveAlpha'] = Krita.instance().action('preserve_alpha').isChecked()
 
+        # tool
+        self.__activeViewCurrentConfig['currentTool'] = EKritaTools.current()
+
     def __restoreViewConfig(self):
         """Restore view properties"""
         self.__activeView.setCurrentBrushPreset(self.__activeViewCurrentConfig['brushPreset'])
@@ -341,6 +351,9 @@ class BBSMainWindow(EDialog):
 
         # not from view but... need to be saved/restored
         Krita.instance().action('preserve_alpha').setChecked(self.__activeViewCurrentConfig['preserveAlpha'])
+
+        # tool
+        EKritaTools.setCurrent(self.__activeViewCurrentConfig['currentTool'])
 
     def __actionBrushScratchpadSetColorFg(self, color):
         """Set brush testing scratchpad color"""
@@ -401,7 +414,7 @@ class BBSMainWindow(EDialog):
         if options is not None:
             self.__applyBrushOptions(brush, options)
             self.__createdShortcuts.append(brush.id())
-            self.__brushes.add(brush)
+            self.__bbsModel.add(brush)
             self.__updateBrushUi()
 
     def __actionBrushEdit(self):
@@ -413,7 +426,7 @@ class BBSMainWindow(EDialog):
             options = BBSBrushesEditor.edit(self.__bbsName+' - '+i18n(f'Edit brush'), brush)
             if options is not None:
                 self.__applyBrushOptions(brush, options)
-                self.__brushes.update(brush)
+                self.__bbsModel.update(brush)
                 self.__updateBrushUi()
 
     def __actionBrushDelete(self):
@@ -429,7 +442,7 @@ class BBSMainWindow(EDialog):
                                            i18n(f"<b>Following brush will removed from user list</b>{brushDescription}<b>Do you confirm action?</b>"),
                                            minSize=QSize(950, 400)):
                 BBSSettings.setShortcut(brush, QKeySequence())
-                self.__brushes.remove(brush)
+                self.__bbsModel.remove(brush)
                 self.__updateBrushUi()
 
     def __actionBrushMoveFirst(self):
@@ -437,7 +450,8 @@ class BBSMainWindow(EDialog):
         brushes = self.tvBrushes.selectedItems()
         if len(brushes):
             # a brush is selected
-            self.__brushes.moveItemAtFirst(brushes[0])
+            # self.__brushes.moveItemAtFirst(brushes[0])
+            print("BBSMainWindow.__actionBrushMoveFirst()")
             self.__updateBrushUi()
 
     def __actionBrushMoveLast(self):
@@ -445,7 +459,8 @@ class BBSMainWindow(EDialog):
         brushes = self.tvBrushes.selectedItems()
         if len(brushes):
             # a brush is selected
-            self.__brushes.moveItemAtLast(brushes[0])
+            # self.__brushes.moveItemAtLast(brushes[0])
+            print("BBSMainWindow.__actionBrushMoveLast()")
             self.__updateBrushUi()
 
     def __actionBrushMoveUp(self):
@@ -453,7 +468,8 @@ class BBSMainWindow(EDialog):
         brushes = self.tvBrushes.selectedItems()
         if len(brushes):
             # a brush is selected
-            self.__brushes.moveItemAtPrevious(brushes[0])
+            # self.__brushes.moveItemAtPrevious(brushes[0])
+            print("BBSMainWindow.__actionBrushMoveUp()")
             self.__updateBrushUi()
 
     def __actionBrushMoveDown(self):
@@ -461,7 +477,8 @@ class BBSMainWindow(EDialog):
         brushes = self.tvBrushes.selectedItems()
         if len(brushes):
             # a brush is selected
-            self.__brushes.moveItemAtNext(brushes[0])
+            # self.__brushes.moveItemAtNext(brushes[0])
+            print("BBSMainWindow.__actionBrushMoveDown()")
             self.__updateBrushUi()
 
     def __brushesSelectionChanged(self, selected, deselected):
@@ -493,16 +510,16 @@ class BBSMainWindow(EDialog):
             # a brush is selected
             brush = brushes[0]
             self.tbBrushMoveFirst.setEnabled(brush.position() > 0)
-            self.tbBrushMoveLast.setEnabled(brush.position() < self.__brushes.length()-1)
+            self.tbBrushMoveLast.setEnabled(brush.position() < len(self.__bbsModel.idIndexes())-1)
             self.tbBrushMoveUp.setEnabled(brush.position() > 0)
-            self.tbBrushMoveDown.setEnabled(brush.position() < self.__brushes.length()-1)
+            self.tbBrushMoveDown.setEnabled(brush.position() < len(self.__bbsModel.idIndexes())-1)
         else:
             self.tbBrushMoveFirst.setEnabled(False)
             self.tbBrushMoveLast.setEnabled(False)
             self.tbBrushMoveUp.setEnabled(False)
             self.tbBrushMoveDown.setEnabled(False)
 
-        if self.__brushes.length() > 0:
+        if len(self.__bbsModel.idIndexes({'brushes': True})) > 0:
             self.pbOk.setEnabled(True)
             self.pbOk.setToolTip("")
         else:
@@ -573,9 +590,9 @@ class BBSMainWindow(EDialog):
 
         BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_BRUSHES_SPLITTER_POSITION, self.splitterBrushes.sizes())
 
-        BBSSettings.set(BBSSettingsKey.CONFIG_BRUSHES_LIST_COUNT, self.__brushes.length())
+        BBSSettings.set(BBSSettingsKey.CONFIG_BRUSHES_LIST_COUNT, len(self.__bbsModel.idIndexes()))
 
-        BBSSettings.setBrushes(self.__brushes)
+        BBSSettings.setBrushes([self.__bbsModel.data(index, BBSModel.ROLE_DATA) for index in self.__bbsModel.idIndexes({'groups': False}).values()])
 
         if BBSSettings.modified():
             BBSSettings.save()
@@ -588,12 +605,10 @@ class BBSMainWindow(EDialog):
 
     def __acceptChange(self):
         """User clicked on OK button"""
-        for brushId in self.__brushes.idList():
-            # don't kwow why, it seems that from here, some actions shortcut  are lost??
+        for item in [self.__bbsModel.data(index, BBSModel.ROLE_DATA) for index in self.__bbsModel.idIndexes().values()]:
+            # don't kwow why, it seems that from here, some actions shortcut are lost??
             # need to reapply them...
-            brush = self.__brushes.get(brushId)
-            if brush:
-                BBSSettings.setShortcut(brush, brush.shortcut())
+            BBSSettings.setShortcut(item, item.shortcut())
 
         self.__restoreViewConfig()
         self.__saveSettings()
@@ -604,7 +619,3 @@ class BBSMainWindow(EDialog):
         self.__restoreViewConfig()
         self.__restoreShortcutConfig()
         self.reject()
-
-    def brushes(self):
-        """Return brushes collection"""
-        return self.__brushes

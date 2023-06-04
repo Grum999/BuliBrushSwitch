@@ -147,6 +147,8 @@ class BBSSettingsKey(SettingsKey):
 
     CONFIG_BRUSHES_LIST_COUNT =                                                 'config.brushes.list.count'
     CONFIG_BRUSHES_LIST_BRUSHES =                                               'config.brushes.list.brushes'
+    CONFIG_BRUSHES_LIST_GROUPS =                                                'config.brushes.list.groups'
+    CONFIG_BRUSHES_LIST_NODES =                                                 'config.brushes.list.nodes'
 
     CONFIG_BRUSHES_DEFAULT_SELECTIONMODE =                                      'config.brushes.default.selectionMode'
     CONFIG_BRUSHES_LAST_SELECTED =                                              'config.brushes.default.lastSelected'
@@ -253,6 +255,8 @@ class BBSSettings(Settings):
 
             SettingsRule(BBSSettingsKey.CONFIG_BRUSHES_LIST_COUNT,                                      0,             SettingsFmt(int, (0, None))),
             SettingsRule(BBSSettingsKey.CONFIG_BRUSHES_LIST_BRUSHES,                                    [],            SettingsFmt(list)),
+            SettingsRule(BBSSettingsKey.CONFIG_BRUSHES_LIST_GROUPS,                                     [],            SettingsFmt(list)),
+            SettingsRule(BBSSettingsKey.CONFIG_BRUSHES_LIST_NODES,                                      [],            SettingsFmt(list)),
 
             SettingsRule(BBSSettingsKey.CONFIG_BRUSHES_LAST_SELECTED,                                   '',            SettingsFmt(str)),
             SettingsRule(BBSSettingsKey.CONFIG_BRUSHES_DEFAULT_SELECTIONMODE,                           BBSSettingsValues.DEFAULT_SELECTIONMODE_FIRST_FROM_LIST,
@@ -605,13 +609,17 @@ class BBSSettings(Settings):
     def setBrushes(brushes):
         """A generic method to save brushes list definition
 
-        Given `brushes` is a BBSBrushes
+        Given `brushes` is a list of BBSBrush
         """
-        exportedBrushes = []
-        for brushId in brushes.idList():
-            brush = brushes.get(brushId)
-            exportedBrushes.append(brush.exportData())
-        BBSSettings.set(BBSSettingsKey.CONFIG_BRUSHES_LIST_BRUSHES, exportedBrushes)
+        BBSSettings.set(BBSSettingsKey.CONFIG_BRUSHES_LIST_BRUSHES, [brush.exportData() for brush in brushes])
+
+    @staticmethod
+    def setGroups(groups):
+        """A generic method to save groups list definition
+
+        Given `groups` is a list of BBSGroup
+        """
+        BBSSettings.set(BBSSettingsKey.CONFIG_BRUSHES_LIST_GROUPS, [group.exportData() for group in groups])
 
     @staticmethod
     def brushAction(brushId, brushName='', brushComments='', create=False, window=None):
