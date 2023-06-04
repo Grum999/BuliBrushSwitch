@@ -384,17 +384,20 @@ class BBSWBrushSwitcher(QWidget):
             if self.__selectedBrush.ignoreEraserMode():
                 pass
 
+            saveOptions = 0
             if self.__selectedBrush.colorFg():
-                saveColor = True
-            else:
-                saveColor = False
+                saveOptions |= BBSBrush.KRITA_BRUSH_FGCOLOR
+
+            if self.__selectedBrush.colorBg():
+                saveOptions |= BBSBrush.KRITA_BRUSH_BGCOLOR
+
+            if self.__selectedBrush.colorGradient():
+                saveOptions |= BBSBrush.KRITA_BRUSH_GRADIENT
 
             if self.__selectedBrush.defaultPaintTool():
-                saveTool = True
-            else:
-                saveTool = False
+                saveOptions |= BBSBrush.KRITA_BRUSH_TOOLOPT
 
-            self.__selectedBrush.fromCurrentKritaBrush(saveColor=saveColor, saveTool=saveTool)
+            self.__selectedBrush.fromCurrentKritaBrush(saveOptions=saveOptions)
 
             BBSSettings.setBrushes(self.__brushes)
             if BBSSettings.modified():
@@ -549,7 +552,11 @@ class BBSWBrushSwitcher(QWidget):
                 # memorize current Krita brush to finally restore when plugin brush is "deactivated"
                 self.__kritaBrush = BBSBrush()
                 self.__kritaBrush.setIgnoreEraserMode(False)
-                if not self.__kritaBrush.fromCurrentKritaBrush(saveColor=True, saveTool=True):
+                if not self.__kritaBrush.fromCurrentKritaBrush(None,
+                                                               BBSBrush.KRITA_BRUSH_FGCOLOR |
+                                                               BBSBrush.KRITA_BRUSH_BGCOLOR |
+                                                               BBSBrush.KRITA_BRUSH_GRADIENT |
+                                                               BBSBrush.KRITA_BRUSH_TOOLOPT):
                     self.__kritaBrush = None
                     return
             else:

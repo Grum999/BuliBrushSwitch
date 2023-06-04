@@ -94,6 +94,11 @@ class BBSBrush(QObject):
     INFO_WITH_BRUSH_DETAILS =       0b00000100
     INFO_WITH_BRUSH_OPTIONS =       0b00001000
 
+    KRITA_BRUSH_FGCOLOR =  0b00000001
+    KRITA_BRUSH_BGCOLOR =  0b00000010
+    KRITA_BRUSH_GRADIENT = 0b00000100
+    KRITA_BRUSH_TOOLOPT =  0b00001000
+
     def __init__(self, brush=None):
         super(BBSBrush, self).__init__(None)
         self.__name = ''
@@ -237,7 +242,7 @@ class BBSBrush(QObject):
         elif self.__emitUpdated == 0:
             self.__updated('*')
 
-    def fromCurrentKritaBrush(self, view=None, saveColor=False, saveTool=False):
+    def fromCurrentKritaBrush(self, view=None, saveOptions=0):
         """Set brush properties from given view
 
         If no view is provided, use current active view
@@ -267,16 +272,22 @@ class BBSBrush(QObject):
         self.__preserveAlpha = Krita.instance().action('preserve_alpha').isChecked()
         self.__image = brush.image()
 
-        if saveColor:
+        if saveOptions & BBSBrush.KRITA_BRUSH_FGCOLOR == BBSBrush.KRITA_BRUSH_FGCOLOR:
             self.__colorFg = view.foregroundColor().colorForCanvas(view.canvas())
-            self.__colorBg = view.backgroundColor().colorForCanvas(view.canvas())
-            self.__colorGradient = _bbsManagedResourcesGradients.getResource(view.currentGradient())
         else:
             self.__colorFg = None
+
+        if saveOptions & BBSBrush.KRITA_BRUSH_BGCOLOR == BBSBrush.KRITA_BRUSH_BGCOLOR:
+            self.__colorBg = view.backgroundColor().colorForCanvas(view.canvas())
+        else:
             self.__colorBg = None
+
+        if saveOptions & BBSBrush.KRITA_BRUSH_GRADIENT == BBSBrush.KRITA_BRUSH_GRADIENT:
+            self.__colorGradient = _bbsManagedResourcesGradients.getResource(view.currentGradient())
+        else:
             self.__colorGradient = None
 
-        if saveTool:
+        if saveOptions & BBSBrush.KRITA_BRUSH_TOOLOPT == BBSBrush.KRITA_BRUSH_TOOLOPT:
             current = EKritaTools.current()
             if current:
                 self.__defaultPaintTool = current
@@ -313,7 +324,7 @@ class BBSBrush(QObject):
             # currently nothing has been memorized
             # memorize current brush
             self.__kritaBrush = BBSBrush()
-            self.__kritaBrush.fromCurrentKritaBrush(view, False, False)
+            self.__kritaBrush.fromCurrentKritaBrush(view)
 
         if self.__defaultPaintTool is not None and loadTool:
             # as tool already keep is own properties, restore tool before brush properties to ensure that memorized brush properties
@@ -393,7 +404,6 @@ class BBSBrush(QObject):
             return False
 
         self.beginUpdate()
-
         try:
             if BBSBrush.KEY_UUID in value:
                 self.__uuid = value[BBSBrush.KEY_UUID].strip("{}")
@@ -620,7 +630,8 @@ class BBSBrush(QObject):
         managedResource = _bbsManagedResourcesGradients.getResource(managedResource)
 
         if managedResource is None or isinstance(managedResource, ManagedResource):
-            if self.__colorGradient is None and managedResource is not None or self.__colorGradient != managedResource:
+            if ((self.__colorGradient is None and managedResource is not None or self.__colorGradient is not None and managedResource is None) or
+               self.__colorGradient is not None and managedResource is not None and self.__colorGradient != managedResource):
                 self.__colorGradient = managedResource
                 self.__updated('colorGradient')
 
