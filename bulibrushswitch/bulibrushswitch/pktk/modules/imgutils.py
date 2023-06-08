@@ -94,6 +94,37 @@ def checkerBoardImage(size, checkerSize=32):
     return pixmap
 
 
+def roundedPixmap(pixmap, radius, size=None):
+    """return `pixmap` to given `size`, with rounded `radius`
+
+    If `size` is None, use pixmap size
+    """
+    if not isinstance(pixmap, QPixmap):
+        raise EInvalidType('Given `pixmap` must be a <QPixmap>')
+    elif not isinstance(radius, (int, float)) or radius < 0:
+        raise EInvalidType('Given `radius` must be a positive <int> or <float>')
+
+    if size is None:
+        size = pixmap.size()
+
+    workPixmap = QPixmap(size)
+    workPixmap.fill(Qt.transparent)
+
+    painter = QPainter(workPixmap)
+    painter.setRenderHint(QPainter.Antialiasing)
+    painter.setPen(QPen(Qt.NoPen))
+    painter.setBrush(QBrush(Qt.black))
+    painter.drawRoundedRect(0, 0, size.width(), size.height(), radius, radius, Qt.AbsoluteSize)
+    painter.setCompositionMode(QPainter.CompositionMode_SourceAtop)
+    if size != pixmap.size():
+        painter.drawPixmap(0, 0, pixmap.scaled(size, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+    else:
+        painter.drawPixmap(0, 0, pixmap)
+
+    painter.end()
+    return workPixmap
+
+
 def bullet(size=16, color=QColor(255, 255, 255), shape='square', scaleShape=1.0):
     """Draw a bullet and return it as a QPixmap
 
