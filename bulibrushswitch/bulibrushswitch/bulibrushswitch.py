@@ -39,7 +39,7 @@ if __name__ != '__main__':
         )
     from bulibrushswitch.pktk.modules.utils import checkKritaVersion
     from bulibrushswitch.pktk.modules.uitheme import UITheme
-    from bulibrushswitch.bbs.bbswbrushes import BBSBrush
+    from bulibrushswitch.bbs.bbswbrushes import (BBSBrush, BBSGroup)
     from bulibrushswitch.bbs.bbssettings import (BBSSettings, BBSSettingsKey)
     from bulibrushswitch.bbs.bbsmainwindow import BBSMainWindow
     from bulibrushswitch.bbs.bbswbrushswitcher import BBSWBrushSwitcher
@@ -65,7 +65,7 @@ else:
         )
     from bulibrushswitch.pktk.modules.utils import checkKritaVersion
     from bulibrushswitch.pktk.modules.uitheme import UITheme
-    from bulibrushswitch.bbs.bbswbrushes import BBSBrush
+    from bulibrushswitch.bbs.bbswbrushes import (BBSBrush, BBSGroup)
     from bulibrushswitch.bbs.bbssettings import (BBSSettings, BBSSettingsKey)
     from bulibrushswitch.bbs.bbsmainwindow import BBSMainWindow
     from bulibrushswitch.bbs.bbswbrushswitcher import BBSWBrushSwitcher
@@ -142,3 +142,20 @@ class BuliBrushSwitch(Extension):
                         # force "dedicated" shortcut to be the same than default one to
                         # avoid problems with Krita's user defined shortcut definition
                         action.setShortcut(QKeySequence(brushNfo[BBSBrush.KEY_SHORTCUT]))
+
+            groups = BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_LIST_GROUPS)
+            for groupNfo in groups:
+                if BBSGroup.KEY_UUID in groupNfo and BBSGroup.KEY_NAME in groupNfo and BBSGroup.KEY_COMMENTS in groupNfo:
+                    actionNext = BBSSettings.groupAction(groupNfo[BBSBrush.KEY_UUID], 'N', groupNfo[BBSGroup.KEY_NAME], groupNfo[BBSGroup.KEY_COMMENTS], True, window)
+                    if BBSGroup.KEY_SHORTCUT_NEXT in groupNfo and groupNfo[BBSGroup.KEY_SHORTCUT_NEXT]:
+                        # action will be loaded with defaul shortcut
+                        # force "dedicated" shortcut to be the same than default one to
+                        # avoid problems with Krita's user defined shortcut definition
+                        actionNext.setShortcut(QKeySequence(groupNfo[BBSGroup.KEY_SHORTCUT_NEXT]))
+
+                    actionPrevious = BBSSettings.groupAction(groupNfo[BBSBrush.KEY_UUID], 'P', groupNfo[BBSGroup.KEY_NAME], groupNfo[BBSGroup.KEY_COMMENTS], True, window)
+                    if BBSGroup.KEY_SHORTCUT_PREV in groupNfo and groupNfo[BBSGroup.KEY_SHORTCUT_PREV]:
+                        # action will be loaded with defaul shortcut
+                        # force "dedicated" shortcut to be the same than default one to
+                        # avoid problems with Krita's user defined shortcut definition
+                        actionPrevious.setShortcut(QKeySequence(groupNfo[BBSGroup.KEY_SHORTCUT_PREV]))

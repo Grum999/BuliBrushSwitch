@@ -253,6 +253,80 @@
               <number>0</number>
              </property>
              <item>
+              <widget class="QToolButton" name="tbGroupAdd">
+               <property name="acceptDrops">
+                <bool>false</bool>
+               </property>
+               <property name="toolTip">
+                <string>Add group</string>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">QToolButton::menu-indicator { image: none; }</string>
+               </property>
+               <property name="text">
+                <string>...</string>
+               </property>
+               <property name="icon">
+                <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
+                 <normaloff>:/pktk/images/normal/folder_open_add</normaloff>:/pktk/images/normal/folder_open_add</iconset>
+               </property>
+               <property name="popupMode">
+                <enum>QToolButton::InstantPopup</enum>
+               </property>
+               <property name="autoRaise">
+                <bool>true</bool>
+               </property>
+               <property name="arrowType">
+                <enum>Qt::NoArrow</enum>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QToolButton" name="tbGroupEdit">
+               <property name="acceptDrops">
+                <bool>false</bool>
+               </property>
+               <property name="toolTip">
+                <string>Edit group</string>
+               </property>
+               <property name="text">
+                <string>...</string>
+               </property>
+               <property name="icon">
+                <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
+                 <normaloff>:/pktk/images/normal/folder_open_dots</normaloff>:/pktk/images/normal/folder_open_dots</iconset>
+               </property>
+               <property name="autoRaise">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QToolButton" name="tbGroupDelete">
+               <property name="toolTip">
+                <string>Remove group</string>
+               </property>
+               <property name="text">
+                <string>...</string>
+               </property>
+               <property name="icon">
+                <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
+                 <normaloff>:/pktk/images/normal/brush_remove</normaloff>
+                 <disabledoff>:/pktk/images/disabled/brush_remove</disabledoff>:/pktk/images/normal/brush_remove</iconset>
+               </property>
+               <property name="autoRaise">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="Line" name="line_3">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+              </widget>
+             </item>
+             <item>
               <widget class="QToolButton" name="tbBrushAdd">
                <property name="acceptDrops">
                 <bool>false</bool>
@@ -285,7 +359,7 @@
              <item>
               <widget class="QToolButton" name="tbBrushEdit">
                <property name="toolTip">
-                <string>Edit brush description</string>
+                <string>Edit brush</string>
                </property>
                <property name="text">
                 <string>...</string>
@@ -326,7 +400,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QToolButton" name="tbBrushMoveFirst">
+              <widget class="QToolButton" name="tbItemMoveFirst">
                <property name="text">
                 <string>...</string>
                </property>
@@ -342,7 +416,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QToolButton" name="tbBrushMoveUp">
+              <widget class="QToolButton" name="tbItemMoveUp">
                <property name="text">
                 <string>...</string>
                </property>
@@ -358,7 +432,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QToolButton" name="tbBrushMoveDown">
+              <widget class="QToolButton" name="tbItemMoveDown">
                <property name="text">
                 <string>...</string>
                </property>
@@ -374,7 +448,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QToolButton" name="tbBrushMoveLast">
+              <widget class="QToolButton" name="tbItemMoveLast">
                <property name="icon">
                 <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
                  <normaloff>:/pktk/images/normal/move_down_last</normaloff>
@@ -406,7 +480,7 @@
               </spacer>
              </item>
              <item>
-              <widget class="QSlider" name="hsBrushesThumbSize">
+              <widget class="QSlider" name="hsItemsThumbSize">
                <property name="maximumSize">
                 <size>
                  <width>150</width>
@@ -445,10 +519,10 @@
              <number>0</number>
             </property>
             <property name="rootIsDecorated">
-             <bool>false</bool>
+             <bool>true</bool>
             </property>
             <property name="itemsExpandable">
-             <bool>false</bool>
+             <bool>true</bool>
             </property>
             <property name="allColumnsShowFocus">
              <bool>true</bool>
@@ -653,7 +727,7 @@
         </property>
         <property name="icon">
          <iconset theme="dialog-ok">
-          <normaloff>../../../../../../../../../../../../.designer/backup</normaloff>../../../../../../../../../../../../.designer/backup</iconset>
+          <normaloff>../../../../../../../../../../../../../../../../../../../../../../.designer/backup</normaloff>../../../../../../../../../../../../../../../../../../../../../../.designer/backup</iconset>
         </property>
        </widget>
       </item>
@@ -667,7 +741,7 @@
         </property>
         <property name="icon">
          <iconset theme="dialog-cancel">
-          <normaloff>../../../../../../../../../../../../.designer/backup</normaloff>../../../../../../../../../../../../.designer/backup</iconset>
+          <normaloff>../../../../../../../../../../../../../../../../../../../../../../.designer/backup</normaloff>../../../../../../../../../../../../../../../../../../../../../../.designer/backup</iconset>
         </property>
        </widget>
       </item>

@@ -44,8 +44,10 @@ from PyQt5.QtWidgets import (
 
 from .bbswbrushes import (
         BBSBrush,
+        BBSGroup,
+        BBSModel,
         BBSBrushesEditor,
-        BBSModel
+        BBSGroupEditor
     )
 from .bbssettings import (
         BBSSettings,
@@ -70,6 +72,19 @@ class BBSMainWindow(EDialog):
 
     @staticmethod
     def open(bbsName="BuliBrushSwitch", bbsVersion="testing", parent=None):
+        if (Krita.instance().activeWindow() is None
+           or Krita.instance().activeWindow().activeView() is None
+           or Krita.instance().activeWindow().activeView().visible() is False
+           or Krita.instance().activeWindow().activeView().document() is None):
+            # why if no document is opened, there's an active view?
+            # need to check if it's normal or not
+            WDialogMessage.display(bbsName+' - '+i18n(f'Ooops sorry!'),
+                                   f'''<p>{i18n("There's no active document")}</p><p>{i18n("A document must be active to configure plugin...")}</p><p>
+                                   <i>{i18n("It's sounds weird I know, even me I'm not happy with that but there's technical things with brushes and then "
+                                            "I currently don't have choice in implementation...")}<br><br>Grum999</i></p>''',
+                                   minSize=QSize(500, 0))
+            return False
+
         dlgBox = BBSMainWindow(bbsName, bbsVersion, parent)
 
         returned = dlgBox.exec()
@@ -88,19 +103,6 @@ class BBSMainWindow(EDialog):
 
         # not yet initialised
         self.__activeView = None
-
-        if (Krita.instance().activeWindow() is None
-           or Krita.instance().activeWindow().activeView() is None
-           or Krita.instance().activeWindow().activeView().visible() is False
-           or Krita.instance().activeWindow().activeView().document() is None):
-            # why if no document is opened, there's an active view?
-            # need to check if it's normal or not
-            WDialogMessage.display(self.__bbsName+' - '+i18n(f'Ooops sorry!'),
-                                   f'''<p>{i18n("There's no active document")}</p><p>{i18n("A document must be active to configure plugin...")}</p><p>
-                                   <i>{i18n("It's sounds weird I know, even me I'm not happy with that but there's technical things with brushes and then "
-                                            "I currently don't have choice in implementation...")}<br><br>Grum999</i></p>''',
-                                   minSize=QSize(500, 0))
-            return
 
         BBSSettings.load()
 
@@ -123,7 +125,13 @@ class BBSMainWindow(EDialog):
             if brush.importData(brushNfo):
                 brushesAndGroups.append(brush)
 
-        self.__bbsModel.load(brushesAndGroups, BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_LIST_NODES))
+        groupsDictList = BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_LIST_GROUPS)
+        for groupNfo in groupsDictList:
+            group = BBSGroup()
+            if group.importData(groupNfo):
+                brushesAndGroups.append(group)
+
+        self.__bbsModel.importData(brushesAndGroups, BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_LIST_NODES))
 
         # keep a saved view of current brush shortcuts
         self.__savedShortcuts = {}
@@ -136,12 +144,11 @@ class BBSMainWindow(EDialog):
         self.__saveViewConfig()
         self.__initialiseUi()
         self.__saveShortcutConfig()
-        self.__updateBrushUi()
+        self.__updateUi()
 
     def showEvent(self, event):
         """Dialog is visible"""
-        self.tvBrushes.selectionModel().selectionChanged.connect(self.__brushesSelectionChanged)
-        self.tvBrushes.resizeColumns()
+        self.tvBrushes.selectionModel().selectionChanged.connect(self.__itemsSelectionChanged)
 
     def __initialiseUi(self):
         """Initialise window interface"""
@@ -224,16 +231,20 @@ class BBSMainWindow(EDialog):
         self.tbBrushAdd.setMenu(self.__menuBrushAdd)
         self.tbBrushEdit.clicked.connect(self.__actionBrushEdit)
         self.tbBrushDelete.clicked.connect(self.__actionBrushDelete)
-        self.tbBrushMoveFirst.clicked.connect(self.__actionBrushMoveFirst)
-        self.tbBrushMoveLast.clicked.connect(self.__actionBrushMoveLast)
-        self.tbBrushMoveUp.clicked.connect(self.__actionBrushMoveUp)
-        self.tbBrushMoveDown.clicked.connect(self.__actionBrushMoveDown)
+        self.tbItemMoveFirst.clicked.connect(self.__actionItemMoveFirst)
+        self.tbItemMoveLast.clicked.connect(self.__actionItemMoveLast)
+        self.tbItemMoveUp.clicked.connect(self.__actionItemMoveUp)
+        self.tbItemMoveDown.clicked.connect(self.__actionItemMoveDown)
         self.tbBrushScratchpadClear.clicked.connect(self.__actionBrushScratchpadClear)
         self.tbBrushScratchpadColorFg.setMenu(menuBrushScratchpadColorFg)
         self.tbBrushScratchpadColorBg.setMenu(menuBrushScratchpadColorBg)
 
-        self.hsBrushesThumbSize.setValue(self.tvBrushes.iconSizeIndex())
-        self.hsBrushesThumbSize.valueChanged.connect(self.__brushesSizeIndexSliderChanged)
+        self.tbGroupAdd.clicked.connect(self.__actionGroupAdd)
+        self.tbGroupEdit.clicked.connect(self.__actionGroupEdit)
+        self.tbGroupDelete.clicked.connect(self.__actionGroupDelete)
+
+        self.hsItemsThumbSize.setValue(self.tvBrushes.iconSizeIndex())
+        self.hsItemsThumbSize.valueChanged.connect(self.__itemsSizeIndexSliderChanged)
 
         # -- button mode
         if BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_DEFAULT_SELECTIONMODE) == BBSSettingsValues.DEFAULT_SELECTIONMODE_FIRST_FROM_LIST:
@@ -247,10 +258,10 @@ class BBSMainWindow(EDialog):
             self.rbModificationModeKeep.setChecked(True)
 
         # -- brush list
-        self.tvBrushes.doubleClicked.connect(self.__actionBrushEdit)
+        self.tvBrushes.doubleClicked.connect(self.__actionItem)
         self.tvBrushes.setModel(self.__bbsModel)
         self.tvBrushes.setIconSizeIndex(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_BRUSHES_ZOOMLEVEL))
-        self.tvBrushes.iconSizeIndexChanged.connect(self.__brushesSizeIndexChanged)
+        self.tvBrushes.iconSizeIndexChanged.connect(self.__itemsSizeIndexChanged)
 
         # -- scratchpad initialisation
         self.__scratchpadTestBrush = Scratchpad(self.__activeView, self.__scratchpadDefaultBgColor, self)
@@ -277,6 +288,11 @@ class BBSMainWindow(EDialog):
             self.move(position)
 
         self.splitterBrushes.setSizes(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_BRUSHES_SPLITTER_POSITION))
+        colSize = BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_BRUSHES_COLWIDTH)
+        if colSize > 0:
+            self.tvBrushes.header().resizeSection(BBSModel.COLNUM_BRUSH, colSize)
+        else:
+            self.tvBrushes.resizeColumnToContents(BBSModel.COLNUM_BRUSH)
 
     def __saveShortcutConfig(self):
         """Save current action shortcuts
@@ -284,24 +300,48 @@ class BBSMainWindow(EDialog):
         During process, we need to udpate action shortcut directly (allows to take
         in account shortcut modification made on brush)
         """
-        for itemId in self.__bbsModel.idIndexes():
-            action = Krita.instance().action(f'bulibrushswitch_brush_{itemId}')
-            if action:
-                self.__savedShortcuts[itemId] = action.shortcut()
-            elif item.id() in self.__savedShortcuts:
-                self.__savedShortcuts.pop(itemId)
+        for itemId, itemType in self.__bbsModel.idIndexes().items():
+            if itemType == BBSModel.TYPE_BRUSH:
+                action = Krita.instance().action(BBSSettings.brushActionId(itemId))
+                if action:
+                    self.__savedShortcuts[itemId] = action.shortcut()
+                elif itemId in self.__savedShortcuts:
+                    self.__savedShortcuts.pop(itemId)
+            else:
+                actionNext = Krita.instance().action(BBSSettings.groupActionId(itemId, 'N'))
+                if actionNext:
+                    self.__savedShortcuts[itemId+'-N'] = actionNext.shortcut()
+                elif itemId in self.__savedShortcuts:
+                    self.__savedShortcuts.pop(itemId+'-N')
+                actionPrevious = Krita.instance().action(BBSSettings.groupActionId(itemId, 'P'))
+                if actionPrevious:
+                    self.__savedShortcuts[itemId+'-P'] = actionPrevious.shortcut()
+                elif itemId in self.__savedShortcuts:
+                    self.__savedShortcuts.pop(itemId+'-P')
 
     def __restoreShortcutConfig(self):
         """Restore current shortcut configuration"""
         # for potential new action created, remove designed shortcut
         for itemId in self.__createdShortcuts:
-            action = BBSSettings.brushAction(itemId)
+            if re.search('-N$', itemId):
+                action = BBSSettings.groupAction(re.sub('-N$', itemId, ''), 'N')
+            elif re.search('-P$', itemId):
+                action = BBSSettings.brushAction(re.sub('-P$', itemId, ''), 'P')
+            else:
+                action = BBSSettings.brushAction(itemId)
+
             if action:
                 action.setShortcut(QKeySequence())
 
         # restore initial shortcuts
         for itemId in self.__savedShortcuts:
-            action = BBSSettings.brushAction(itemId)
+            if re.search('-N$', itemId):
+                action = BBSSettings.groupAction(re.sub('-N$', itemId, ''), 'N')
+            elif re.search('-P$', itemId):
+                action = BBSSettings.brushAction(re.sub('-P$', itemId, ''), 'P')
+            else:
+                action = BBSSettings.brushAction(itemId)
+
             if action:
                 action.setShortcut(self.__savedShortcuts[itemId])
 
@@ -404,18 +444,38 @@ class BBSMainWindow(EDialog):
         brush.setFlow(options[BBSBrush.KEY_FLOW])
         brush.setShortcut(options[BBSBrush.KEY_SHORTCUT])
         brush.endUpdate()
-        BBSSettings.setShortcut(brush, options[BBSBrush.KEY_SHORTCUT])
+        BBSSettings.setBrushShortcut(brush, options[BBSBrush.KEY_SHORTCUT])
+
+    def __applyGroupOptions(self, group, options):
+        """Apply options to group"""
+        group.beginUpdate()
+        group.setName(options[BBSGroup.KEY_NAME])
+        group.setComments(options[BBSGroup.KEY_COMMENTS])
+        group.setColor(options[BBSGroup.KEY_COLOR])
+        group.setExpanded(options[BBSGroup.KEY_EXPANDED])
+        group.setShortcutNext(options[BBSGroup.KEY_SHORTCUT_NEXT])
+        group.setShortcutPrevious(options[BBSGroup.KEY_SHORTCUT_PREV])
+        group.endUpdate()
+        BBSSettings.setGroupShortcut(group, options[BBSGroup.KEY_SHORTCUT_NEXT], options[BBSGroup.KEY_SHORTCUT_PREV])
 
     def __actionBrushAdd(self):
         """Add a new brush in list (from current view brush)"""
+        parentGroup = None
+        items = self.tvBrushes.selectedItems()
+        if len(items):
+            for item in items:
+                if isinstance(item, BBSGroup):
+                    parentGroup = item
+                    break
+
         brush = BBSBrush()
         brush.fromCurrentKritaBrush(self.__activeView)
         options = BBSBrushesEditor.edit(self.__bbsName+' - '+i18n('Add brush'), brush)
         if options is not None:
             self.__applyBrushOptions(brush, options)
             self.__createdShortcuts.append(brush.id())
-            self.__bbsModel.add(brush)
-            self.__updateBrushUi()
+            self.__bbsModel.add(brush, parentGroup)
+            self.__updateUi()
 
     def __actionBrushEdit(self):
         """Edit brush from list"""
@@ -427,7 +487,7 @@ class BBSMainWindow(EDialog):
             if options is not None:
                 self.__applyBrushOptions(brush, options)
                 self.__bbsModel.update(brush)
-                self.__updateBrushUi()
+                self.__updateUi()
 
     def __actionBrushDelete(self):
         """Remove brush from list"""
@@ -436,90 +496,156 @@ class BBSMainWindow(EDialog):
             # a brush is selected
             brush = brushes[0]
 
-            brushDescription = "<br><br>"+brush.information(BBSBrush.INFO_WITH_BRUSH_DETAILS | BBSBrush.INFO_WITH_BRUSH_OPTIONS)+"<br><br>"
+            brushDescription = "<br><br>"+brush.information(BBSBrush.INFO_WITH_DETAILS | BBSBrush.INFO_WITH_OPTIONS)+"<br><br>"
 
             if WDialogBooleanInput.display(self.__bbsName+' - '+i18n(f'Remove brush'),
-                                           i18n(f"<b>Following brush will removed from user list</b>{brushDescription}<b>Do you confirm action?</b>"),
+                                           i18n(f"<b>Following brush will removed from list</b>{brushDescription}<b>Do you confirm action?</b>"),
                                            minSize=QSize(950, 400)):
-                BBSSettings.setShortcut(brush, QKeySequence())
+                BBSSettings.setBrushShortcut(brush, QKeySequence())
                 self.__bbsModel.remove(brush)
-                self.__updateBrushUi()
+                self.__updateUi()
 
-    def __actionBrushMoveFirst(self):
+    def __actionGroupAdd(self):
+        """Add a new group in list (from current view brush)"""
+        parentGroup = None
+        items = self.tvBrushes.selectedItems()
+        if len(items):
+            for item in items:
+                if isinstance(item, BBSGroup):
+                    parentGroup = item
+                    break
+
+        group = BBSGroup()
+        options = BBSGroupEditor.edit(self.__bbsName+' - '+i18n('Add group'), group)
+        if options is not None:
+            self.__applyGroupOptions(group, options)
+            self.__createdShortcuts.append(group.id())
+            self.__bbsModel.add(group, parentGroup)
+            self.__updateUi()
+
+    def __actionGroupEdit(self):
+        """Edit brush from list"""
+        groups = self.tvBrushes.selectedItems()
+        if len(groups):
+            # a group is selected
+            group = groups[0]
+            options = BBSGroupEditor.edit(self.__bbsName+' - '+i18n(f'Edit group'), group)
+            if options is not None:
+                self.__applyGroupOptions(group, options)
+                self.__bbsModel.update(group)
+                self.__updateUi()
+
+    def __actionGroupDelete(self):
+        """Remove brush from list"""
+        groups = self.tvBrushes.selectedItems()
+        if len(groups):
+            # a brush is selected
+            group = groups[0]
+
+            groupDescription = "<br><br>"+group.information()+"<br><br>"
+
+            if WDialogBooleanInput.display(self.__bbsName+' - '+i18n(f'Remove group'),
+                                           i18n(f"<b>Following group will removed from list</b>{groupDescription}<b>Do you confirm action?</b>"),
+                                           minSize=QSize(950, 400)):
+                BBSSettings.setGroupShortcut(group, QKeySequence(), QKeySequence())
+                self.__bbsModel.remove(group)
+                self.__updateUi()
+
+    def __actionItem(self):
+        """Double click on item
+        - brush: edit brush
+        - group: expand/collapse
+        """
+        items = self.tvBrushes.selectedItems()
+        if len(items):
+            # a brush is selected
+            item = items[0]
+            if isinstance(item, BBSBrush):
+                self.__actionBrushEdit()
+            else:
+                index = self.tvBrushes.model().getFromId(item.id(), True)
+
+    def __actionItemMoveFirst(self):
         """Move brush at first position in list"""
         brushes = self.tvBrushes.selectedItems()
         if len(brushes):
             # a brush is selected
             # self.__brushes.moveItemAtFirst(brushes[0])
-            print("BBSMainWindow.__actionBrushMoveFirst()")
-            self.__updateBrushUi()
+            print("TODO: BBSMainWindow.__actionItemMoveFirst()")
+            self.__updateUi()
 
-    def __actionBrushMoveLast(self):
+    def __actionItemMoveLast(self):
         """Move brush at last position in list"""
         brushes = self.tvBrushes.selectedItems()
         if len(brushes):
             # a brush is selected
             # self.__brushes.moveItemAtLast(brushes[0])
-            print("BBSMainWindow.__actionBrushMoveLast()")
-            self.__updateBrushUi()
+            print("TODO: BBSMainWindow.__actionItemMoveLast()")
+            self.__updateUi()
 
-    def __actionBrushMoveUp(self):
+    def __actionItemMoveUp(self):
         """Move brush at previous position in list"""
         brushes = self.tvBrushes.selectedItems()
         if len(brushes):
             # a brush is selected
             # self.__brushes.moveItemAtPrevious(brushes[0])
-            print("BBSMainWindow.__actionBrushMoveUp()")
-            self.__updateBrushUi()
+            print("TODO: BBSMainWindow.__actionItemMoveUp()")
+            self.__updateUi()
 
-    def __actionBrushMoveDown(self):
+    def __actionItemMoveDown(self):
         """Move brush at next position in list"""
         brushes = self.tvBrushes.selectedItems()
         if len(brushes):
             # a brush is selected
             # self.__brushes.moveItemAtNext(brushes[0])
-            print("BBSMainWindow.__actionBrushMoveDown()")
-            self.__updateBrushUi()
+            print("TODO: BBSMainWindow.__actionItemMoveDown()")
+            self.__updateUi()
 
-    def __brushesSelectionChanged(self, selected, deselected):
+    def __itemsSelectionChanged(self, selected, deselected):
         """Selection in treeview has changed, update UI"""
-        self.__updateBrushUi()
+        self.__updateUi()
         selectedBrushes = self.tvBrushes.selectedItems()
-        if len(selectedBrushes) == 1:
+        if len(selectedBrushes) == 1 and isinstance(selectedBrushes, BBSBrush):
             if selectedBrushes[0].found():
                 selectedBrushes[0].toCurrentKritaBrush()
 
-    def __brushesSizeIndexSliderChanged(self, newSize):
+    def __itemsSizeIndexSliderChanged(self, newSize):
         """Thumbnail size has been changed from brushes slider"""
         # update treeview
         self.tvBrushes.setIconSizeIndex(newSize)
 
-    def __brushesSizeIndexChanged(self, newSize, newQSize):
+    def __itemsSizeIndexChanged(self, newSize, newQSize):
         """Thumbnail size has been changed from brushes treeview"""
         # update slider
-        self.hsBrushesThumbSize.setValue(newSize)
+        self.hsItemsThumbSize.setValue(newSize)
 
-    def __updateBrushUi(self):
+    def __updateUi(self):
         """Update brushes UI (enable/disable buttons...)"""
-        nbSelectedBrush = self.tvBrushes.nbSelectedItems()
-        self.tbBrushEdit.setEnabled(nbSelectedBrush == 1)
-        self.tbBrushDelete.setEnabled(nbSelectedBrush == 1)
+        items = self.tvBrushes.selectedItems()
 
-        brushes = self.tvBrushes.selectedItems()
-        if len(brushes):
+        nbSelectedItems = len(items)
+
+        self.tbBrushEdit.setEnabled(nbSelectedItems == 1 and isinstance(items[0], BBSBrush))
+        self.tbBrushDelete.setEnabled(nbSelectedItems == 1 and isinstance(items[0], BBSBrush))
+
+        self.tbGroupEdit.setEnabled(nbSelectedItems == 1 and isinstance(items[0], BBSGroup))
+        self.tbGroupDelete.setEnabled(nbSelectedItems == 1 and isinstance(items[0], BBSGroup))
+
+        if len(items):
             # a brush is selected
-            brush = brushes[0]
-            self.tbBrushMoveFirst.setEnabled(brush.position() > 0)
-            self.tbBrushMoveLast.setEnabled(brush.position() < len(self.__bbsModel.idIndexes())-1)
-            self.tbBrushMoveUp.setEnabled(brush.position() > 0)
-            self.tbBrushMoveDown.setEnabled(brush.position() < len(self.__bbsModel.idIndexes())-1)
+            item = items[0]
+            self.tbItemMoveFirst.setEnabled(item.position() > 0)
+            self.tbItemMoveLast.setEnabled(item.position() < len(self.__bbsModel.idIndexes())-1)
+            self.tbItemMoveUp.setEnabled(item.position() > 0)
+            self.tbItemMoveDown.setEnabled(item.position() < len(self.__bbsModel.idIndexes())-1)
         else:
-            self.tbBrushMoveFirst.setEnabled(False)
-            self.tbBrushMoveLast.setEnabled(False)
-            self.tbBrushMoveUp.setEnabled(False)
-            self.tbBrushMoveDown.setEnabled(False)
+            self.tbItemMoveFirst.setEnabled(False)
+            self.tbItemMoveLast.setEnabled(False)
+            self.tbItemMoveUp.setEnabled(False)
+            self.tbItemMoveDown.setEnabled(False)
 
         if len(self.__bbsModel.idIndexes({'brushes': True})) > 0:
+            # need at elast one brush defined!
             self.pbOk.setEnabled(True)
             self.pbOk.setToolTip("")
         else:
@@ -545,6 +671,7 @@ class BBSMainWindow(EDialog):
         BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_WINDOW_SIZE_HEIGHT, self.height())
 
         BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_BRUSHES_ZOOMLEVEL, self.tvBrushes.iconSizeIndex())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_BRUSHES_COLWIDTH, self.tvBrushes.header().sectionSize(BBSModel.COLNUM_BRUSH))
 
         BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_COMPACT, self.__actionSelectBrushScratchpadColorFg.colorPicker().optionCompactUi())
         BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_PALETTE_VISIBLE, self.__actionSelectBrushScratchpadColorFg.colorPicker().optionShowColorPalette())
@@ -592,7 +719,10 @@ class BBSMainWindow(EDialog):
 
         BBSSettings.set(BBSSettingsKey.CONFIG_BRUSHES_LIST_COUNT, len(self.__bbsModel.idIndexes()))
 
-        BBSSettings.setBrushes([self.__bbsModel.data(index, BBSModel.ROLE_DATA) for index in self.__bbsModel.idIndexes({'groups': False}).values()])
+        exportedData = self.__bbsModel.exportData()
+        BBSSettings.setBrushes(exportedData['brushes'])
+        BBSSettings.setGroups(exportedData['groups'])
+        BBSSettings.setNodes(exportedData['nodes'])
 
         if BBSSettings.modified():
             BBSSettings.save()
@@ -608,7 +738,10 @@ class BBSMainWindow(EDialog):
         for item in [self.__bbsModel.data(index, BBSModel.ROLE_DATA) for index in self.__bbsModel.idIndexes().values()]:
             # don't kwow why, it seems that from here, some actions shortcut are lost??
             # need to reapply them...
-            BBSSettings.setShortcut(item, item.shortcut())
+            if isinstance(item, BBSBrush):
+                BBSSettings.setBrushShortcut(item, item.shortcut())
+            else:
+                BBSSettings.setGroupShortcut(item, item.shortcutNext(), item.shortcutPrevious())
 
         self.__restoreViewConfig()
         self.__saveSettings()

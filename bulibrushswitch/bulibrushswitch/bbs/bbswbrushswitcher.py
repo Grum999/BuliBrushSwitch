@@ -21,6 +21,7 @@
 #       Pop-out user interface for brush switcher
 #
 # -----------------------------------------------------------------------------
+import re
 from krita import (
         Krita,
         Window,
@@ -118,9 +119,6 @@ class BBSWBrushSwitcher(QWidget):
 
         # define oibject name (easier to find widget in window children, if needed)
         self.setObjectName('bbs')
-
-        # when settings are saved, need to reload brushes
-        BBSSettings.settingsSaved().connect(lambda: self.__reloadBrushes())
 
         # when tool is changed, need to fix opacity
         EKritaTools.notifier.toolChanged.connect(self.__kritaToolChanged)
@@ -249,7 +247,7 @@ class BBSWBrushSwitcher(QWidget):
         if updated:
             # update icon...
             self.__tbBrush.setIcon(QIcon(QPixmap.fromImage(selectedBrush.image())))
-            self.__tbBrush.setToolTip(selectedBrush.information(BBSBrush.INFO_WITH_BRUSH_DETAILS | BBSBrush.INFO_WITH_BRUSH_OPTIONS))
+            self.__tbBrush.setToolTip(selectedBrush.information(BBSBrush.INFO_WITH_DETAILS | BBSBrush.INFO_WITH_OPTIONS))
 
     @pyqtSlot(bool)
     def __setSelectedBrushFromAction(self, checked):
@@ -257,6 +255,20 @@ class BBSWBrushSwitcher(QWidget):
         action = self.sender()
         brush = self.__bbsModel.getFromId(action.data(), False)
         self.setBrushActivated(brush)
+
+    @pyqtSlot(bool)
+    def __setSelectedGroupNextFromAction(self, checked):
+        """An action has been triggered to select a brush from a group"""
+        action = self.sender()
+        group = self.__bbsModel.getFromId(action.data(), False)
+        print('TODO: __setSelectedGroupNextFromAction', group)
+
+    @pyqtSlot(bool)
+    def __setSelectedGroupPreviousFromAction(self, checked):
+        """An action has been triggered to select a brush"""
+        action = self.sender()
+        group = self.__bbsModel.getFromId(action.data(), False)
+        print('TODO: __setSelectedGroupPreviousFromAction', group)
 
     @pyqtSlot()
     def __setShortcutFromAction(self):
@@ -278,20 +290,45 @@ class BBSWBrushSwitcher(QWidget):
         self.__disableUpdatingShortcutFromAction = True
 
         action = self.sender()
-        brush = self.__bbsModel.getFromId(action.data(), False)
-        if brush:
+        item = self.__bbsModel.getFromId(action.data(), False)
+        if isinstance(item, BBSBrush):
             # a brush is defined for action
             obj = Krita.instance().activeWindow().qwindow().findChild(QWidget, 'KisShortcutsDialog')
             if obj:
                 # shortcut has been modified from settings dialog
                 # update brush
-                brush.setShortcut(action.shortcut())
+                item.setShortcut(action.shortcut())
             else:
                 # shortcut has been molified from???
                 # force shortcut from brush
-                brush.setShortcut(brush.shortcut())
+                item.setShortcut(item.shortcut())
             # reapply shortcut to action
-            BBSSettings.setShortcut(brush, brush.shortcut())
+            BBSSettings.setBrushShortcut(item, item.shortcut())
+        elif isinstance(item, BBSGroup):
+            # a group is defined for action
+            obj = Krita.instance().activeWindow().qwindow().findChild(QWidget, 'KisShortcutsDialog')
+            if re.search("-N$", action.data()):
+                if obj:
+                    # shortcut has been modified from settings dialog
+                    # update group
+                    item.setShortcutNext(action.shortcut())
+                else:
+                    # shortcut has been molified from???
+                    # force shortcut from brush
+                    item.setShortcutNext(item.shortcutNext())
+            else:
+                if obj:
+                    # shortcut has been modified from settings dialog
+                    # update group
+                    item.setShortcutPrevious(action.shortcut())
+                else:
+                    # shortcut has been molified from???
+                    # force shortcut from brush
+                    item.setShortcutPrevious(item.shortcutPrevious())
+
+            # reapply shortcut to action
+            BBSSettings.setGroupShortcut(item, item.shortcutNext(), item.shortcutPrevious())
+
         self.__disableUpdatingShortcutFromAction = False
 
     def __reloadBrushes(self):
@@ -302,16 +339,40 @@ class BBSWBrushSwitcher(QWidget):
         # cleanup all current action shortcuts
         # not made from model to let possibility to work on removed items if needed
         for id in self.__bbsModel.idIndexes():
-            action = self.__bbsModel.getFromId(id, False).action()
-            if action:
-                try:
-                    action.triggered.disconnect(self.__setSelectedBrushFromAction)
-                except Exception:
-                    pass
-                try:
-                    action.changed.disconnect(self.__setSelectedBrushFromAction)
-                except Exception:
-                    pass
+            item = self.__bbsModel.getFromId(id, False)
+            if isinstance(item, BBSBrush):
+                action = item.action()
+                if action:
+                    try:
+                        action.triggered.disconnect(self.__setSelectedBrushFromAction)
+                    except Exception:
+                        pass
+                    try:
+                        action.changed.disconnect(self.__setSelectedBrushFromAction)
+                    except Exception:
+                        pass
+            else:
+                actionNext = item.actionNext()
+                if actionNext:
+                    try:
+                        actionNext.triggered.disconnect(self.__setSelectedGroupNextFromAction)
+                    except Exception:
+                        pass
+                    try:
+                        actionNext.changed.disconnect(self.__setSelectedGroupNextFromAction)
+                    except Exception:
+                        pass
+
+                actionPrevious = item.actionPrevious()
+                if actionPrevious:
+                    try:
+                        actionPrevious.triggered.disconnect(self.__setSelectedGroupPreviousFromAction)
+                    except Exception:
+                        pass
+                    try:
+                        actionPrevious.changed.disconnect(self.__setSelectedGroupPreviousFromAction)
+                    except Exception:
+                        pass
 
         brushesAndGroups = []
 
@@ -340,23 +401,39 @@ class BBSWBrushSwitcher(QWidget):
         for groupNfo in groupsDictList:
             group = BBSGroup()
             if group.importData(groupNfo):
-                action = group.action()
-                if action:
+                actionNext = group.actionNext()
+                if actionNext:
                     try:
-                        action.triggered.disconnect(self.__setSelectedBrushFromAction)
+                        actionNext.triggered.disconnect(self.__setSelectedGroupNextFromAction)
                     except Exception:
                         pass
 
                     try:
-                        action.changed.disconnect(self.__setSelectedBrushFromAction)
+                        actionNext.changed.disconnect(self.__setSelectedGroupNextFromAction)
                     except Exception:
                         pass
 
-                    action.triggered.connect(self.__setSelectedBrushFromAction)
-                    action.changed.connect(self.__setShortcutFromAction)
+                    actionNext.triggered.connect(self.__setSelectedGroupNextFromAction)
+                    actionNext.changed.connect(self.__setShortcutFromAction)
+
+                actionPrevious = group.actionPrevious()
+                if actionPrevious:
+                    try:
+                        actionPrevious.triggered.disconnect(self.__setSelectedGroupPreviousFromAction)
+                    except Exception:
+                        pass
+
+                    try:
+                        actionPrevious.changed.disconnect(self.__setSelectedGroupPreviousFromAction)
+                    except Exception:
+                        pass
+
+                    actionPrevious.triggered.connect(self.__setSelectedGroupPreviousFromAction)
+                    actionPrevious.changed.connect(self.__setShortcutFromAction)
+
                 brushesAndGroups.append(group)
 
-        self.__bbsModel.load(brushesAndGroups, BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_LIST_NODES))
+        self.__bbsModel.importData(brushesAndGroups, BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_LIST_NODES))
 
         self.__setSelectedBrushId(self.__selectedBrushId)
 
@@ -458,7 +535,9 @@ class BBSWBrushSwitcher(QWidget):
     def openSettings(self):
         """Open settings dialog box"""
         self.__disableUpdatingShortcutFromAction = True
-        returned = BBSMainWindow.open(self.__bbsName, self.__bbsVersion, self.__dlgParentWidget)
+        if BBSMainWindow.open(self.__bbsName, self.__bbsVersion, self.__dlgParentWidget):
+            # settings has been saved; reload brushes
+            self.__reloadBrushes()
         self.__disableUpdatingShortcutFromAction = False
 
     def openAbout(self):
@@ -467,7 +546,7 @@ class BBSWBrushSwitcher(QWidget):
 
     def brushes(self):
         """Return brush list"""
-        print("BBSWBrushSwitcher.brushes()")
+        print("TODO: BBSWBrushSwitcher.brushes() -- delete method?")
         # return self.__brushes
         return []
 
@@ -656,10 +735,11 @@ class BBSWBrushSwitcherUi(QFrame):
         self.__tvBrushes.setModel(self.__bbsModel)
         self.__tvBrushes.setIconSizeIndex(BBSSettings.get(BBSSettingsKey.CONFIG_UI_POPUP_BRUSHES_ZOOMLEVEL))
         self.__tvBrushes.setIndentation(0)
-        self.__tvBrushes.setRootIsDecorated(False)
-        self.__tvBrushes.setAllColumnsShowFocus(True)
         self.__tvBrushes.setCompactIconSizeIndex(2)
         self.__tvBrushes.iconSizeIndexChanged.connect(self.__brushesSizeIndexChanged)
+        self.__tvBrushes.collapsed.connect(self.__groupExpandCollapse)
+        self.__tvBrushes.expanded.connect(self.__groupExpandCollapse)
+        self.__tvBrushes.header().sectionResized.connect(self.__brushesColumnResized)
         self.__tvBrushesInitialised = False
 
         self.__lvBrushes = BBSWBrushesLv()
@@ -770,10 +850,13 @@ class BBSWBrushSwitcherUi(QFrame):
             selectInView = self.__tvBrushes
 
         if len(selectedBrushes) == 1:
-            if selectedBrushes[0].found():
-                self.__brushSwitcher.setBrushActivated(selectedBrushes[0])
-                selectInView.selectItem(selectedBrushes[0])
-                self.hide()
+            if isinstance(selectedBrushes[0], BBSBrush):
+                if selectedBrushes[0].found():
+                    self.__brushSwitcher.setBrushActivated(selectedBrushes[0])
+                    selectInView.selectItem(selectedBrushes[0])
+                    self.hide()
+            else:
+                print("TODO: __brushesSelectionChanged", selectedBrushes[0])
         self.__inSelectionUpdate = False
 
     def __brushesSizeIndexChanged(self, newSize, newQSize):
@@ -788,6 +871,20 @@ class BBSWBrushSwitcherUi(QFrame):
         # update treeview
         self.__tvBrushes.setIconSizeIndex(newSize)
         self.__lvBrushes.setIconSizeIndex(newSize)
+
+    def __groupExpandCollapse(self, index):
+        """Group is expanded or collapsed; save state in configuration file"""
+        exportedData = self.__bbsModel.exportData()
+        BBSSettings.setGroups(exportedData['groups'])
+        if BBSSettings.modified():
+            BBSSettings.save()
+
+    def __brushesColumnResized(self, logicalIndex, oldSize, newSize):
+        """Brushes column resized, keep it in settings"""
+        if logicalIndex == BBSModel.COLNUM_BRUSH:
+            BBSSettings.set(BBSSettingsKey.CONFIG_UI_POPUP_BRUSHES_COLWIDTH, newSize)
+            if BBSSettings.modified():
+                BBSSettings.save()
 
     def keyPressEvent(self, event):
         """Check if need to close window"""
@@ -839,7 +936,12 @@ class BBSWBrushSwitcherUi(QFrame):
             self.__tvBrushes.clicked.connect(self.__brushesSelectionChanged)
             self.__lvBrushes.clicked.connect(self.__brushesSelectionChanged)
             self.__tvBrushesInitialised = True
-        self.__tvBrushes.resizeColumns()
+
+        colSize = BBSSettings.get(BBSSettingsKey.CONFIG_UI_POPUP_BRUSHES_COLWIDTH)
+        if colSize > 0:
+            self.__tvBrushes.header().resizeSection(BBSModel.COLNUM_BRUSH, colSize)
+        else:
+            self.__tvBrushes.resizeColumns()
 
     def resizeEvent(self, event):
         """Widget has been resized"""
