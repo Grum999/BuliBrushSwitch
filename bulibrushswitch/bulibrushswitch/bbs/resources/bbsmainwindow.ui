@@ -311,8 +311,7 @@
                </property>
                <property name="icon">
                 <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
-                 <normaloff>:/pktk/images/normal/brush_remove</normaloff>
-                 <disabledoff>:/pktk/images/disabled/brush_remove</disabledoff>:/pktk/images/normal/brush_remove</iconset>
+                 <normaloff>:/pktk/images/normal/folder_open_remove</normaloff>:/pktk/images/normal/folder_open_remove</iconset>
                </property>
                <property name="autoRaise">
                 <bool>true</bool>
