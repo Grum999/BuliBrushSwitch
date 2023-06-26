@@ -206,7 +206,7 @@ class BBSWBrushSwitcher(QWidget):
             if len(brushes) > 0:
                 return brushes[0]
             for group in [item for item in items if isinstance(item, BBSGroup)]:
-                found = searchFromNode(group.id(), False)
+                found = searchFromNode(group.id())
                 if found:
                     return found
             return None

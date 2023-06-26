@@ -268,7 +268,9 @@
                </property>
                <property name="icon">
                 <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
-                 <normaloff>:/pktk/images/normal/folder_open_add</normaloff>:/pktk/images/normal/folder_open_add</iconset>
+                 <normaloff>:/pktk/images/normal/folder_open_add</normaloff>
+                 <disabledoff>:/pktk/images/disabled/folder_open_add</disabledoff>
+                 <disabledon>:/pktk/images/disabled/folder_open_add</disabledon>:/pktk/images/normal/folder_open_add</iconset>
                </property>
                <property name="popupMode">
                 <enum>QToolButton::InstantPopup</enum>
@@ -294,7 +296,9 @@
                </property>
                <property name="icon">
                 <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
-                 <normaloff>:/pktk/images/normal/folder_open_dots</normaloff>:/pktk/images/normal/folder_open_dots</iconset>
+                 <normaloff>:/pktk/images/normal/folder_open_dots</normaloff>
+                 <disabledoff>:/pktk/images/disabled/folder_open_dots</disabledoff>
+                 <disabledon>:/pktk/images/disabled/folder_open_dots</disabledon>:/pktk/images/normal/folder_open_dots</iconset>
                </property>
                <property name="autoRaise">
                 <bool>true</bool>
@@ -311,7 +315,9 @@
                </property>
                <property name="icon">
                 <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
-                 <normaloff>:/pktk/images/normal/folder_open_remove</normaloff>:/pktk/images/normal/folder_open_remove</iconset>
+                 <normaloff>:/pktk/images/normal/folder_open_remove</normaloff>
+                 <disabledoff>:/pktk/images/disabled/folder_open_remove</disabledoff>
+                 <disabledon>:/pktk/images/disabled/folder_open_remove</disabledon>:/pktk/images/normal/folder_open_remove</iconset>
                </property>
                <property name="autoRaise">
                 <bool>true</bool>
@@ -510,6 +516,18 @@
            <widget class="BBSWBrushesTv" name="tvBrushes">
             <property name="editTriggers">
              <set>QAbstractItemView::NoEditTriggers</set>
+            </property>
+            <property name="dragEnabled">
+             <bool>true</bool>
+            </property>
+            <property name="dragDropMode">
+             <enum>QAbstractItemView::InternalMove</enum>
+            </property>
+            <property name="defaultDropAction">
+             <enum>Qt::MoveAction</enum>
+            </property>
+            <property name="selectionMode">
+             <enum>QAbstractItemView::ExtendedSelection</enum>
             </property>
             <property name="verticalScrollMode">
              <enum>QAbstractItemView::ScrollPerPixel</enum>
@@ -762,7 +780,7 @@
  </resources>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup"/>
+  <buttongroup name="buttonGroup_2"/>
  </buttongroups>
 </ui>

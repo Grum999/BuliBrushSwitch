@@ -413,7 +413,7 @@ Also, first line is used to define action name in Krita's shortcut settings dial
   <customwidget>
    <class>WStandardColorSelector</class>
    <extends>QWidget</extends>
-   <header>bulinotes.pktk.widgets.wstandardcolorselector</header>
+   <header>bulibrushswitch.pktk.widgets.wstandardcolorselector</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
