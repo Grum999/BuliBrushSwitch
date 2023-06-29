@@ -25,8 +25,10 @@
 #       A brush definition (managed by BNBrushes collection)
 #
 # -----------------------------------------------------------------------------
-
+import ctypes
+import json
 import re
+import os.path
 
 from bulibrushswitch.pktk import *
 
@@ -1006,27 +1008,29 @@ class BBSModelNode(QStandardItem):
         elif not isinstance(data, BBSBaseNode):
             raise EInvalidType("Given `data` must be a <BBSBaseNode>")
 
-        self.__parent = parent
-        self.__data = data
+        self.__parentNode = None
+        self.__dataNode = data
 
         self.__inUpdate = 0
         self.__dndOver = False
 
         # Initialise node childs
-        self.__childs = []
+        self.__childNodes = []
+
+        self.setParentNode(parent)
 
     def __repr__(self):
-        if self.__parent:
-            parent = f"{self.__parent.data().id()}"
+        if self.__parentNode:
+            parent = f"{self.__parentNode.data().id()}"
         else:
             parent = "None"
 
-        if self.__data:
-            data = f"{self.__data}"
+        if self.__dataNode:
+            data = f"{self.__dataNode}"
         else:
             data = "None"
 
-        return f"<BBSModelNode(parent:{parent}, data:{data}, childs({len(self.__childs)}):{self.__childs})>"
+        return f"<BBSModelNode(parent:{parent}, data:{data}, childs({len(self.__childNodes)}):{self.__childNodes})>"
 
     def beginUpdate(self):
         self.__inUpdate += 1
@@ -1036,34 +1040,33 @@ class BBSModelNode(QStandardItem):
         if self.__inUpdate < 0:
             self.__inUpdate = 0
         elif self.__inUpdate == 0:
-            self.sort()
+            self.__childNodes.sort(key=lambda item: item.data().position())
             # need to recalculate position properly;
-            for index, child in enumerate(self.__childs):
+            for index, child in enumerate(self.__childNodes):
                 child.data().setPosition((index + 1) * 100)
 
     def childs(self):
         """Return list of childs"""
-        return self.__childs
+        return self.__childNodes
 
     def child(self, row):
         """Return child at given position"""
-        if row < 0 or row >= len(self.__childs):
+        if row < 0 or row >= len(self.__childNodes):
             return None
-        return self.__childs[row]
+        return self.__childNodes[row]
 
-    def addChild(self, childNode):
+    def appendChild(self, childNode):
         """Add a new child """
         if isinstance(childNode, list):
             self.beginUpdate()
             for childNodeToAdd in childNode:
-                self.addChild(childNodeToAdd)
+                self.appendChild(childNodeToAdd)
             self.endUpdate()
         elif not isinstance(childNode, BBSModelNode):
             raise EInvalidType("Given `childNode` must be a <BBSModelNode>")
-        elif isinstance(childNode.data(), self.__data.acceptedChild()):
+        elif isinstance(childNode.data(), self.__dataNode.acceptedChild()):
             self.beginUpdate()
-            childNode.setParent(self)
-            self.__childs.append(childNode)
+            self.__childNodes.append(childNode)
             self.endUpdate()
 
     def removeChild(self, childNode):
@@ -1078,44 +1081,44 @@ class BBSModelNode(QStandardItem):
                 returned.append(self.removeChild(childNodeToRemove))
             self.__endUpdate()
             return returned
-        elif not isinstance(childNode, BBSModelNode):
-            raise EInvalidType("Given `childNode` must be a <BBSModelNode>")
+        elif not isinstance(childNode, (int, BBSModelNode)):
+            raise EInvalidType("Given `childNode` must be a <BBSModelNode> or <int>")
         else:
             self.beginUpdate()
             try:
-                returned = self.__childs.pop(self.__childs.index(childNode))
-                returned.setParent(None)
+                if isinstance(childNode, BBSModelNode):
+                    returned = self.__childNodes.pop(self.__childNodes.index(childNode))
+                else:
+                    # row number provided
+                    returned = self.__childNodes.pop(childNode)
             except Exception:
                 returned = None
 
             self.endUpdate()
             return returned
 
-    def remove(self):
-        """Remove item from parent"""
-        if self.__parent:
-            self.beginUpdate()
-            self.__parent.removeChild(self)
-            self.endUpdate()
+    def insertChild(self, position, childNode):
+        self.__childNodes.insert(position, childNode)
+        childNode.beginUpdate()
+        childNode.data().setPosition(position)
+        childNode.setParentNode(self)
+        childNode.endUpdate()
 
     def clear(self):
         """Remove all childs"""
         self.beginUpdate()
-        self.__childs = []
+        self.__childNodes = []
         self.endUpdate()
 
     def childCount(self):
         """Return number of children the current node have"""
-        return len(self.__childs)
+        return len(self.__childNodes)
 
     def row(self):
         """Return position in parent's children list"""
         returned = 0
-        if self.__parent:
-            returned = self.__parent.childRow(self)
-            if returned < 0:
-                # need to check if -1 can be used
-                returned = -1
+        if self.__parentNode:
+            returned = self.__parentNode.childRow(self)
         return returned
 
     def childRow(self, node):
@@ -1124,7 +1127,7 @@ class BBSModelNode(QStandardItem):
         If node is not found, return -1
         """
         try:
-            return self.__childs.index(node)
+            return self.__childNodes.index(node)
         except Exception:
             return -1
 
@@ -1137,13 +1140,13 @@ class BBSModelNode(QStandardItem):
 
         Content is managed from model
         """
-        return self.__data
+        return self.__dataNode
 
     def setData(self, data):
         """Set node data"""
         if not isinstance(data, BBSBaseNode):
             raise EInvalidType("Given `data` must be a <BBSBaseNode>")
-        self.__data = data
+        self.__dataNode = data
 
     def dndOver(self):
         """memorize drag'n'drop over status"""
@@ -1153,22 +1156,24 @@ class BBSModelNode(QStandardItem):
         """memorize drag'n'drop over status"""
         self.__dndOver = value
 
-    def parent(self):
+    def parentNode(self):
         """Return current parent"""
-        return self.__parent
+        return self.__parentNode
 
-    def setParent(self, parent):
+    def setParentNode(self, parent):
         """Set current parent"""
         if parent is None or isinstance(parent, BBSModelNode):
-            self.__parent = parent
+            #if self.__parentNode is not None:
+            #    self.__parentNode.removeChild(self)
 
-    def sort(self):
-        """Sort children from their position"""
-        self.__childs.sort(key=lambda item: item.data().position())
+            self.__parentNode = parent
+
+            #if self.__parentNode is not None:
+            #    self.__parentNode.appendChild(self)
 
     def level(self):
-        if self.__parent:
-            return 1 + self.__parent.level()
+        if self.__parentNode:
+            return 1 + self.__parentNode.level()
         return 0
 
 
@@ -1197,7 +1202,7 @@ class BBSModel(QAbstractItemModel):
         """Initialise data model"""
         super(BBSModel, self).__init__(parent)
 
-        self.__rootItem = BBSModelNode(BBSGroup({BBSGroup.KEY_UUID: "00000000-0000-0000-0000-000000000000",
+        self.__rootNode = BBSModelNode(BBSGroup({BBSGroup.KEY_UUID: "00000000-0000-0000-0000-000000000000",
                                                  BBSGroup.KEY_NAME: "root node"
                                                  }))
 
@@ -1222,8 +1227,7 @@ class BBSModel(QAbstractItemModel):
                 if returned.isValid():
                     return returned
             return QModelIndex()
-        returned = getIdIndexes(id, self.__rootItem, QModelIndex())
-        print("__getIdIndex", id, returned.isValid())
+        returned = getIdIndexes(id, self.__rootNode, QModelIndex())
         return returned
 
     def __updateIdIndex(self):
@@ -1245,12 +1249,10 @@ class BBSModel(QAbstractItemModel):
                 getIdIndexes(child)
 
         self.__idIndexes = {}
-        getIdIndexes(self.__rootItem)
+        getIdIndexes(self.__rootNode)
 
     def __beginUpdate(self):
         """Start a massive update"""
-        if self.__inMassiveUpdate == 0:
-            self.beginResetModel()
         self.__inMassiveUpdate += 1
 
     def __endUpdate(self):
@@ -1258,7 +1260,6 @@ class BBSModel(QAbstractItemModel):
         self.__inMassiveUpdate -= 1
         if self.__inMassiveUpdate == 0:
             self.__updateIdIndex()
-            self.endResetModel()
             self.updateWidth.emit()
 
     def flags(self, index):
@@ -1271,127 +1272,83 @@ class BBSModel(QAbstractItemModel):
         """Model accept move of items only"""
         return Qt.MoveAction
 
-    def moveRows(self, sourceParent, sourceRow, count, destinationParent, destinationChild):
-        """TODO: describe"""
-        nodeSourceParent = self.data(sourceParent, BBSModel.ROLE_NODE)
-        if nodeSourceParent is None:
-            return False
-
-        nodeDestinationParent = self.data(destinationParent, BBSModel.ROLE_NODE)
-        if nodeDestinationParent is None:
-            return False
-
-        itemToMove = nodeSourceParent.child(sourceRow)
-        nodeSourceParent.removeChild(itemToMove)
-        nodeDestinationParent.addChild(itemToMove)
-        return True
-
-    def removeRows(self, row, count, parentIndex=QModelIndex()):
-        """needed?"""
-        # nodeSourceParent = self.data(parentIndex, BBSModel.ROLE_NODE)
-        # if nodeSourceParent is None:
-        #     return False
-
-        # itemToRemove = nodeSourceParent.child(row)
-        # nodeSourceParent.removeChild(itemToRemove)
-        return False
-
-    def insertRows(self, row, count, parentIndex=QModelIndex()):
-        """needed?"""
-        # nodeSourceParent = self.data(parentIndex, BBSModel.ROLE_NODE)
-        # if nodeSourceParent is None:
-        #     return False
-        return False
+    def supportedDragActions(self):
+        return Qt.MoveAction
 
     def mimeTypes(self):
         """return mime type managed by treeview"""
         return [BBSModel.MIME_DATA]
 
     def mimeData(self, indexes):
-        """Encode current model index data to mime data"""
-        uid = set([uid for uid in [self.data(index, BBSModel.ROLE_ID) for index in indexes] if uid is not None])
-        if len(uid) == 0:
-            print("mimeData:", [self.data(index, BBSModel.ROLE_ID) for index in indexes])
-            print("mimeData:", indexes)
-            return None
+        """Encode current node memory address to mime data"""
+        nodes = [id(self.nodeForIndex(index)) for index in indexes if index.column() == 0]
 
         mimeData = QMimeData()
-        mimeData.setData(BBSModel.MIME_DATA, (";".join(uid)).encode())
+        mimeData.setData(BBSModel.MIME_DATA, json.dumps(nodes).encode())
         return mimeData
 
-    def dropMimeData(self, data, action, row, column, target):
+    def dropMimeData(self, mimeData, action, row, column, newParent):
         """User drop a group/brush on view
 
         Need to process it: move item(s) from source to target
         """
-        targetNode = self.data(target, BBSModel.ROLE_NODE)
-        if not targetNode:
-            print("dropMimeData-targetNode:", targetNode)
-            print("dropMimeData-data:", data, bytes(data.data(BBSModel.MIME_DATA)).decode())
-            print("dropMimeData-target:", target)
-            print("dropMimeData-targetData:", self.data(target, BBSModel.ROLE_DATA))
+        if action != Qt.MoveAction:
+            return False
+
+        if not mimeData.hasFormat(BBSModel.MIME_DATA):
+            return False
+
+        idList = json.loads(bytes(mimeData.data(BBSModel.MIME_DATA)).decode())
+
+        newParentNode = self.nodeForIndex(newParent)
+        if not newParentNode:
             return False
 
         # take current target position to determinate new position for items
-        targetPosition = targetNode.data().position()
-        if targetNode.dndOver() == QAbstractItemView.AboveItem:
+        targetPosition = newParentNode.data().position()
+        if newParentNode.dndOver() == QAbstractItemView.AboveItem:
             positionUpdate = -1
             # above a BBSGroup ==> need to get group parent
             # above a BBSBrush ==> need to get brush parent
-            targetParentNode = targetNode.parent()
-            targetParentIndex = self.parent(target)
+            targetParentNode = newParentNode.parentNode()
+            targetParentIndex = self.parent(newParent)
         else:
             positionUpdate = 1
             # below a BBSGroup ==> BBSGroup is the parent
             # below a BBSBrush ==> need to get brush parent
-            if isinstance(targetNode.data(), BBSBrush):
-                targetParentNode = targetNode.parent()
-                targetParentIndex = self.parent(target)
+            if isinstance(newParentNode.data(), BBSBrush):
+                targetParentNode = newParentNode.parentNode()
+                targetParentIndex = self.parent(newParent)
             else:
-                targetParentIndex = target
-                targetParentNode = targetNode
+                targetParentIndex = newParent
+                targetParentNode = newParentNode
                 # when moved directly into a group, ensure the item is moved to the last position
                 targetPosition = 999999
 
-        print("dropMimeData")
-        print("dropMimeData: targetNode", targetNode)
-        print("dropMimeData")
-        print("dropMimeData: targetParentNode", targetParentNode)
-        print("dropMimeData")
-        print("dropMimeData: targetPosition", targetPosition)
-        print("dropMimeData: positionUpdate", positionUpdate)
-
-        uidList = bytes(data.data(BBSModel.MIME_DATA)).decode().split(";")
-        itemsIndex = [self.getFromId(uid) for uid in uidList]
         if positionUpdate < 0:
             # above, need to process in inverted order to keep position
-            itemsIndex.reverse()
+            idList.reverse()
 
         self.__beginUpdate()
-        targetNode.beginUpdate()
-        for numIndex, itemIndex in enumerate(itemsIndex):
-            itemNode = self.data(itemIndex, BBSModel.ROLE_NODE)
-            #self.beginMoveRows(self.parent(itemIndex), itemNode.row(), itemNode.row(), targetParentIndex, 0)
+        targetParentNode.beginUpdate()
+        for numDataId, nodeDataId in enumerate(idList):
+            itemNode = ctypes.cast(nodeDataId, ctypes.py_object).value
 
-            itemNode.parent().removeChild(itemNode)
-            newPosition = targetPosition + positionUpdate * (numIndex+1)
+            newPosition = targetPosition + positionUpdate * (numDataId+1)
             print("dropMimeData: newPosition from", itemNode.data().position(), " to ", newPosition)
-            itemNode.data().setPosition(newPosition)
-            print('-1-')
-            targetParentNode.addChild(itemNode)
-            print('-2-')
 
-            #self.endMoveRows()
-            print('-3-')
-            #print("dropMimeData", data.formats(), uidList, action & Qt.MoveAction, row, targetNode, itemNode)
-        print('-4-')
-        targetNode.endUpdate()
+            # remove from old position
+            self.removeNode(itemNode)
+
+            self.beginInsertRows(newParent, row, row)
+            targetParentNode.insertChild(newPosition, itemNode)
+            self.endInsertRows()
+
+            row += positionUpdate
+
+        targetParentNode.endUpdate()
         self.__endUpdate()
 
-        print("dropMimeData")
-        print("dropMimeData: rootItem", self.__rootItem)
-        print("")
-        print("")
         return True
 
     def columnCount(self, parent=QModelIndex()):
@@ -1403,20 +1360,18 @@ class BBSModel(QAbstractItemModel):
         if parent.column() > 0:
             return 0
 
-        parentItem = self.getNodeItem(parent)
+        parentNode = self.nodeForIndex(parent)
 
-        return parentItem.childCount()
+        return parentNode.childCount()
 
     def data(self, index, role=Qt.DisplayRole):
         """Return data for index+role"""
         if not index.isValid():
-            print("data: index is not valid", index)
             return None
 
         item = index.internalPointer()
         if item is None:
             # not sure when/why it could occurs...
-            print("data: internal pointer is None", index)
             return None
 
         if role == BBSModel.ROLE_NODE:
@@ -1463,22 +1418,14 @@ class BBSModel(QAbstractItemModel):
         If an invalid model index is specified as the parent, it is up to the model to return an index that corresponds to a top-level item in the model.
         """
         if not isinstance(parent, QModelIndex) or not self.hasIndex(row, column, parent):
-            print(f"index--1: invalid parent")
-            print(f"index--1: row: {row}, col: {column}")
-            print(f"index--1:", parent)
-            print(f"index--1:", self.hasIndex(row, column, parent))
             return QModelIndex()
 
-        parentNode = self.getNodeItem(parent)
-        child = parentNode.child(row)
+        parentNode = self.nodeForIndex(parent)
+        childNode = parentNode.child(row)
 
-        if child:
-            return self.createIndex(row, column, child)
+        if childNode:
+            return self.createIndex(row, column, childNode)
         else:
-            print(f"index--2: invalid child")
-            print(f"index--2: row: {row}, col: {column}")
-            print(f"index--2: parent:", parent)
-            print(f"index--2: parentNode:", parentNode)
             return QModelIndex()
 
     def parent(self, index):
@@ -1486,22 +1433,33 @@ class BBSModel(QAbstractItemModel):
         if not isinstance(index, QModelIndex) or not index.isValid():
             return QModelIndex()
 
-        childItem = self.getNodeItem(index)
-        if childItem is None:
-            # not sure to understand why this case occurs... :-/
-            print(f"parent--2: ", index)
-            print(f"parent--2: ", index.internalPointer())
-            print(f"parent--2: ", index.internalId())
-            print(f"parent--2: row: {index.row()}, col: {index.column()}")
-            print(f"parent--2: ", index.data(), index.isValid())
+        childNode = self.nodeForIndex(index)
+        if childNode == self.__rootNode:
             return QModelIndex()
 
-        parentItem = childItem.parent()
-
-        if parentItem == self.__rootItem:
+        parentNode = childNode.parentNode()
+        if parentNode == self.__rootNode:
             return QModelIndex()
 
-        return self.createIndex(parentItem.row(), 0, parentItem)
+        return self.createIndex(parentNode.row(), 0, parentNode)
+
+    def nodeForIndex(self, index):
+        """Return node for given index
+
+        If index is not valid, return a toot node
+        """
+        if not index.isValid():
+            return self.__rootNode
+        else:
+            return index.internalPointer()
+
+    def removeNode(self, node):
+        if isinstance(node, BBSModelNode):
+            row = node.row()
+            index = self.createIndex(row, 0, node)
+            self.beginRemoveRows(index.parent(), row, row)
+            node.parentNode().removeChild(row)
+            self.endRemoveRows()
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         """Return label for given data section"""
@@ -1600,7 +1558,7 @@ class BBSModel(QAbstractItemModel):
         self.__updateIdIndex()
 
         if groupId is None:
-            node = self.__rootItem
+            node = self.__rootNode
         elif isinstance(groupId, str):
             index = self.__getIdIndex(groupId)
             if index.isValid():
@@ -1608,7 +1566,7 @@ class BBSModel(QAbstractItemModel):
                 if isinstance(data, BBSGroup) and data.id() == groupId:
                     node = self.data(index, BBSModel.ROLE_NODE)
         elif isinstance(groupId, BBSGroup):
-            return getGroupItems(groupId.id(), asIndex)
+            return self.getGroupItems(groupId.id(), asIndex)
 
         if node is not None:
             # get all data, maybe not ordered
@@ -1619,18 +1577,10 @@ class BBSModel(QAbstractItemModel):
                 returned = [self.__getIdIndex(item.id()) for item in returned]
         return returned
 
-    def getNodeItem(self, index):
-        """return node from index, shortchut for data(BBSModel.ROLE_NODE)"""
-        if index.isValid():
-            returned = index.internalPointer()
-            if returned:
-                return returned
-        return self.__rootItem
-
     def clear(self):
         """Clear all brushes & groups"""
         self.__beginUpdate()
-        self.__rootItem.clear()
+        self.__rootNode.clear()
         self.__endUpdate()
 
     def remove(self, itemToRemove):
@@ -1667,7 +1617,7 @@ class BBSModel(QAbstractItemModel):
         If parent is None, item is added to rootNode
         """
         if parent is None:
-            parent = self.__rootItem
+            parent = self.__rootNode
 
         if isinstance(parent, BBSModelNode):
             if isinstance(itemToAdd, list):
@@ -1679,7 +1629,7 @@ class BBSModel(QAbstractItemModel):
             elif isinstance(itemToAdd, BBSBaseNode):
                 if isinstance(itemToAdd, parent.data().acceptedChild()):
                     self.__beginUpdate()
-                    parent.addChild(BBSModelNode(itemToAdd, parent))
+                    parent.appendChild(BBSModelNode(itemToAdd, parent))
                     self.__endUpdate()
         elif isinstance(parent, str):
             # a string --> assume it's an Id
@@ -1688,9 +1638,6 @@ class BBSModel(QAbstractItemModel):
                 self.add(itemToAdd, self.data(index, BBSModel.ROLE_NODE))
         elif isinstance(parent, BBSBaseNode):
             self.add(itemToAdd, parent.id())
-
-    def update(self, itemToUpdate):
-        print("TODO: BBSModel.update()", itemToUpdate)
 
     def importData(self, brushesAndGroups, nodes):
         """Load model from:
@@ -1704,7 +1651,8 @@ class BBSModel(QAbstractItemModel):
             for id in idList:
                 if isinstance(id, str):
                     if id in tmpIdIndex:
-                        toAdd.append(BBSModelNode(tmpIdIndex[id], parent))
+                        node = BBSModelNode(tmpIdIndex[id], parent)
+                        toAdd.append(node)
                     else:
                         raise EInvalidValue(f"Given `id` ({id}) can't be added, index not exist")
                 elif isinstance(id, (tuple, list)):
@@ -1714,7 +1662,7 @@ class BBSModel(QAbstractItemModel):
                     toAdd.append(groupNode)
                 else:
                     raise EInvalidValue(f"Given `id` must be a valid <str>")
-            parent.addChild(toAdd)
+            parent.appendChild(toAdd)
 
         self.__beginUpdate()
         self.clear()
@@ -1725,7 +1673,7 @@ class BBSModel(QAbstractItemModel):
             # in this case (probably from a previous version of BBS, create everything at root level
             nodes = list(tmpIdIndex.keys())
 
-        addNodes(nodes, self.__rootItem)
+        addNodes(nodes, self.__rootNode)
         self.__endUpdate()
 
     def exportData(self):
@@ -1757,7 +1705,7 @@ class BBSModel(QAbstractItemModel):
                 'nodes': []
             }
 
-        returned['nodes'] = export(self.__rootItem, returned)
+        returned['nodes'] = export(self.__rootNode, returned)
 
         return returned
 
