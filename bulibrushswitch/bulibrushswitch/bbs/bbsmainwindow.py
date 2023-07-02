@@ -228,20 +228,14 @@ class BBSMainWindow(EDialog):
         self.__scratchpadDefaultBgColor = QColor(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLOR_BG))
 
         # -- toolbar
+        self.tbGroupAdd.clicked.connect(self.__actionGroupAdd)
         self.tbBrushAdd.setMenu(self.__menuBrushAdd)
-        self.tbBrushEdit.clicked.connect(self.__actionBrushEdit)
-        self.tbBrushDelete.clicked.connect(self.__actionBrushDelete)
-        self.tbItemMoveFirst.clicked.connect(self.__actionItemMoveFirst)
-        self.tbItemMoveLast.clicked.connect(self.__actionItemMoveLast)
-        self.tbItemMoveUp.clicked.connect(self.__actionItemMoveUp)
-        self.tbItemMoveDown.clicked.connect(self.__actionItemMoveDown)
+        self.tbEdit.clicked.connect(self.__actionEdit)
+        self.tbDelete.clicked.connect(self.__actionDelete)
         self.tbBrushScratchpadClear.clicked.connect(self.__actionBrushScratchpadClear)
         self.tbBrushScratchpadColorFg.setMenu(menuBrushScratchpadColorFg)
         self.tbBrushScratchpadColorBg.setMenu(menuBrushScratchpadColorBg)
 
-        self.tbGroupAdd.clicked.connect(self.__actionGroupAdd)
-        self.tbGroupEdit.clicked.connect(self.__actionGroupEdit)
-        self.tbGroupDelete.clicked.connect(self.__actionGroupDelete)
 
         self.hsItemsThumbSize.setValue(self.tvBrushes.iconSizeIndex())
         self.hsItemsThumbSize.valueChanged.connect(self.__itemsSizeIndexSliderChanged)
@@ -477,32 +471,93 @@ class BBSMainWindow(EDialog):
             self.__bbsModel.add(brush, parentGroup)
             self.__updateUi()
 
-    def __actionBrushEdit(self):
-        """Edit brush from list"""
-        brushes = self.tvBrushes.selectedItems()
-        if len(brushes):
+    def __actionEdit(self):
+        """Edit selected group/brush"""
+        items = self.tvBrushes.selectedItems()
+        if len(items) == 1:
+            # can edit only if one item is selected
+            item = items[0]
+
+            if isinstance(item, BBSBrush):
+                # edit a brush
+                options = BBSBrushesEditor.edit(self.__bbsName+' - '+i18n(f'Edit brush'), item)
+                if options is not None:
+                    self.__applyBrushOptions(item, options)
+                    self.__bbsModel.update(item)
+                    self.__updateUi()
+            else:
+                # edit a group
+                options = BBSGroupEditor.edit(self.__bbsName+' - '+i18n(f'Edit group'), item)
+                if options is not None:
+                    self.__applyGroupOptions(item, options)
+                    self.__bbsModel.update(item)
+                    self.__updateUi()
+
+    def __actionDelete(self):
+        """Remove selected group/brush"""
+        def groupNfo(group):
+            returned = group.information(BBSGroup.INFO_WITH_DETAILS | BBSGroup.INFO_WITH_OPTIONS)
+
+            stats = group.node().childStats()
+            includingGroups = ''
+            groups = ''
+            if stats['groups'] > 0:
+                includingGroups = i18n(' (Including groups sub-items)')
+                groups = f"<li>{i18n('Groups:')} {stats['groups']}</li>"
+
+            if stats['brushes'] > 0:
+                returned += f"<hr><small><b><i>&gt; {i18n('Deletion of group will also delete')}{includingGroups}<ul><li>{i18n('Brushes:')} {stats['brushes']}</li>{groups}</ul></i></b></small>"
+
+            return returned
+
+        items = self.tvBrushes.selectedItems()
+        if len(items):
             # a brush is selected
-            brush = brushes[0]
-            options = BBSBrushesEditor.edit(self.__bbsName+' - '+i18n(f'Edit brush'), brush)
-            if options is not None:
-                self.__applyBrushOptions(brush, options)
-                self.__bbsModel.update(brush)
-                self.__updateUi()
+            brushes = [item for item in items if isinstance(item, BBSBrush)]
+            groups = [item for item in items if isinstance(item, BBSGroup)]
 
-    def __actionBrushDelete(self):
-        """Remove brush from list"""
-        brushes = self.tvBrushes.selectedItems()
-        if len(brushes):
-            # a brush is selected
-            brush = brushes[0]
+            nbBrushes = len(brushes)
+            nbGroups = len(groups)
 
-            brushDescription = "<br><br>"+brush.information(BBSBrush.INFO_WITH_DETAILS | BBSBrush.INFO_WITH_OPTIONS)+"<br><br>"
+            title = []
+            txtBrushes = []
+            txtGroups = []
 
-            if WDialogBooleanInput.display(self.__bbsName+' - '+i18n(f'Remove brush'),
-                                           i18n(f"<b>Following brush will removed from list</b>{brushDescription}<b>Do you confirm action?</b>"),
+            if nbBrushes > 0:
+                if nbBrushes == 1:
+                    txtBrushes.append(f'<h2>{i18n("Following brush will removed")}</h2>')
+                    title.append(i18n("Remove brush"))
+                elif nbBrushes > 1:
+                    txtBrushes.append(f'<h2>{i18n("Following brushes will removed")} ({nbBrushes})</h2>')
+                    title.append(i18n("Remove brushes"))
+
+                txtBrushes.append("<ul><li>")
+                txtBrushes.append("<br></li><li>".join([brush.information(BBSBrush.INFO_WITH_ICON | BBSBrush.INFO_WITH_DETAILS | BBSBrush.INFO_WITH_OPTIONS) for brush in brushes]))
+                txtBrushes.append("<br></li></ul>")
+
+            if nbGroups > 0:
+                if nbGroups == 1:
+                    txtGroups.append(f'<h2>{i18n("Following group will removed")}</h2>')
+                    title.append(i18n("Remove group"))
+                elif nbGroups > 1:
+                    txtGroups.append(f'<h2>{i18n("Following groups will removed")} ({nbGroups})</h2>')
+                    title.append(i18n("Remove groups"))
+
+                txtGroups.append("<ul><li>")
+                txtGroups.append("<br></li><li>".join([groupNfo(group) for group in groups]))
+                txtGroups.append("<br></li></ul>")
+
+            if WDialogBooleanInput.display(self.__bbsName+' - ' + "/".join(title),
+                                           "".join(txtBrushes + txtGroups + [f'<br><h2>{i18n("Do you confirm action?")}</h2>']),
                                            minSize=QSize(950, 400)):
-                BBSSettings.setBrushShortcut(brush, QKeySequence())
-                self.__bbsModel.remove(brush)
+                for brush in brushes:
+                    BBSSettings.setBrushShortcut(brush, QKeySequence())
+                self.__bbsModel.remove(brushes)
+
+                for group in groups:
+                    BBSSettings.setGroupShortcut(group, QKeySequence(), QKeySequence())
+
+                self.__bbsModel.remove(groups)
                 self.__updateUi()
 
     def __actionGroupAdd(self):
@@ -523,89 +578,21 @@ class BBSMainWindow(EDialog):
             self.__bbsModel.add(group, parentGroup)
             self.__updateUi()
 
-    def __actionGroupEdit(self):
-        """Edit brush from list"""
-        groups = self.tvBrushes.selectedItems()
-        if len(groups):
-            # a group is selected
-            group = groups[0]
-            options = BBSGroupEditor.edit(self.__bbsName+' - '+i18n(f'Edit group'), group)
-            if options is not None:
-                self.__applyGroupOptions(group, options)
-                self.__bbsModel.update(group)
-                self.__updateUi()
-
-    def __actionGroupDelete(self):
-        """Remove brush from list"""
-        groups = self.tvBrushes.selectedItems()
-        if len(groups):
-            # a brush is selected
-            group = groups[0]
-
-            groupDescription = "<br><br>"+group.information()+"<br><br>"
-
-            if WDialogBooleanInput.display(self.__bbsName+' - '+i18n(f'Remove group'),
-                                           i18n(f"<b>Following group will removed from list</b>{groupDescription}<b>Do you confirm action?</b>"),
-                                           minSize=QSize(950, 400)):
-                BBSSettings.setGroupShortcut(group, QKeySequence(), QKeySequence())
-                self.__bbsModel.remove(group)
-                self.__updateUi()
-
-    def __actionItem(self):
+    def __actionItem(self, index):
         """Double click on item
         - brush: edit brush
         - group: expand/collapse
         """
-        items = self.tvBrushes.selectedItems()
-        if len(items):
-            # a brush is selected
-            item = items[0]
-            if isinstance(item, BBSBrush):
-                self.__actionBrushEdit()
-            else:
-                index = self.tvBrushes.model().getFromId(item.id(), True)
-
-    def __actionItemMoveFirst(self):
-        """Move brush at first position in list"""
-        brushes = self.tvBrushes.selectedItems()
-        if len(brushes):
-            # a brush is selected
-            # self.__brushes.moveItemAtFirst(brushes[0])
-            print("TODO: BBSMainWindow.__actionItemMoveFirst()")
-            self.__updateUi()
-
-    def __actionItemMoveLast(self):
-        """Move brush at last position in list"""
-        brushes = self.tvBrushes.selectedItems()
-        if len(brushes):
-            # a brush is selected
-            # self.__brushes.moveItemAtLast(brushes[0])
-            print("TODO: BBSMainWindow.__actionItemMoveLast()")
-            self.__updateUi()
-
-    def __actionItemMoveUp(self):
-        """Move brush at previous position in list"""
-        brushes = self.tvBrushes.selectedItems()
-        if len(brushes):
-            # a brush is selected
-            # self.__brushes.moveItemAtPrevious(brushes[0])
-            print("TODO: BBSMainWindow.__actionItemMoveUp()")
-            self.__updateUi()
-
-    def __actionItemMoveDown(self):
-        """Move brush at next position in list"""
-        brushes = self.tvBrushes.selectedItems()
-        if len(brushes):
-            # a brush is selected
-            # self.__brushes.moveItemAtNext(brushes[0])
-            print("TODO: BBSMainWindow.__actionItemMoveDown()")
-            self.__updateUi()
+        item = self.__bbsModel.data(index, BBSModel.ROLE_DATA)
+        if item:
+            if isinstance(item, BBSBrush) or index.column() != BBSModel.COLNUM_BRUSH:
+                self.__actionEdit()
 
     def __itemsSelectionChanged(self, selected, deselected):
         """Selection in treeview has changed, update UI"""
         self.__updateUi()
         selectedBrushes = self.tvBrushes.selectedItems()
-        if len(selectedBrushes) == 1 and isinstance(selectedBrushes, BBSBrush):
+        if len(selectedBrushes) == 1 and isinstance(selectedBrushes[0], BBSBrush):
             if selectedBrushes[0].found():
                 selectedBrushes[0].toCurrentKritaBrush()
 
@@ -625,24 +612,8 @@ class BBSMainWindow(EDialog):
 
         nbSelectedItems = len(items)
 
-        self.tbBrushEdit.setEnabled(nbSelectedItems == 1 and isinstance(items[0], BBSBrush))
-        self.tbBrushDelete.setEnabled(nbSelectedItems == 1 and isinstance(items[0], BBSBrush))
-
-        self.tbGroupEdit.setEnabled(nbSelectedItems == 1 and isinstance(items[0], BBSGroup))
-        self.tbGroupDelete.setEnabled(nbSelectedItems == 1 and isinstance(items[0], BBSGroup))
-
-        if len(items):
-            # a brush is selected
-            item = items[0]
-            self.tbItemMoveFirst.setEnabled(item.position() > 0)
-            self.tbItemMoveLast.setEnabled(item.position() < len(self.__bbsModel.idIndexes())-1)
-            self.tbItemMoveUp.setEnabled(item.position() > 0)
-            self.tbItemMoveDown.setEnabled(item.position() < len(self.__bbsModel.idIndexes())-1)
-        else:
-            self.tbItemMoveFirst.setEnabled(False)
-            self.tbItemMoveLast.setEnabled(False)
-            self.tbItemMoveUp.setEnabled(False)
-            self.tbItemMoveDown.setEnabled(False)
+        self.tbEdit.setEnabled(nbSelectedItems == 1)
+        self.tbDelete.setEnabled(nbSelectedItems >= 1)
 
         if len(self.__bbsModel.idIndexes({'brushes': True})) > 0:
             # need at elast one brush defined!

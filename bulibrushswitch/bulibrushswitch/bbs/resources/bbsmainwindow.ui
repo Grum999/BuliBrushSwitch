@@ -284,54 +284,6 @@
               </widget>
              </item>
              <item>
-              <widget class="QToolButton" name="tbGroupEdit">
-               <property name="acceptDrops">
-                <bool>false</bool>
-               </property>
-               <property name="toolTip">
-                <string>Edit group</string>
-               </property>
-               <property name="text">
-                <string>...</string>
-               </property>
-               <property name="icon">
-                <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
-                 <normaloff>:/pktk/images/normal/folder_open_dots</normaloff>
-                 <disabledoff>:/pktk/images/disabled/folder_open_dots</disabledoff>
-                 <disabledon>:/pktk/images/disabled/folder_open_dots</disabledon>:/pktk/images/normal/folder_open_dots</iconset>
-               </property>
-               <property name="autoRaise">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QToolButton" name="tbGroupDelete">
-               <property name="toolTip">
-                <string>Remove group</string>
-               </property>
-               <property name="text">
-                <string>...</string>
-               </property>
-               <property name="icon">
-                <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
-                 <normaloff>:/pktk/images/normal/folder_open_remove</normaloff>
-                 <disabledoff>:/pktk/images/disabled/folder_open_remove</disabledoff>
-                 <disabledon>:/pktk/images/disabled/folder_open_remove</disabledon>:/pktk/images/normal/folder_open_remove</iconset>
-               </property>
-               <property name="autoRaise">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="Line" name="line_3">
-               <property name="orientation">
-                <enum>Qt::Vertical</enum>
-               </property>
-              </widget>
-             </item>
-             <item>
               <widget class="QToolButton" name="tbBrushAdd">
                <property name="acceptDrops">
                 <bool>false</bool>
@@ -362,17 +314,21 @@
               </widget>
              </item>
              <item>
-              <widget class="QToolButton" name="tbBrushEdit">
+              <widget class="QToolButton" name="tbEdit">
+               <property name="acceptDrops">
+                <bool>false</bool>
+               </property>
                <property name="toolTip">
-                <string>Edit brush</string>
+                <string>Edit</string>
                </property>
                <property name="text">
                 <string>...</string>
                </property>
                <property name="icon">
-                <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
-                 <normaloff>:/pktk/images/normal/brush_edit</normaloff>
-                 <disabledoff>:/pktk/images/disabled/brush_edit</disabledoff>:/pktk/images/normal/brush_edit</iconset>
+                <iconset>
+                 <normalon>:/pktk/images/normal/edit</normalon>
+                 <disabledon>:/pktk/images/disabled/edit</disabledon>
+                </iconset>
                </property>
                <property name="autoRaise">
                 <bool>true</bool>
@@ -380,94 +336,21 @@
               </widget>
              </item>
              <item>
-              <widget class="QToolButton" name="tbBrushDelete">
+              <widget class="QToolButton" name="tbDelete">
                <property name="toolTip">
-                <string>Remove brush</string>
+                <string>Remove</string>
                </property>
                <property name="text">
                 <string>...</string>
                </property>
                <property name="icon">
-                <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
-                 <normaloff>:/pktk/images/normal/brush_remove</normaloff>
-                 <disabledoff>:/pktk/images/disabled/brush_remove</disabledoff>:/pktk/images/normal/brush_remove</iconset>
+                <iconset>
+                 <normalon>:/pktk/images/normal/delete</normalon>
+                 <disabledon>:/pktk/images/disabled/delete</disabledon>
+                </iconset>
                </property>
                <property name="autoRaise">
                 <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="Line" name="line">
-               <property name="orientation">
-                <enum>Qt::Vertical</enum>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QToolButton" name="tbItemMoveFirst">
-               <property name="text">
-                <string>...</string>
-               </property>
-               <property name="icon">
-                <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
-                 <normaloff>:/pktk/images/normal/move_up_first</normaloff>
-                 <disabledoff>:/pktk/images/disabled/move_up_first</disabledoff>
-                 <disabledon>:/pktk/images/disabled/move_up_first</disabledon>:/pktk/images/normal/move_up_first</iconset>
-               </property>
-               <property name="autoRaise">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QToolButton" name="tbItemMoveUp">
-               <property name="text">
-                <string>...</string>
-               </property>
-               <property name="icon">
-                <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
-                 <normaloff>:/pktk/images/normal/move_up</normaloff>
-                 <disabledoff>:/pktk/images/disabled/move_up</disabledoff>
-                 <disabledon>:/pktk/images/disabled/move_up</disabledon>:/pktk/images/normal/move_up</iconset>
-               </property>
-               <property name="autoRaise">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QToolButton" name="tbItemMoveDown">
-               <property name="text">
-                <string>...</string>
-               </property>
-               <property name="icon">
-                <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
-                 <normaloff>:/pktk/images/normal/move_down</normaloff>
-                 <disabledoff>:/pktk/images/disabled/move_down</disabledoff>
-                 <disabledon>:/pktk/images/disabled/move_down</disabledon>:/pktk/images/normal/move_down</iconset>
-               </property>
-               <property name="autoRaise">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QToolButton" name="tbItemMoveLast">
-               <property name="icon">
-                <iconset resource="../../pktk/resources/svg/dark_icons.qrc">
-                 <normaloff>:/pktk/images/normal/move_down_last</normaloff>
-                 <disabledoff>:/pktk/images/disabled/move_down_last</disabledoff>
-                 <disabledon>:/pktk/images/disabled/move_down_last</disabledon>:/pktk/images/normal/move_down_last</iconset>
-               </property>
-               <property name="popupMode">
-                <enum>QToolButton::DelayedPopup</enum>
-               </property>
-               <property name="autoRaise">
-                <bool>true</bool>
-               </property>
-               <property name="arrowType">
-                <enum>Qt::NoArrow</enum>
                </property>
               </widget>
              </item>

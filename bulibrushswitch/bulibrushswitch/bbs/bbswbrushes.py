@@ -85,6 +85,7 @@ class BBSBaseNode(QObject):
         self.__uuid = QUuid.createUuid().toString().strip("{}")
         self.__emitUpdated = 0
         self.__position = 999999
+        self.__node = None
 
     def _setId(self, id):
         """Set unique id """
@@ -134,6 +135,14 @@ class BBSBaseNode(QObject):
     def information(self, displayOption=0):
         """Return synthetised information (HTML)"""
         return ''
+
+    def node(self):
+        """return node owner"""
+        return self.__node
+
+    def setNode(self, node):
+        """set node owner"""
+        self.__node = node
 
 
 class BBSBrush(BBSBaseNode):
@@ -223,7 +232,7 @@ class BBSBrush(BBSBaseNode):
             self.__brushNfoShort = f' <tr><td align="left">{self.__size:0.2f}px - {self.__blendingMode}</td><td></td><td></td></tr>'
 
             if self.__image:
-                self.__brushNfoImg = f'<img src="data:image/png;base64,{bytes(qImageToPngQByteArray(self.__image).toBase64(QByteArray.Base64Encoding)).decode()}">'
+                self.__brushNfoImg = f'<img src="data:image/png;base64,{bytes(qImageToPngQByteArray(roundedPixmap(QPixmap.fromImage(self.__image), 8).toImage()).toBase64(QByteArray.Base64Encoding)).decode()}">'
             else:
                 self.__brushNfoImg = ''
 
@@ -282,7 +291,7 @@ class BBSBrush(BBSBaseNode):
             self.__brushNfoComments = self.__comments
             if self.__brushNfoComments != '':
                 self.__brushNfoComments = re.sub("<(/)?body",
-                                                 r"<\1div", re.sub("<!doctype[^>]>|<meta[^>]+>|</?html>|</?head>", "", self.__brushNfoComments, flags=re.I),
+                                                 r"<\1div", re.sub("<!doctype[^>]+>|<meta[^>]+>|</?html>|</?head>", "", self.__brushNfoComments, flags=re.I),
                                                  flags=re.I)
 
         super(BBSBrush, self).applyUpdate(property)
@@ -733,7 +742,7 @@ class BBSBrush(BBSBaseNode):
 
             returned = f'<b>{self.__name.replace("_", " ")}</b>{returned}'
         else:
-            returned = f'<small><i><table>{returned}</table></i></small>'
+            returned = f'<b>{self.__name.replace("_", " ")}</b><small><i><table>{returned}</table></i></small>'
 
         if displayOption & BBSBrush.INFO_WITH_ICON and self.__brushNfoImg != '':
             returned = f'<table><tr><td>{self.__brushNfoImg}</td><td>{returned}</td></tr></table>'
@@ -796,8 +805,12 @@ class BBSGroup(BBSBaseNode):
         self.__shortcutNext = QKeySequence()
         self.__shortcutPrevious = QKeySequence()
 
+        self.__groupNfoFull = ''
+        self.__groupNfoShort = ''
         self.__groupNfoOptions = ''
         self.__groupNfoComments = ''
+
+        self.__node = None
 
         if isinstance(group, BBSGroup):
             # clone group
@@ -829,8 +842,11 @@ class BBSGroup(BBSBaseNode):
             self.__groupNfoComments = self.__comments
             if self.__groupNfoComments != '':
                 self.__groupNfoComments = re.sub("<(/)?body",
-                                                 r"<\1div", re.sub("<!doctype[^>]>|<meta[^>]+>|</?html>|</?head>", "", self.__groupNfoComments, flags=re.I),
+                                                 r"<\1div", re.sub("<!doctype[^>]+>|<meta[^>]+>|</?html>|</?head>", "", self.__groupNfoComments, flags=re.I),
                                                  flags=re.I)
+
+            self.__groupNfoFull = ""
+            self.__groupNfoShort = ""
 
         super(BBSGroup, self).applyUpdate(property)
 
@@ -991,10 +1007,10 @@ class BBSGroup(BBSBaseNode):
                     hr = "<tr><td colspan=3><hr></td></tr>"
                 returned = f"<tr><td colspan=3>{self.__groupNfoComments}</td></tr>{hr}{returned}"
 
-        if displayOption & BBSGroup.INFO_WITH_DETAILS:
-            returned = f'<b>{self.__name}</b>'
-        else:
+        if displayOption & BBSGroup.INFO_WITH_DETAILS and returned != '':
             returned = f'<small><i><table>{returned}</table></i></small>'
+
+        returned = f'<b>{self.__name}</b>{returned}'
 
         return returned
 
@@ -1009,7 +1025,7 @@ class BBSModelNode(QStandardItem):
             raise EInvalidType("Given `data` must be a <BBSBaseNode>")
 
         self.__parentNode = None
-        self.__dataNode = data
+        self.__dataNode = None
 
         self.__inUpdate = 0
         self.__dndOver = False
@@ -1017,6 +1033,7 @@ class BBSModelNode(QStandardItem):
         # Initialise node childs
         self.__childNodes = []
 
+        self.setData(data)
         self.setParentNode(parent)
 
     def __repr__(self):
@@ -1104,6 +1121,11 @@ class BBSModelNode(QStandardItem):
         childNode.setParentNode(self)
         childNode.endUpdate()
 
+    def remove(self):
+        """Remove item from parent"""
+        if self.__parentNode:
+            self.__parentNode.removeChild(self)
+
     def clear(self):
         """Remove all childs"""
         self.beginUpdate()
@@ -1147,6 +1169,7 @@ class BBSModelNode(QStandardItem):
         if not isinstance(data, BBSBaseNode):
             raise EInvalidType("Given `data` must be a <BBSBaseNode>")
         self.__dataNode = data
+        self.__dataNode.setNode(self)
 
     def dndOver(self):
         """memorize drag'n'drop over status"""
@@ -1163,18 +1186,36 @@ class BBSModelNode(QStandardItem):
     def setParentNode(self, parent):
         """Set current parent"""
         if parent is None or isinstance(parent, BBSModelNode):
-            #if self.__parentNode is not None:
-            #    self.__parentNode.removeChild(self)
-
             self.__parentNode = parent
-
-            #if self.__parentNode is not None:
-            #    self.__parentNode.appendChild(self)
 
     def level(self):
         if self.__parentNode:
             return 1 + self.__parentNode.level()
         return 0
+
+    def childStats(self):
+        """return child statistics:
+            - number of groups/sub-groups
+            - number of brushes/sub-brushes
+        """
+        returned = {
+                'groups': 0,
+                'brushes': 0
+            }
+
+        if len(self.__childNodes):
+            for child in self.__childNodes:
+                data = child.data()
+
+                if isinstance(data, BBSBrush):
+                    returned['brushes'] += 1
+                else:
+                    returned['groups'] += 1
+
+                    stats = child.childStats()
+                    returned['brushes'] += stats['brushes']
+                    returned['groups'] += stats['groups']
+        return returned
 
 
 class BBSModel(QAbstractItemModel):
@@ -1335,7 +1376,6 @@ class BBSModel(QAbstractItemModel):
             itemNode = ctypes.cast(nodeDataId, ctypes.py_object).value
 
             newPosition = targetPosition + positionUpdate * (numDataId+1)
-            print("dropMimeData: newPosition from", itemNode.data().position(), " to ", newPosition)
 
             # remove from old position
             self.removeNode(itemNode)
@@ -1434,7 +1474,7 @@ class BBSModel(QAbstractItemModel):
             return QModelIndex()
 
         childNode = self.nodeForIndex(index)
-        if childNode == self.__rootNode:
+        if not childNode or childNode == self.__rootNode:
             return QModelIndex()
 
         parentNode = childNode.parentNode()
@@ -1467,7 +1507,6 @@ class BBSModel(QAbstractItemModel):
             return BBSModel.HEADERS[section]
         return None
 
-    # TODO: to check ==> not used?
     def itemSelection(self, item):
         """Return QItemSelection for given item"""
         returned = QItemSelection()
@@ -1601,7 +1640,7 @@ class BBSModel(QAbstractItemModel):
         elif isinstance(itemToRemove, BBSModelNode):
             # a node
             self.__beginUpdate()
-            itemToRemove.remove()
+            self.removeNode(itemToRemove)
             self.__endUpdate()
         elif isinstance(itemToRemove, str):
             # a string --> assume it's an Id
@@ -1639,6 +1678,9 @@ class BBSModel(QAbstractItemModel):
         elif isinstance(parent, BBSBaseNode):
             self.add(itemToAdd, parent.id())
 
+    def update(self, itemToUpdate):
+        print("TODO: BBSModel.update()", itemToUpdate)
+
     def importData(self, brushesAndGroups, nodes):
         """Load model from:
         - brushes (list of BBSBrush)
@@ -1665,6 +1707,7 @@ class BBSModel(QAbstractItemModel):
             parent.appendChild(toAdd)
 
         self.__beginUpdate()
+        self.beginResetModel()
         self.clear()
         # a dictionary id => BBSBaseNode
         tmpIdIndex = {brushOrGroup.id(): brushOrGroup for brushOrGroup in brushesAndGroups}
@@ -1674,6 +1717,7 @@ class BBSModel(QAbstractItemModel):
             nodes = list(tmpIdIndex.keys())
 
         addNodes(nodes, self.__rootNode)
+        self.endResetModel()
         self.__endUpdate()
 
     def exportData(self):
@@ -1809,10 +1853,11 @@ class BBSWBrushesTv(QTreeView):
         """Manage double-click on Groups to expand/collapse and keep state in model"""
         index = self.indexAt(event.pos())
         data = index.data(BBSModel.ROLE_DATA)
-        if isinstance(data, BBSGroup):
+        if isinstance(data, BBSGroup) and index.column() == BBSModel.COLNUM_BRUSH:
             newExpandedState = not self.isExpanded(index)
             data.setExpanded(newExpandedState)
             self.setExpanded(index, newExpandedState)
+        super(BBSWBrushesTv, self).mouseDoubleClickEvent(event)
 
     def wheelEvent(self, event):
         """Manage zoom level through mouse wheel"""
@@ -1832,7 +1877,6 @@ class BBSWBrushesTv(QTreeView):
     def dropEvent(self, event):
         """TODO: needed?"""
         super(BBSWBrushesTv, self).dropEvent(event)
-        print("dropEvent", event.isAccepted(), event)
         self.__setDndOverIndex(None)
 
     def dragMoveEvent(self, event):
@@ -1910,18 +1954,18 @@ class BBSWBrushesTv(QTreeView):
 
     def selectItem(self, item):
         """Select given item"""
-        if isinstance(item, BBSBrush):
+        if isinstance(item, BBSBaseNode):
             itemSelection = self.__model.itemSelection(item)
             self.selectionModel().select(itemSelection, QItemSelectionModel.ClearAndSelect)
 
     def selectedItems(self):
-        """Return a list of selected brushes items"""
+        """Return a list of selected groups/brushes items"""
         returned = []
         if self.selectionModel():
-            for item in self.selectionModel().selectedRows(BBSModel.COLNUM_BRUSH):
-                brush = item.data(BBSModel.ROLE_DATA)
-                if brush is not None:
-                    returned.append(brush)
+            for selectedItem in self.selectionModel().selectedRows(BBSModel.COLNUM_BRUSH):
+                item = selectedItem.data(BBSModel.ROLE_DATA)
+                if item is not None:
+                    returned.append(item)
         return returned
 
     def nbSelectedItems(self):
@@ -2372,7 +2416,7 @@ class BBSBrushesEditor(EDialog):
 
         toolIdList = EKritaTools.list(EKritaToolsCategory.PAINT)
         for index, toolId in enumerate(toolIdList):
-            self.cbDefaultPaintTools.addItem(EKritaTools.name(toolId), toolId)
+            self.cbDefaultPaintTools.addItem(EKritaTools.icon(toolId), EKritaTools.name(toolId), toolId)
             if toolId == brush.defaultPaintTool():
                 self.cbDefaultPaintTools.setCurrentIndex(index)
         self.cbDefaultPaintTool.toggled.connect(self.cbDefaultPaintTools.setEnabled)
