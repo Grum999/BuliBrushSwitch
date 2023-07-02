@@ -1115,7 +1115,12 @@ class BBSModelNode(QStandardItem):
             return returned
 
     def insertChild(self, position, childNode):
-        self.__childNodes.insert(position, childNode)
+        row = 0
+        for i, child in enumerate(self.__childNodes):
+            if child.data().position() >= position:
+                row = i - 1
+                break
+        self.__childNodes.insert(row, childNode)
         childNode.beginUpdate()
         childNode.data().setPosition(position)
         childNode.setParentNode(self)
@@ -1353,6 +1358,7 @@ class BBSModel(QAbstractItemModel):
             # above a BBSBrush ==> need to get brush parent
             targetParentNode = newParentNode.parentNode()
             targetParentIndex = self.parent(newParent)
+            row = newParentNode.row()
         else:
             positionUpdate = 1
             # below a BBSGroup ==> BBSGroup is the parent
@@ -1360,11 +1366,13 @@ class BBSModel(QAbstractItemModel):
             if isinstance(newParentNode.data(), BBSBrush):
                 targetParentNode = newParentNode.parentNode()
                 targetParentIndex = self.parent(newParent)
+                row = newParentNode.row() + 1
             else:
                 targetParentIndex = newParent
                 targetParentNode = newParentNode
                 # when moved directly into a group, ensure the item is moved to the last position
                 targetPosition = 999999
+                row = newParentNode.row() + 1
 
         if positionUpdate < 0:
             # above, need to process in inverted order to keep position
@@ -1380,7 +1388,7 @@ class BBSModel(QAbstractItemModel):
             # remove from old position
             self.removeNode(itemNode)
 
-            self.beginInsertRows(newParent, row, row)
+            self.beginInsertRows(targetParentIndex, row, row)
             targetParentNode.insertChild(newPosition, itemNode)
             self.endInsertRows()
 
@@ -1497,7 +1505,7 @@ class BBSModel(QAbstractItemModel):
         if isinstance(node, BBSModelNode):
             row = node.row()
             index = self.createIndex(row, 0, node)
-            self.beginRemoveRows(index.parent(), row, row)
+            self.beginRemoveRows(self.parent(index), row, row)
             node.parentNode().removeChild(row)
             self.endRemoveRows()
 
@@ -1520,7 +1528,6 @@ class BBSModel(QAbstractItemModel):
 
         return returned
 
-    # TODO: used in bbsmainwindow & bbswbrushswitcher
     def idIndexes(self, options={}):
         """Return a dictionnary of all brushes/groups id
 
@@ -1568,7 +1575,6 @@ class BBSModel(QAbstractItemModel):
         else:
             return {id: self.__idIndexes[id] for id in returned}
 
-    # TODO: used bbswbrushswitcher
     def getFromId(self, id, asIndex=True):
         """Return brush/group from given Id
 
@@ -1583,7 +1589,6 @@ class BBSModel(QAbstractItemModel):
         else:
             return None
 
-    # TODO: used bbswbrushswitcher
     def getGroupItems(self, groupId=None, asIndex=True):
         """Return items from given `groupId`
 
@@ -1618,9 +1623,15 @@ class BBSModel(QAbstractItemModel):
 
     def clear(self):
         """Clear all brushes & groups"""
+        if self.__inMassiveUpdate == 0:
+            self.beginResetModel()
+
         self.__beginUpdate()
         self.__rootNode.clear()
         self.__endUpdate()
+
+        if self.__inMassiveUpdate == 0:
+            self.endResetModel()
 
     def remove(self, itemToRemove):
         """Remove item from list
@@ -1706,8 +1717,8 @@ class BBSModel(QAbstractItemModel):
                     raise EInvalidValue(f"Given `id` must be a valid <str>")
             parent.appendChild(toAdd)
 
-        self.__beginUpdate()
         self.beginResetModel()
+        self.__beginUpdate()
         self.clear()
         # a dictionary id => BBSBaseNode
         tmpIdIndex = {brushOrGroup.id(): brushOrGroup for brushOrGroup in brushesAndGroups}
@@ -1717,8 +1728,8 @@ class BBSModel(QAbstractItemModel):
             nodes = list(tmpIdIndex.keys())
 
         addNodes(nodes, self.__rootNode)
-        self.endResetModel()
         self.__endUpdate()
+        self.endResetModel()
 
     def exportData(self):
         """export model as dict
@@ -1989,6 +2000,7 @@ class BBSWBrushesTv(QTreeView):
             self.__compactIconSizeIndex = value
             self.__delegate.setCompactSize(self.__iconSize.index() <= self.__compactIconSizeIndex)
             self.update()
+
 
 
 class BBSWBrushesLv(QListView):
