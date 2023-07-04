@@ -89,6 +89,9 @@
     <file alias="filter_limitrange">dark/32dp/filter_limitrange.svg</file>
     <file alias="filter_regex">dark/32dp/filter_regex.svg</file>
     <file alias="filter_wholeword">dark/32dp/filter_wholeword.svg</file>
+    <file alias="folder__filled_close">dark/32dp/folder__filled_close.svg</file>
+    <file alias="folder__filled_open">dark/32dp/folder__filled_open.svg</file>
+    <file alias="folder_close">dark/32dp/folder_close.svg</file>
     <file alias="folder_open">dark/32dp/folder_open.svg</file>
     <file alias="folder_open_add">dark/32dp/folder_open_add.svg</file>
     <file alias="folder_open_cache">dark/32dp/folder_open_cache.svg</file>
@@ -299,6 +302,9 @@
     <file alias="filter_limitrange">dark/32dp-disabled/filter_limitrange.svg</file>
     <file alias="filter_regex">dark/32dp-disabled/filter_regex.svg</file>
     <file alias="filter_wholeword">dark/32dp-disabled/filter_wholeword.svg</file>
+    <file alias="folder__filled_close">dark/32dp-disabled/folder__filled_close.svg</file>
+    <file alias="folder__filled_open">dark/32dp-disabled/folder__filled_open.svg</file>
+    <file alias="folder_close">dark/32dp-disabled/folder_close.svg</file>
     <file alias="folder_open">dark/32dp-disabled/folder_open.svg</file>
     <file alias="folder_open_add">dark/32dp-disabled/folder_open_add.svg</file>
     <file alias="folder_open_cache">dark/32dp-disabled/folder_open_cache.svg</file>
