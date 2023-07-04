@@ -795,6 +795,8 @@ class BBSGroup(BBSBaseNode):
     KEY_SHORTCUT_PREV = 'shortcutPrevious'
     KEY_EXPANDED = 'expanded'
 
+    IMG_SIZE = 256
+
     def __init__(self, group=None):
         super(BBSGroup, self).__init__(None)
 
@@ -809,6 +811,9 @@ class BBSGroup(BBSBaseNode):
         self.__groupNfoShort = ''
         self.__groupNfoOptions = ''
         self.__groupNfoComments = ''
+
+        self.__imageOpen = None
+        self.__imageClose = None
 
         self.__node = None
 
@@ -941,6 +946,26 @@ class BBSGroup(BBSBaseNode):
         """Set group color"""
         if WStandardColorSelector.isValidColorIndex(color) and self.__color != color:
             self.__color = color
+
+            # need to build images according to colors
+            pixmapOpen = buildIcon('pktk:folder__filled_open').pixmap(QSize(BBSGroup.IMG_SIZE, BBSGroup.IMG_SIZE))
+            painterOpen = QPainter()
+            painterOpen.begin(pixmapOpen)
+            if self.__color != WStandardColorSelector.COLOR_NONE:
+                painterOpen.setCompositionMode(QPainter.CompositionMode_SourceAtop)
+                painterOpen.fillRect(0, 0, BBSGroup.IMG_SIZE, BBSGroup.IMG_SIZE, WStandardColorSelector.getColor(self.__color))
+            painterOpen.end()
+            self.__imageOpen = pixmapOpen.toImage()
+
+            pixmapClose = buildIcon('pktk:folder__filled_close').pixmap(QSize(BBSGroup.IMG_SIZE, BBSGroup.IMG_SIZE))
+            painterClose = QPainter()
+            painterClose.begin(pixmapClose)
+            if self.__color != WStandardColorSelector.COLOR_NONE:
+                painterClose.setCompositionMode(QPainter.CompositionMode_SourceAtop)
+                painterClose.fillRect(0, 0, BBSGroup.IMG_SIZE, BBSGroup.IMG_SIZE, WStandardColorSelector.getColor(self.__color))
+            painterClose.end()
+            self.__imageClose = pixmapClose.toImage()
+
             self.applyUpdate('color')
 
     def expanded(self):
@@ -1013,6 +1038,20 @@ class BBSGroup(BBSBaseNode):
         returned = f'<b>{self.__name}</b>{returned}'
 
         return returned
+
+    def image(self, expandedStatus=None):
+        """Return image for group
+
+        if expandedStatus is none, return image according to expanded/collapsed status
+        if expandedStatus is True, return image for exapanded status, otherwise return image for collapsed status
+        """
+        if expandedStatus is None:
+            expandedStatus = self.expanded()
+
+        if expandedStatus:
+            return self.__imageOpen
+        else:
+            return self.__imageClose
 
 
 class BBSModelNode(QStandardItem):
@@ -2222,7 +2261,7 @@ class BBSModelDelegateTv(QStyledItemDelegate):
                     pixmap = roundedPixmap(QPixmap.fromImage(data.image()), bRadius, bgRect.size().toSize())
             else:
                 # group icon: folder
-                pixmap = buildIcon('pktk:folder_open').pixmap(bgRect.size().toSize())
+                pixmap = QPixmap.fromImage(data.image()).scaled(bgRect.size().toSize(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
             if (option.state & QStyle.State_Selected) == QStyle.State_Selected:
                 painter.fillRect(option.rect, option.palette.color(QPalette.Highlight))
@@ -2232,13 +2271,6 @@ class BBSModelDelegateTv(QStyledItemDelegate):
 
             if dndOver := item.dndOver():
                 paintDndMarker(item.data(), dndOver, QRect(option.rect.topLeft() + QPoint(iconOffset, 0), option.rect.size() + QSize(-iconOffset, 0)))
-
-            # translate coordinates, avoid to use addition or additional python computation; let painter do it for us
-            if isinstance(data, BBSGroup) and data.color() != WStandardColorSelector.COLOR_NONE:
-                # group icon colored background if any
-                painter.setPen(self.__noPen)
-                painter.setBrush(WStandardColorSelector.getColor(data.color()))
-                painter.drawRoundedRect(bgRect, bRadius, bRadius, Qt.AbsoluteSize)
 
             # draw icon
             painter.drawPixmap(bgRect.topLeft(), pixmap)
