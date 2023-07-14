@@ -742,7 +742,7 @@ class BBSBrush(BBSBaseNode):
 
             returned = f'<b>{self.__name.replace("_", " ")}</b>{returned}'
         else:
-            returned = f'<b>{self.__name.replace("_", " ")}</b><small><i><table>{returned}</table></i></small>'
+            returned = f'<small><i><table>{returned}</table></i></small>'
 
         if displayOption & BBSBrush.INFO_WITH_ICON and self.__brushNfoImg != '':
             returned = f'<table><tr><td>{self.__brushNfoImg}</td><td>{returned}</td></tr></table>'
@@ -793,6 +793,7 @@ class BBSGroup(BBSBaseNode):
     KEY_COLOR = 'color'
     KEY_SHORTCUT_NEXT = 'shortcutNext'
     KEY_SHORTCUT_PREV = 'shortcutPrevious'
+    KEY_RESET_EXIT_GROUP = 'resetWhenExitGroupLoop'
     KEY_EXPANDED = 'expanded'
 
     IMG_SIZE = 256
@@ -806,6 +807,7 @@ class BBSGroup(BBSBaseNode):
         self.__expanded = True
         self.__shortcutNext = QKeySequence()
         self.__shortcutPrevious = QKeySequence()
+        self.__resetWhenExitGroupLoop = False
 
         self.__groupNfoFull = ''
         self.__groupNfoShort = ''
@@ -815,7 +817,8 @@ class BBSGroup(BBSBaseNode):
         self.__imageOpen = None
         self.__imageClose = None
 
-        self.__node = None
+        # to manage next/prev
+        self.__currentBrushIndexInGroup = -1
 
         if isinstance(group, BBSGroup):
             # clone group
@@ -872,6 +875,7 @@ class BBSGroup(BBSBaseNode):
                 BBSGroup.KEY_UUID: self.id(),
                 BBSGroup.KEY_SHORTCUT_NEXT: self.__shortcutNext.toString(),
                 BBSGroup.KEY_SHORTCUT_PREV: self.__shortcutPrevious.toString(),
+                BBSGroup.KEY_RESET_EXIT_GROUP: self.__resetWhenExitGroupLoop,
                 BBSGroup.KEY_EXPANDED: self.__expanded
             }
 
@@ -897,6 +901,8 @@ class BBSGroup(BBSBaseNode):
                 self.setColor(value[BBSGroup.KEY_COLOR])
             if BBSGroup.KEY_EXPANDED in value:
                 self.setExpanded(value[BBSGroup.KEY_EXPANDED])
+            if BBSGroup.KEY_RESET_EXIT_GROUP in value:
+                self.setResetWhenExitGroupLoop(value[BBSGroup.KEY_RESET_EXIT_GROUP])
 
             actionNext = self.actionNext()
             if actionNext and actionNext.shortcut():
@@ -1052,6 +1058,83 @@ class BBSGroup(BBSBaseNode):
             return self.__imageOpen
         else:
             return self.__imageClose
+
+    def getNextBrush(self):
+        """Return next brush in group, or None if no brush can be returned (no brush in group)
+
+        if current brush index is the last one, loop to first
+        """
+        node = self.node()
+        if node:
+            loopIndex = self.__currentBrushIndexInGroup
+            while True:
+                self.__currentBrushIndexInGroup += 1
+
+                if self.__currentBrushIndexInGroup >= node.childCount():
+                    if loopIndex == -1:
+                        self.__currentBrushIndexInGroup = -1
+                    else:
+                        self.__currentBrushIndexInGroup = 0
+
+                if self.__currentBrushIndexInGroup == loopIndex:
+                    # loop done, still on same index, no need to continue: there's no brush in group
+                    # (avoid inifinite loop)
+                    return None
+
+                item = node.child(self.__currentBrushIndexInGroup).data()
+                if isinstance(item, BBSBrush):
+                    return item
+
+        return None
+
+    def getPrevBrush(self):
+        """Return next brush in group, or None if no brush can be returned (no brush in group)
+
+        if current brush index is the last one, loop to first
+        """
+        node = self.node()
+        if node:
+            if self.__currentBrushIndexInGroup == -1:
+                self.__currentBrushIndexInGroup = node.childCount()
+            loopIndex = self.__currentBrushIndexInGroup
+            while True:
+                self.__currentBrushIndexInGroup -= 1
+
+                if self.__currentBrushIndexInGroup < 0:
+                    if loopIndex == -1:
+                        self.__currentBrushIndexInGroup = -1
+                    else:
+                        self.__currentBrushIndexInGroup = node.childCount() - 1
+
+                if self.__currentBrushIndexInGroup == loopIndex:
+                    # loop done, still on same index, no need to continue: there's no brush in group
+                    # (avoid inifinite loop)
+                    return None
+
+                item = node.child(self.__currentBrushIndexInGroup).data()
+                if isinstance(item, BBSBrush):
+                    return item
+
+        return None
+
+    def resetBrush(self):
+        """reset current brush index"""
+        self.__currentBrushIndexInGroup = -1
+
+    def resetBrushIfNeeded(self):
+        """reset current brush index"""
+        if self.__resetWhenExitGroupLoop:
+            self.resetBrush()
+
+    def resetWhenExitGroupLoop(self):
+        """Return if group reset current bursh to first one after exiting loop selection"""
+        return self.__resetWhenExitGroupLoop
+
+    def setResetWhenExitGroupLoop(self, value):
+        """Return if group reset current bursh to first one after exiting loop selection"""
+        if isinstance(value, bool) and value != self.__resetWhenExitGroupLoop:
+            self.__resetWhenExitGroupLoop = value
+            self.applyUpdate('resetWhenExitGroupLoop')
 
 
 class BBSModelNode(QStandardItem):
@@ -1495,7 +1578,14 @@ class BBSModel(QAbstractItemModel):
                     return data.information(BBSBrush.INFO_WITH_DETAILS | BBSBrush.INFO_WITH_OPTIONS)
         elif isinstance(data, BBSGroup):
             if role == Qt.DecorationRole:
-                return buildIcon('pktk:folder_open')
+                image = data.image()
+                if image:
+                    # QIcon
+                    return QIcon(QPixmap.fromImage(image))
+                else:
+                    return buildIcon('pktk:folder_open')
+            elif role == Qt.ToolTipRole:
+                return data.information(BBSBrush.INFO_WITH_DETAILS | BBSBrush.INFO_WITH_OPTIONS)
 
         return None
 
@@ -1550,7 +1640,7 @@ class BBSModel(QAbstractItemModel):
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         """Return label for given data section"""
-        if role == Qt.DisplayRole and orientation == Qt.Horizontal and section > 0:
+        if role == Qt.DisplayRole and orientation == Qt.Horizontal:
             return BBSModel.HEADERS[section]
         return None
 
@@ -1561,8 +1651,8 @@ class BBSModel(QAbstractItemModel):
         if isinstance(item, BBSBaseNode):
             index = self.__getIdIndex(item.id())
             if index.isValid():
-                indexS = self.createIndex(index.row(), 0)
-                indexE = self.createIndex(index.row(), BBSModel.COLNUM_LAST)
+                indexS = self.createIndex(index.row(), 0, item.node())
+                indexE = self.createIndex(index.row(), BBSModel.COLNUM_LAST, item.node())
                 returned = QItemSelection(indexS, indexE)
 
         return returned
@@ -1729,7 +1819,20 @@ class BBSModel(QAbstractItemModel):
             self.add(itemToAdd, parent.id())
 
     def update(self, itemToUpdate):
-        print("TODO: BBSModel.update()", itemToUpdate)
+        """The given item has been updated"""
+        if isinstance(itemToUpdate, list):
+            # a list of item to add
+            self.__beginUpdate()
+            for item in itemToUpdate:
+                self.update(item)
+            self.__endUpdate()
+        elif isinstance(itemToUpdate, BBSBaseNode):
+            self.updatedData(self.getFromId(itemToUpdate.id(), True))
+
+    def updatedData(self, index):
+        """Data has been updated for index, emit signal"""
+        if index.isValid():
+            self.dataChanged.emit(index, index, [BBSModel.ROLE_DATA])
 
     def importData(self, brushesAndGroups, nodes):
         """Load model from:
@@ -1804,6 +1907,374 @@ class BBSModel(QAbstractItemModel):
         return returned
 
 
+class BBSGroupsProxyModel(QAbstractProxyModel):
+    """A proxy model used for list view mode
+
+    Return groups all groups with:
+        - an additional group node "Flat view"
+        - a top group "User view" for which all groups items will be available
+    """
+
+    UUID_FLATVIEW = "DUMMY001-0000-0000-0000-FLATVIEW0000"
+    UUID_USERVIEW = "DUMMY002-0000-0000-0000-USERVIEW0000"
+    UUID_ROOTNODE = "00000000-0000-0000-0000-000000000000"
+
+    def __init__(self, parent=None):
+        super(BBSGroupsProxyModel, self).__init__(parent)
+        # initialise dummy root nodes
+        self.__flatViewNode = BBSModelNode(BBSGroup({BBSGroup.KEY_UUID: BBSGroupsProxyModel.UUID_FLATVIEW,
+                                                     BBSGroup.KEY_NAME: i18n("Flat view")
+                                                     }))
+
+        self.__userViewNode = BBSModelNode(BBSGroup({BBSGroup.KEY_UUID: BBSGroupsProxyModel.UUID_USERVIEW,
+                                                     BBSGroup.KEY_NAME: i18n("User view"),
+                                                     BBSGroup.KEY_EXPANDED: True
+                                                     }))
+
+    def __countGroups(self, node):
+        """Return number of BBSGroup in curent node childs"""
+        returned = 0
+        for child in node.childs():
+            if isinstance(child.data(), BBSGroup):
+                returned += 1
+        return returned
+
+    def __dataChanged(self, topLeft, bottomRight, roles):
+        """Data from source index has been changed"""
+        proxyIndexTopLeft = self.mapFromSource(topLeft)
+        proxyIndexBottomRight = self.mapFromSource(bottomRight)
+        if proxyIndexTopLeft.isValid() and proxyIndexBottomRight.isValid():
+            self.dataChanged.emit(proxyIndexTopLeft, proxyIndexBottomRight, roles)
+
+    def flags(self, index):
+        """returns flags for items, especially for dummy ones"""
+        if index.isValid():
+            if not index.parent().isValid():
+                return (Qt.ItemIsEnabled | Qt.ItemIsSelectable)
+        return (Qt.ItemIsEnabled | Qt.ItemIsSelectable)
+        return super(BBSGroupsProxyModel, self).flags(index)
+
+    def hasChildren(self, index):
+        """returns true if item have childrens"""
+        if index.isValid():
+            if not index.parent().isValid():
+                # from root, dummy nodes
+                data = index.data(BBSModel.ROLE_DATA)
+                if data.id() == BBSGroupsProxyModel.UUID_FLATVIEW:
+                    return False
+                else:
+                    return True
+            else:
+                node = index.data(BBSModel.ROLE_NODE)
+                if node:
+                    return self.__countGroups(node) > 0
+        return True
+
+    def setSourceModel(self, model):
+        """Set model for proxy"""
+        super(BBSGroupsProxyModel, self).setSourceModel(model)
+        model.dataChanged.connect(self.__dataChanged)
+
+    def mapFromSource(self, index):
+        """Return index from proxy model that match source model Index"""
+        data = self.sourceModel().data(index, BBSModel.ROLE_DATA)
+        if data is None:
+            return QModelIndex()
+
+        return self.getIndexFromId(data.id())
+
+    def mapToSource(self, proxyIndex):
+        """Return index from source model that match proxyIndex"""
+        if not proxyIndex.isValid() or proxyIndex.row() < 0:
+            return QModelIndex()
+
+        if not proxyIndex.parent().isValid():
+            # from root
+            return QModelIndex()
+
+        data = proxyIndex.data(BBSModel.ROLE_DATA)
+        if data:
+            return self.sourceModel().getFromId(data.id())
+        return QModelIndex()
+
+    def data(self, index, role=Qt.DisplayRole):
+        """Return data for index+role"""
+        if not index.isValid():
+            return None
+
+        item = index.internalPointer()
+        if item is None:
+            # not sure when/why it could occurs...
+            return None
+
+        if role == BBSModel.ROLE_NODE:
+            return item
+
+        data = item.data()  # get BBSBrush or BBSGroup
+
+        if role == BBSModel.ROLE_ID:
+            return data.id()
+        elif role == BBSModel.ROLE_DATA:
+            return data
+        elif role == Qt.DisplayRole:
+            return data.name()
+        elif role == Qt.DecorationRole:
+            if data.id() == BBSGroupsProxyModel.UUID_FLATVIEW:
+                return buildIcon('pktk:list_view_icon')
+            elif data.id() == BBSGroupsProxyModel.UUID_USERVIEW:
+                return buildIcon('pktk:author')
+            else:
+                image = data.image()
+                if image:
+                    # QIcon
+                    return QIcon(QPixmap.fromImage(image))
+                else:
+                    return buildIcon('pktk:folder_open')
+        elif role == Qt.ToolTipRole:
+            return data.information(BBSBrush.INFO_WITH_DETAILS | BBSBrush.INFO_WITH_OPTIONS)
+
+        return None
+
+    def updatedData(self, index):
+        """Data has been updated for index, emit signal"""
+        if index.isValid() and index.parent().isValid():
+            # not from root, update source model
+            sourceIndex = self.mapToSource(index)
+            self.sourceModel().updatedData(sourceIndex)
+
+    def columnCount(self, parent):
+        # always return, as we only want 1 cmlumn (group icon+name)"""
+        return 1
+
+    def rowCount(self, parent):
+        """return number of rows"""
+        if not parent.isValid():
+            # from root
+            # flat view + user view
+            return 2
+        else:
+            node = parent.data(BBSModel.ROLE_NODE)
+            data = node.data()
+            if data:
+                if data.id() == BBSGroupsProxyModel.UUID_USERVIEW:
+                    node = self.sourceModel().nodeForIndex(QModelIndex())
+                return node.childCount()
+        return 0
+
+    def index(self, row, column, parent):
+        """Return index model"""
+        if not parent.isValid():
+            # parent is not valid, means we are on root
+            if row == 0:
+                return self.createIndex(row, column, self.__flatViewNode)
+            elif row == 1:
+                return self.createIndex(row, column, self.__userViewNode)
+            else:
+                return QModelIndex()
+
+        node = parent.data(BBSModel.ROLE_NODE)
+        if node:
+            data = node.data()
+            if data.id() == BBSGroupsProxyModel.UUID_USERVIEW:
+                srcIndex = self.sourceModel().index(row, column, QModelIndex())
+                srcNode = srcIndex.data(BBSModel.ROLE_NODE)
+                if isinstance(srcNode.data(), BBSGroup):
+                    return self.createIndex(row, column, srcNode)
+                return QModelIndex()
+            else:
+                childNode = node.child(row)
+                if isinstance(childNode.data(), BBSGroup):
+                    return self.createIndex(row, column, node.child(row))
+
+        return QModelIndex()
+
+    def parent(self, index):
+        node = index.data(BBSModel.ROLE_NODE)
+        if node:
+            data = node.data()
+            if data.id().startswith("DUMMY"):
+                # flat view or user view node, no parent
+                return QModelIndex()
+            else:
+                parentNode = node.parentNode()
+
+                if parentNode.data().id() == BBSGroupsProxyModel.UUID_ROOTNODE:
+                    # user mode is in row 1
+                    return self.createIndex(1, 0, self.__userViewNode)
+                else:
+                    return self.createIndex(parentNode.row(), 0, parentNode)
+        return QModelIndex()
+
+    def getIndexFromId(self, id):
+        """Return group index from given Id
+
+        Return invalid QModelIndex if not found
+        """
+        def getIdIndexes(id, modelIndexParent):
+            for childRow in range(self.rowCount(modelIndexParent)):
+                index = self.index(childRow, 0, modelIndexParent)
+
+                if index.isValid():
+                    data = index.data(BBSModel.ROLE_DATA)
+                    if data.id() == id:
+                        return index
+
+                    returned = getIdIndexes(id, index)
+                    if returned.isValid():
+                        return returned
+            return QModelIndex()
+        userViewIndex = self.index(1, 0, QModelIndex())
+        if id == BBSGroupsProxyModel.UUID_USERVIEW:
+            return userViewIndex
+        elif id == BBSGroupsProxyModel.UUID_FLATVIEW:
+            return self.index(0, 0, QModelIndex())
+        return getIdIndexes(id, userViewIndex)
+
+    def itemSelection(self, item):
+        """Return QItemSelection for given item"""
+        returned = QItemSelection()
+
+        if isinstance(item, BBSGroup):
+            index = self.getIndexFromId(item.id())
+            if index.isValid():
+                returned = QItemSelection(index, index)
+
+        return returned
+
+
+class BBSBrushesProxyModel(QAbstractProxyModel):
+    """A proxy model used for list view mode
+
+    Return brushes from given group or, if no group is given return a flat view of all brushes
+    """
+
+    def __init__(self, parent=None):
+        super(BBSBrushesProxyModel, self).__init__(parent)
+        # initialise map dict
+        self.__mapRowFromId = {}
+        self.__mapIdFromRow = {}
+        self.__parentId = None
+
+    def __buildMap(self, parent=QModelIndex(), row=0, currentParentId=BBSGroupsProxyModel.UUID_ROOTNODE):
+        """Build map row<-->uuid that let proxy model do the matching between proxyIndex and modelIndex"""
+        if row == 0:
+            self.__mapRowFromId = {}
+            self.__mapIdFromRow = {}
+
+        rows = self.sourceModel().rowCount(parent)
+
+        for rowNumber in range(rows):
+            index = self.sourceModel().index(rowNumber, 0, parent)
+            data = self.sourceModel().data(index, BBSModel.ROLE_DATA)
+
+            if data:
+                uuid = data.id()
+
+                if self.__parentId is None or self.__parentId == currentParentId:
+                    if isinstance(data, BBSBrush):
+                        self.__mapRowFromId[uuid] = row
+                        self.__mapIdFromRow[row] = uuid
+                        row = row + 1
+                    elif self.sourceModel().hasChildren(index):
+                        row = self.__buildMap(index, row, uuid)
+                elif self.__parentId is not None and len(self.__mapRowFromId) > 0:
+                    # parent has already been processed, no need to continue
+                    break
+                elif self.sourceModel().hasChildren(index):
+                    row = self.__buildMap(index, row, uuid)
+
+        if not parent.isValid():
+            self.beginResetModel()
+            self.endResetModel()
+
+        return row
+
+    def setParentId(self, parentId):
+        """Set parent for which we need to get childs
+
+        If parentId is None, it's will return a flat view of all brushes
+        """
+        if (parentId is None or isinstance(parentId, str)) and parentId != self.__parentId:
+            self.__parentId = parentId
+            self.__buildMap()
+
+    def setSourceModel(self, model):
+        """Set model for proxy"""
+        super(BBSBrushesProxyModel, self).setSourceModel(model)
+        # when model is reset, need to rebuild row<-->uuid map
+        model.modelReset.connect(self.__buildMap)
+
+    def mapFromSource(self, index):
+        """Return index from proxy model that match source model Index"""
+        data = self.sourceModel().data(index, BBSModel.ROLE_DATA)
+        if data is None:
+            return QModelIndex()
+
+        uuid = data.id()
+        if uuid not in self.__mapRowFromId:
+            return QModelIndex()
+
+        return self.createIndex(self.__mapRowFromId[uuid], index.column(), index.data())
+
+    def mapToSource(self, proxyIndex):
+        """Return index from source model that match proxyIndex"""
+        if not proxyIndex.isValid() or proxyIndex.row() not in self.__mapIdFromRow:
+            return QModelIndex()
+
+        return self.sourceModel().getFromId(self.__mapIdFromRow[proxyIndex.row()])
+
+    def columnCount(self, parent):
+        # always return, as we only want 1 comlumn (brush icon+name)"""
+        return 1
+
+    def rowCount(self, parent):
+        """return number of rows for flat model"""
+        if parent.isValid():
+            return 0
+        return len(self.__mapRowFromId)
+
+    def index(self, row, column, parent):
+        """Return index for flat model"""
+        if parent.isValid():
+            return QModelIndex()
+        return self.createIndex(row, column)
+
+    def parent(self, index):
+        return QModelIndex()
+
+    def getIndexFromId(self, id):
+        """Return group index from given Id
+
+        Return invalid QModelIndex if not found
+        """
+        def getIdIndexes(id, modelIndexParent):
+            for childRow in range(self.rowCount(modelIndexParent)):
+                index = self.index(childRow, 0, modelIndexParent)
+
+                if index.isValid():
+                    data = index.data(BBSModel.ROLE_DATA)
+                    if data.id() == id:
+                        return index
+
+                    if isinstance(data, BBSGroup):
+                        returned = getIdIndexes(id, index)
+                        if returned.isValid():
+                            return returned
+            return QModelIndex()
+        return getIdIndexes(id, QModelIndex())
+
+    def itemSelection(self, item):
+        """Return QItemSelection for given item"""
+        returned = QItemSelection()
+
+        if isinstance(item, BBSBrush):
+            index = self.getIndexFromId(item.id())
+            if index.isValid():
+                returned = QItemSelection(index, index)
+
+        return returned
+
+
 class BBSWBrushesTv(QTreeView):
     """Tree view groups&brushes"""
     focused = Signal()
@@ -1861,6 +2332,13 @@ class BBSWBrushesTv(QTreeView):
 
         self.__selectedBeforeReset = []
 
+    def __modelDataChanged(self, topLeft, bottomRight, roles):
+        """Data has been changed"""
+        if BBSModel.ROLE_DATA in roles:
+            data = topLeft.data(BBSModel.ROLE_DATA)
+            if isinstance(data, BBSGroup):
+                self.setExpanded(topLeft, data.expanded())
+
     def __sectionResized(self, index, oldSize, newSize):
         """When section is resized, update rows height"""
         if index == BBSModel.COLNUM_COMMENT and not self.isColumnHidden(BBSModel.COLNUM_COMMENT):
@@ -1907,6 +2385,7 @@ class BBSWBrushesTv(QTreeView):
             newExpandedState = not self.isExpanded(index)
             data.setExpanded(newExpandedState)
             self.setExpanded(index, newExpandedState)
+            self.__model.updatedData(index)
         super(BBSWBrushesTv, self).mouseDoubleClickEvent(event)
 
     def wheelEvent(self, event):
@@ -1998,6 +2477,7 @@ class BBSWBrushesTv(QTreeView):
         self.__model.updateWidth.connect(self.resizeColumns)
         self.__model.modelAboutToBeReset.connect(self.__modelAboutToBeReset)
         self.__model.modelReset.connect(self.__modelReset)
+        self.__model.dataChanged.connect(self.__modelDataChanged)
 
         # when model is set, consider there's a reset
         self.__modelReset()
@@ -2007,6 +2487,8 @@ class BBSWBrushesTv(QTreeView):
         if isinstance(item, BBSBaseNode):
             itemSelection = self.__model.itemSelection(item)
             self.selectionModel().select(itemSelection, QItemSelectionModel.ClearAndSelect)
+        else:
+            self.selectionModel().clear()
 
     def selectedItems(self):
         """Return a list of selected groups/brushes items"""
@@ -2041,7 +2523,6 @@ class BBSWBrushesTv(QTreeView):
             self.update()
 
 
-
 class BBSWBrushesLv(QListView):
     """List view groups&brushes"""
     focused = Signal()
@@ -2052,6 +2533,8 @@ class BBSWBrushesLv(QListView):
         super(BBSWBrushesLv, self).__init__(parent)
         self.setAutoScroll(True)
         self.setViewMode(QListView.IconMode)
+        self.setResizeMode(QListView.Adjust)
+        self.setWrapping(True)
 
         self.__parent = parent
         self.__model = None
@@ -2060,19 +2543,11 @@ class BBSWBrushesLv(QListView):
         if self.__fontSize == -1:
             self.__fontSize = -self.font().pixelSize()
 
+        self.__delegate = BBSModelDelegateLv(self)
+        self.setItemDelegate(self.__delegate)
+
         self.__iconSize = IconSizes([32, 64, 96, 128, 192])
         self.setIconSizeIndex(3)
-
-    def __modelAboutToBeReset(self):
-        """model is about to be reset"""
-        self.__selectedBeforeReset = self.selectedItems()
-
-    def __modelReset(self):
-        """model has been reset"""
-        for selectedItem in self.__selectedBeforeReset:
-            self.selectItem(selectedItem)
-
-        self.__selectedBeforeReset = []
 
     def wheelEvent(self, event):
         """Mange zoom level through mouse wheel"""
@@ -2098,25 +2573,27 @@ class BBSWBrushesLv(QListView):
         if index is None or self.__iconSize.setIndex(index):
             # new size defined
             self.setIconSize(self.__iconSize.value(True))
+            self.__delegate.setIconSize(self.__iconSize.value(False))
             self.iconSizeIndexChanged.emit(self.__iconSize.index(), self.__iconSize.value(True))
 
     def setModel(self, model):
         """Initialise treeview header & model"""
-        if isinstance(model, BBSModel):
+        if isinstance(model, (BBSModel, BBSBrushesProxyModel)):
             self.__model = model
         else:
-            raise EInvalidType("Given `model` must be <BBSModel>")
+            raise EInvalidType("Given `model` must be <BBSBrushesProxyModel>")
 
         super(BBSWBrushesLv, self).setModel(self.__model)
-
-        self.__model.modelAboutToBeReset.connect(self.__modelAboutToBeReset)
-        self.__model.modelReset.connect(self.__modelReset)
 
     def selectItem(self, item):
         """Select given item"""
         if isinstance(item, BBSBrush):
             itemSelection = self.__model.itemSelection(item)
+            itemIndex = self.__model.getIndexFromId(item.id())
             self.selectionModel().select(itemSelection, QItemSelectionModel.ClearAndSelect)
+            self.scrollTo(itemIndex, QAbstractItemView.EnsureVisible)
+        else:
+            self.selectionModel().clear()
 
     def selectedItems(self):
         """Return a list of selected brushes items"""
@@ -2131,6 +2608,79 @@ class BBSWBrushesLv(QListView):
     def nbSelectedItems(self):
         """Return number of selected items"""
         return len(self.selectedItems())
+
+
+class BBSWGroupsTv(QTreeView):
+    """Tree view for groups only"""
+    focused = Signal()
+    keyPressed = Signal(int)
+
+    def __init__(self, parent=None):
+        super(BBSWGroupsTv, self).__init__(parent)
+        self.setAutoScroll(True)
+        self.setItemsExpandable(True)
+        self.setRootIsDecorated(True)
+        self.setAllColumnsShowFocus(True)
+        self.setExpandsOnDoubleClick(True)
+        self.setHeaderHidden(True)
+        self.setRootIsDecorated(False)
+
+        self.collapsed.connect(self.__setCollapsed)
+        self.expanded.connect(self.__setExpanded)
+
+        self.__model = None
+
+    def __modelDataChanged(self, topLeft, bottomRight, roles):
+        """Data has been changed
+
+        Index are from (proxy) model
+        """
+        if BBSModel.ROLE_DATA in roles:
+            data = topLeft.data(BBSModel.ROLE_DATA)
+            if isinstance(data, BBSGroup):
+                self.setExpanded(topLeft, data.expanded())
+
+    def __setExpanded(self, index):
+        """Manage expand/collapse and keep state in model"""
+        data = index.data(BBSModel.ROLE_DATA)
+        if data:
+            data.setExpanded(True)
+            self.model().updatedData(index)
+
+    def __setCollapsed(self, index):
+        """Manage expand/collapse and keep state in model"""
+        data = index.data(BBSModel.ROLE_DATA)
+        if data:
+            data.setExpanded(False)
+            self.model().updatedData(index)
+
+    def setModel(self, model):
+        """Initialise treeview header & model"""
+        if isinstance(model, (BBSModel, BBSGroupsProxyModel)):
+            self.__model = model
+        else:
+            raise EInvalidType("Given `model` must be <BBSGroupsProxyModel>")
+
+        super(BBSWGroupsTv, self).setModel(self.__model)
+
+        self.__model.dataChanged.connect(self.__modelDataChanged)
+        # self.expand(self.model().index(1, 0, QModelIndex()))
+
+    def selectItem(self, item):
+        """Select given item"""
+        if isinstance(item, BBSGroup):
+            itemSelection = self.__model.itemSelection(item)
+            self.selectionModel().select(itemSelection, QItemSelectionModel.ClearAndSelect)
+
+    def selectedItems(self):
+        """Return selected groups item"""
+        if self.selectionModel():
+            for selectedItem in self.selectionModel().selectedRows(BBSModel.COLNUM_BRUSH):
+                item = selectedItem.data(BBSModel.ROLE_DATA)
+                if item is not None:
+                    # return first selected item as only one item can be selected
+                    return item
+        return None
 
 
 class BBSModelDelegateTv(QStyledItemDelegate):
@@ -2261,7 +2811,11 @@ class BBSModelDelegateTv(QStyledItemDelegate):
                     pixmap = roundedPixmap(QPixmap.fromImage(data.image()), bRadius, bgRect.size().toSize())
             else:
                 # group icon: folder
-                pixmap = QPixmap.fromImage(data.image()).scaled(bgRect.size().toSize(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                img = data.image()
+                if img is None:
+                    pixmap = buildIcon('pktk:warning').pixmap(bgRect.size().toSize())
+                else:
+                    pixmap = QPixmap.fromImage(img).scaled(bgRect.size().toSize(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
             if (option.state & QStyle.State_Selected) == QStyle.State_Selected:
                 painter.fillRect(option.rect, option.palette.color(QPalette.Highlight))
@@ -2355,6 +2909,78 @@ class BBSModelDelegateTv(QStyledItemDelegate):
             size = QSize(self.__csize, textDocument.size().toSize().height())
 
         return size
+
+
+class BBSModelDelegateLv(QStyledItemDelegate):
+    """Extend QStyledItemDelegate class to build improved rendering items for BBSWBrushesLv listview"""
+
+    def __init__(self, parent=None):
+        """Constructor, nothingspecial"""
+        super(BBSModelDelegateLv, self).__init__(parent)
+        self.__iconMargins = QMarginsF()
+        self.__iconSize = 0
+        self.__iconLevelOffset = 0
+        self.__iconQSize = QSize()
+        self.__iconAndMarginSize = 0
+        self.__bRadius = 0
+
+    def setIconSize(self, value):
+        """define icone size"""
+        if self.__iconSize != value:
+            self.__iconSize = round(value, 0)
+            self.__iconQSize = QSize(self.__iconSize, self.__iconSize)
+
+            margin = max(1, round(self.__iconSize * 0.05))
+            self.__iconAndMarginSize = QSize(self.__iconSize + (margin << 1), self.__iconSize + (margin << 1))
+            self.__tl = QPoint(margin, margin)
+            self.__bRadius = max(2, self.__iconSize * 0.050)
+
+    def paint(self, painter, option, index):
+        """Paint list item"""
+        if option.state & QStyle.State_HasFocus == QStyle.State_HasFocus:
+            # remove focus style if active
+            option.state = option.state & ~QStyle.State_HasFocus
+
+        if index.column() == BBSModel.COLNUM_BRUSH:
+            # render group/brush information
+            self.initStyleOption(option, index)
+
+            # data: normally is a BBSBrush
+            data = index.data(BBSModel.ROLE_DATA)
+
+            # Initialise painter
+            painter.save()
+            painter.setRenderHint(QPainter.Antialiasing)
+
+            if not data.found():
+                if (option.state & QStyle.State_Selected) == QStyle.State_Selected:
+                    option.state &= ~QStyle.State_Selected
+                painter.setBrush(warningAreaBrush())
+                painter.drawRoundedRect(option.rect, self.__bRadius, self.__bRadius)
+                # unable to get brush? return warning icon instead
+                pixmap = buildIcon('pktk:warning').pixmap(self.__iconQSize)
+            else:
+                # brush icon is resized & border are rounded
+                pixmap = roundedPixmap(QPixmap.fromImage(data.image()), self.__bRadius, self.__iconQSize)
+
+            if (option.state & QStyle.State_Selected) == QStyle.State_Selected:
+                painter.setPen(Qt.NoPen)
+                painter.setBrush(option.palette.color(QPalette.Highlight))
+                painter.drawRoundedRect(option.rect, self.__bRadius, self.__bRadius)
+                painter.setPen(QPen(option.palette.color(QPalette.HighlightedText)))
+                painter.drawPixmap(option.rect.topLeft() + self.__tl, pixmap)
+            else:
+                painter.setPen(QPen(option.palette.color(QPalette.Text)))
+                painter.drawPixmap(option.rect.topLeft() + self.__tl, pixmap)
+
+            painter.restore()
+            return
+
+        QStyledItemDelegate.paint(self, painter, option, index)
+
+    def sizeHint(self, option, index):
+        """Return size for items in brushes list view"""
+        return self.__iconAndMarginSize
 
 
 class BBSBrushesEditor(EDialog):
@@ -2755,6 +3381,8 @@ class BBSGroupEditor(EDialog):
         self.kseShortcutPrevious.editingFinished.connect(self.__shortcutModified)
         self.kseShortcutPrevious.keySequenceChanged.connect(self.__shortcutModified)
 
+        self.cbResetWhenExitGroupLoop.setChecked(self.__group.resetWhenExitGroupLoop())
+
         self.pbOk.clicked.connect(self.accept)
         self.pbCancel.clicked.connect(self.reject)
 
@@ -2815,14 +3443,14 @@ class BBSGroupEditor(EDialog):
 
     def options(self):
         """Return options from brush editor"""
-        # --- ici ---
         returned = {
                 BBSGroup.KEY_NAME: self.leName.text(),
                 BBSGroup.KEY_COMMENTS: self.wtComments.toHtml(),
                 BBSGroup.KEY_SHORTCUT_NEXT: self.kseShortcutNext.keySequence(),
                 BBSGroup.KEY_SHORTCUT_PREV: self.kseShortcutPrevious.keySequence(),
                 BBSGroup.KEY_COLOR: self.wColorIndex.colorIndex(),
-                BBSGroup.KEY_EXPANDED: self.__group.expanded()
-            }
+                BBSGroup.KEY_EXPANDED: self.__group.expanded(),
+                BBSGroup.KEY_RESET_EXIT_GROUP: self.cbResetWhenExitGroupLoop.isChecked()
+                }
 
         return returned

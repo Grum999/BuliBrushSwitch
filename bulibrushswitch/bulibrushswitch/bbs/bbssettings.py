@@ -145,7 +145,8 @@ class BBSSettingsKey(SettingsKey):
     CONFIG_UI_POPUP_HEIGHT =                                                    'config.ui.popup.height'
     CONFIG_UI_POPUP_BRUSHES_COLWIDTH =                                          'config.ui.popup.brushes.list.columnWidth.brushes'
     CONFIG_UI_POPUP_BRUSHES_ZOOMLEVEL =                                         'config.ui.popup.brushes.list.zoomLevel'
-    CONFIG_UI_POPUP_BRUSHES_VIEWMODE =                                          'config.ui.popup.brushes.list.viewMode'
+    CONFIG_UI_POPUP_BRUSHES_VIEWMODE =                                          'config.ui.popup.brushes.list.viewMode.mode'
+    CONFIG_UI_POPUP_BRUSHES_VIEWMODE_ICON_SPLITTER_POSITION =                   'config.ui.popup.brushes.list.viewMode.icon.splitterPosition'
 
     CONFIG_BRUSHES_LIST_COUNT =                                                 'config.brushes.list.count'
     CONFIG_BRUSHES_LIST_BRUSHES =                                               'config.brushes.list.brushes'
@@ -241,7 +242,8 @@ class BBSSettings(Settings):
             SettingsRule(BBSSettingsKey.CONFIG_EDITOR_GRADIENT_VIEWMODE,                                BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_LIST,
                                                                                                                        SettingsFmt(int,
                                                                                                                                    [BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_LIST,
-                                                                                                                                    BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_ICON])),
+                                                                                                                                    BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_ICON])
+                         ),
 
             SettingsRule(BBSSettingsKey.CONFIG_EDITOR_WINDOW_POSITION_X,                                -1,            SettingsFmt(int)),
             SettingsRule(BBSSettingsKey.CONFIG_EDITOR_WINDOW_POSITION_Y,                                -1,            SettingsFmt(int)),
@@ -255,7 +257,9 @@ class BBSSettings(Settings):
             SettingsRule(BBSSettingsKey.CONFIG_UI_POPUP_BRUSHES_VIEWMODE,                               BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_LIST,
                                                                                                                        SettingsFmt(int,
                                                                                                                                    [BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_LIST,
-                                                                                                                                    BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_ICON])),
+                                                                                                                                    BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_ICON])
+                         ),
+            SettingsRule(BBSSettingsKey.CONFIG_UI_POPUP_BRUSHES_VIEWMODE_ICON_SPLITTER_POSITION,        [400, 1000],   SettingsFmt(int), SettingsFmt(int)),
 
             SettingsRule(BBSSettingsKey.CONFIG_BRUSHES_LIST_COUNT,                                      0,             SettingsFmt(int, (0, None))),
             SettingsRule(BBSSettingsKey.CONFIG_BRUSHES_LIST_BRUSHES,                                    [],            SettingsFmt(list)),

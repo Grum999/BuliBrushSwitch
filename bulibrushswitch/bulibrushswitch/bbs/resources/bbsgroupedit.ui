@@ -217,19 +217,6 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="label_14">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Define a shortcut to activate from keyboard previous brush within group&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="styleSheet">
-           <string notr="true"/>
-          </property>
-          <property name="text">
-           <string>Previous brush</string>
-          </property>
-         </widget>
-        </item>
         <item row="1" column="1">
          <widget class="WKeySequenceInput" name="kseShortcutPrevious" native="true">
           <property name="sizePolicy">
@@ -240,19 +227,6 @@
           </property>
           <property name="toolTip">
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Define a shortcut to activate from keyboard previous brush within group&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="WKeySequenceInput" name="kseShortcutNext" native="true">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
-            <horstretch>1</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Define a shortcut to activate from keyboard next brush within group&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </widget>
         </item>
@@ -274,6 +248,42 @@
           </property>
           <property name="alignment">
            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="label_14">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Define a shortcut to activate from keyboard previous brush within group&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="styleSheet">
+           <string notr="true"/>
+          </property>
+          <property name="text">
+           <string>Previous brush</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="WKeySequenceInput" name="kseShortcutNext" native="true">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+            <horstretch>1</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Define a shortcut to activate from keyboard next brush within group&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0" colspan="2">
+         <widget class="QCheckBox" name="cbResetWhenExitGroupLoop">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;When using &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; and/or &lt;span style=&quot; font-weight:600;&quot;&gt;Previous&lt;/span&gt; shortcuts to activate brushes in group:&lt;/p&gt;&lt;p&gt;- First brush in group is the default brush when &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; / &lt;span style=&quot; font-weight:600;&quot;&gt;Previous&lt;/span&gt; brush within group is activated for the first time&lt;/p&gt;&lt;p&gt;- Last selected brush in group is the reference brush for follwing &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; / &lt;span style=&quot; font-weight:600;&quot;&gt;Previous&lt;/span&gt; brush activation within group&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The information is kept &lt;span style=&quot; text-decoration: underline;&quot;&gt;during session&lt;/span&gt;: when brush from group is deselected (unactivate brush, select a brush from an another group, ...), then &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; / &lt;span style=&quot; font-weight:600;&quot;&gt;Previous&lt;/span&gt; brush will continue from last selected brush in group.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The option &lt;span style=&quot; font-style:italic;&quot;&gt;Reset to first brush when exiting next/previous selection&lt;/span&gt;, if checked, allow to restart from first brush in group after brush from group has been deselected, instead of continue from the last selected one.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="text">
+           <string>Reset brush when exiting next/previous selection</string>
           </property>
          </widget>
         </item>

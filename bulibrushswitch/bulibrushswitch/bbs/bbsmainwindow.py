@@ -449,6 +449,7 @@ class BBSMainWindow(EDialog):
         group.setExpanded(options[BBSGroup.KEY_EXPANDED])
         group.setShortcutNext(options[BBSGroup.KEY_SHORTCUT_NEXT])
         group.setShortcutPrevious(options[BBSGroup.KEY_SHORTCUT_PREV])
+        group.setResetWhenExitGroupLoop(options[BBSGroup.KEY_RESET_EXIT_GROUP])
         group.endUpdate()
         BBSSettings.setGroupShortcut(group, options[BBSGroup.KEY_SHORTCUT_NEXT], options[BBSGroup.KEY_SHORTCUT_PREV])
 
@@ -480,14 +481,14 @@ class BBSMainWindow(EDialog):
 
             if isinstance(item, BBSBrush):
                 # edit a brush
-                options = BBSBrushesEditor.edit(self.__bbsName+' - '+i18n(f'Edit brush'), item)
+                options = BBSBrushesEditor.edit(self.__bbsName+' - ' + i18n(f'Edit brush'), item)
                 if options is not None:
                     self.__applyBrushOptions(item, options)
                     self.__bbsModel.update(item)
                     self.__updateUi()
             else:
                 # edit a group
-                options = BBSGroupEditor.edit(self.__bbsName+' - '+i18n(f'Edit group'), item)
+                options = BBSGroupEditor.edit(self.__bbsName+' - ' + i18n(f'Edit group'), item)
                 if options is not None:
                     self.__applyGroupOptions(item, options)
                     self.__bbsModel.update(item)
