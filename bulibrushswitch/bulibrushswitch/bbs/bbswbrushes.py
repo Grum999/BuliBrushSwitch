@@ -215,7 +215,15 @@ class BBSBrush(BBSBaseNode):
         return f"<BBSBrush({self.id()}, '{self.__name}', '{self.position()}')>"
 
     def applyUpdate(self, property):
-        """Emit updated signal when a property has been changed"""
+        """Emit updated signal when a property has been changed
+
+        Also compute following information:
+        - brush full info   (brush properties)
+        - brush short info  (brush properties)
+        - brush image
+        - brush options     (dedicated BBSBrush options)
+        - brush comments
+        """
         def yesno(value):
             if value:
                 return i18n('Yes')
@@ -719,7 +727,33 @@ class BBSBrush(BBSBaseNode):
         return self.__fingerPrint
 
     def information(self, displayOption=0):
-        """Return synthetised brush information (HTML)"""
+        """Return synthetised brush information (HTML)
+
+        Will combine following information according to given `displayOption`
+        - brush full info   (brush properties)
+        - brush short info  (brush properties)
+        - brush image
+        - brush options     (dedicated BBSBrush options)
+        - brush comments
+
+        Options return following result
+            INFO_WITH_ICON
+                ==> brush image
+
+            INFO_WITH_DETAILS
+                ==> brush name
+
+            INFO_WITH_OPTIONS
+                !INFO_COMPACT
+                    ==> comment
+                ==> brush options
+
+            INFO_WITH_DETAILS
+                !INFO_COMPACT
+                    ==> brush full info
+                INFO_COMPACT
+                    ==> brush short info
+        """
         returned = ''
         if displayOption & BBSBrush.INFO_WITH_OPTIONS:
             returned = self.__brushNfoOptions
@@ -740,7 +774,7 @@ class BBSBrush(BBSBaseNode):
             else:
                 returned = f'<small><i><table>{self.__brushNfoFull}{hr}{returned}</table></i></small>'
 
-            returned = f'<b>{self.__name.replace("_", " ")}</b>{returned}'
+            returned = f'<h1><b>{self.__name.replace("_", " ")}</b></h1>{returned}'
         else:
             returned = f'<small><i><table>{returned}</table></i></small>'
 
@@ -809,8 +843,6 @@ class BBSGroup(BBSBaseNode):
         self.__shortcutPrevious = QKeySequence()
         self.__resetWhenExitGroupLoop = False
 
-        self.__groupNfoFull = ''
-        self.__groupNfoShort = ''
         self.__groupNfoOptions = ''
         self.__groupNfoComments = ''
 
@@ -830,7 +862,12 @@ class BBSGroup(BBSBaseNode):
         return f"<BBSGroup({self.id()}, '{self.__name}', '{self.position()}')>"
 
     def applyUpdate(self, property):
-        """Emit updated signal when a property has been changed"""
+        """Emit updated signal when a property has been changed
+
+        Also compute following information:
+        - group options     (dedicated BBSGroup options)
+        - group comments
+        """
         def yesno(value):
             if value:
                 return i18n('Yes')
@@ -852,9 +889,6 @@ class BBSGroup(BBSBaseNode):
                 self.__groupNfoComments = re.sub("<(/)?body",
                                                  r"<\1div", re.sub("<!doctype[^>]+>|<meta[^>]+>|</?html>|</?head>", "", self.__groupNfoComments, flags=re.I),
                                                  flags=re.I)
-
-            self.__groupNfoFull = ""
-            self.__groupNfoShort = ""
 
         super(BBSGroup, self).applyUpdate(property)
 
@@ -1027,7 +1061,25 @@ class BBSGroup(BBSBaseNode):
         return BBSSettings.groupAction(self.id(), 'P')
 
     def information(self, displayOption=0):
-        """Return synthetised brush information (HTML)"""
+        """Return synthetised brush information (HTML)
+
+        Will combine following information according to given `displayOption`
+        - group options     (dedicated BBSGroup options)
+        - group comments
+
+        Options return following result
+            INFO_WITH_ICON
+                N/A
+
+            INFO_WITH_DETAILS
+                ==> group name
+
+            INFO_WITH_OPTIONS
+                !INFO_COMPACT
+                    ==> comment
+                ==> group options
+
+        """
         returned = ''
         if displayOption & BBSGroup.INFO_WITH_OPTIONS:
             returned = self.__groupNfoOptions
@@ -1038,10 +1090,13 @@ class BBSGroup(BBSBaseNode):
                     hr = "<tr><td colspan=3><hr></td></tr>"
                 returned = f"<tr><td colspan=3>{self.__groupNfoComments}</td></tr>{hr}{returned}"
 
-        if displayOption & BBSGroup.INFO_WITH_DETAILS and returned != '':
+        if displayOption & BBSGroup.INFO_WITH_DETAILS:
+            if returned != '':
+                returned = f'<h1><b>{self.__name}</b></h1><small><i><table>{returned}</table></i></small>'
+            else:
+                returned = f'<h1><b>{self.__name}</b></h1>'
+        else:
             returned = f'<small><i><table>{returned}</table></i></small>'
-
-        returned = f'<b>{self.__name}</b>{returned}'
 
         return returned
 
@@ -1575,7 +1630,7 @@ class BBSModel(QAbstractItemModel):
                 if not data.found():
                     return i18n(f"Brush <i><b>{data.name()}</b></i> is not installed and/or activated on this Krita installation")
                 else:
-                    return data.information(BBSBrush.INFO_WITH_DETAILS | BBSBrush.INFO_WITH_OPTIONS)
+                    return data.information(BBSBrush.INFO_WITH_DETAILS | BBSBrush.INFO_WITH_OPTIONS | BBSBrush.INFO_WITH_ICON)
         elif isinstance(data, BBSGroup):
             if role == Qt.DecorationRole:
                 image = data.image()
