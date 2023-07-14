@@ -59,7 +59,6 @@ from bulibrushswitch.pktk.modules.ekrita import EKritaBrushPreset
 from bulibrushswitch.pktk.modules.ekrita_tools import EKritaTools
 from bulibrushswitch.pktk.widgets.wseparator import WVLine
 from bulibrushswitch.pktk.widgets.wtoolbarbutton import WToolbarButton
-from bulibrushswitch.pktk.widgets.wcombotree import WComboTree
 
 from bulibrushswitch.pktk.pktk import *
 
