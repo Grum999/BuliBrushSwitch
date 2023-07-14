@@ -3,7 +3,7 @@
    viewBox="0 0 16 16"
    version="1.1"
    id="svg5"
-   sodipodi:docname="folder_open_pinned.svg"
+   sodipodi:docname="folder__filled_open.svg"
    inkscape:version="1.2.2 (b0a8486, 2022-12-01)"
    width="32"
    height="32"
@@ -22,7 +22,6 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -35,24 +34,29 @@
      guidetolerance="10"
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
-     inkscape:window-width="1912"
-     inkscape:window-height="1798"
+     inkscape:window-width="1554"
+     inkscape:window-height="1641"
      id="namedview7"
-     showgrid="false"
-     inkscape:zoom="32.000001"
-     inkscape:cx="8.4999996"
-     inkscape:cy="12.859374"
-     inkscape:window-x="3840"
-     inkscape:window-y="0"
+     showgrid="true"
+     inkscape:zoom="32"
+     inkscape:cx="17.09375"
+     inkscape:cy="23.796875"
+     inkscape:window-x="3609"
+     inkscape:window-y="257"
      inkscape:window-maximized="0"
      inkscape:current-layer="svg5"
      inkscape:snap-bbox="true"
      inkscape:snap-bbox-edge-midpoints="true"
-     inkscape:bbox-nodes="true"
-     inkscape:snap-page="true"
      inkscape:showpageshadow="0"
      inkscape:pagecheckerboard="0"
-     inkscape:deskcolor="#d1d1d1" />
+     inkscape:deskcolor="#d1d1d1">
+    <inkscape:grid
+       type="xygrid"
+       id="grid28371"
+       units="px"
+       spacingx="0.5"
+       spacingy="0.5" />
+  </sodipodi:namedview>
   <defs
      id="defs3051">
     <style
@@ -63,9 +67,17 @@
       }
       </style>
   </defs>
-  <path
-     id="path13"
-     style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:2"
-     d="M 5.9492188 4 C 4.8727279 4.0275173 4 4.9171886 4 6 L 4 26 C 4 27.099999 4.9000011 28 6 28 L 14 28 L 16 26 L 6 26 L 6 16 L 10 16 L 13.996094 12 L 26 12 L 26 14 L 28 16 L 28 10 C 28 8.9000011 27.099999 8 26 8 L 18.015625 8 L 14.015625 4 L 14 4.015625 L 14 4 L 6 4 C 5.9828125 4 5.9663059 3.9995632 5.9492188 4 z M 25 16 C 24.318813 16.681188 23.930383 17.897602 24.722656 19.226562 L 21.003906 21.714844 C 20.541553 21.528284 20.045263 21.389183 19.554688 21.386719 C 18.917022 21.383519 18.546875 21.453121 18 22 L 20 24.462891 L 17 28 L 16 30 L 18 29 L 21.585938 26 L 24 28 C 24.968593 27.031407 24.719156 26.055703 24.285156 24.996094 L 26.773438 21.277344 C 28.102398 22.069617 29.318811 21.681187 30 21 L 25 16 z "
-     transform="scale(0.5)" />
+  <g
+     id="g30648"
+     style="opacity:1;fill:#ffffff">
+    <path
+       style="fill:#ffffff;fill-opacity:1;stroke:none"
+       d="M 3,2 C 2.45,2 2,2.45 2,3 v 10 c 0,0.55 0.45,1 1,1 h 6 4 c 0.55,0 1,-0.45 1,-1 V 9 5 C 14,4.45 13.55,4 13,4 H 9.0078125 l -2,-2 L 7,2.007812 V 2 Z M 6.9980469,6 H 13 v 3 4 H 9 3 V 8 h 2 z"
+       id="path13"
+       inkscape:connector-curvature="0" />
+    <path
+       id="rect29151"
+       style="opacity:1;fill:#ffffff;fill-opacity:0.5;stroke-width:1;stroke-linecap:round;stroke-linejoin:bevel;stroke-miterlimit:10"
+       d="M 7 6 L 5 8 L 3 8 L 3 13 L 13 13 L 13 6 L 7 6 z " />
+  </g>
 </svg>

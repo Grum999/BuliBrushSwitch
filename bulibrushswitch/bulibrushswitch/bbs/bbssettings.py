@@ -84,6 +84,7 @@ class BBSSettingsKey(SettingsKey):
     CONFIG_EDITOR_WINDOW_SIZE_WIDTH =                                           'config.editor.window.size.width'
     CONFIG_EDITOR_WINDOW_SIZE_HEIGHT =                                          'config.editor.window.size.height'
 
+    CONFIG_EDITOR_BRUSHES_COLWIDTH =                                            'config.editor.brushes.list.columnWidth.brushes'
     CONFIG_EDITOR_BRUSHES_ZOOMLEVEL =                                           'config.editor.brushes.list.zoomLevel'
     CONFIG_EDITOR_BRUSHES_SPLITTER_POSITION =                                   'config.editor.brushes.list.splitterPosition'
 
@@ -142,11 +143,15 @@ class BBSSettingsKey(SettingsKey):
 
     CONFIG_UI_POPUP_WIDTH =                                                     'config.ui.popup.width'
     CONFIG_UI_POPUP_HEIGHT =                                                    'config.ui.popup.height'
+    CONFIG_UI_POPUP_BRUSHES_COLWIDTH =                                          'config.ui.popup.brushes.list.columnWidth.brushes'
     CONFIG_UI_POPUP_BRUSHES_ZOOMLEVEL =                                         'config.ui.popup.brushes.list.zoomLevel'
-    CONFIG_UI_POPUP_BRUSHES_VIEWMODE =                                          'config.ui.popup.brushes.list.viewMode'
+    CONFIG_UI_POPUP_BRUSHES_VIEWMODE =                                          'config.ui.popup.brushes.list.viewMode.mode'
+    CONFIG_UI_POPUP_BRUSHES_VIEWMODE_ICON_SPLITTER_POSITION =                   'config.ui.popup.brushes.list.viewMode.icon.splitterPosition'
 
     CONFIG_BRUSHES_LIST_COUNT =                                                 'config.brushes.list.count'
     CONFIG_BRUSHES_LIST_BRUSHES =                                               'config.brushes.list.brushes'
+    CONFIG_BRUSHES_LIST_GROUPS =                                                'config.brushes.list.groups'
+    CONFIG_BRUSHES_LIST_NODES =                                                 'config.brushes.list.nodes'
 
     CONFIG_BRUSHES_DEFAULT_SELECTIONMODE =                                      'config.brushes.default.selectionMode'
     CONFIG_BRUSHES_LAST_SELECTED =                                              'config.brushes.default.lastSelected'
@@ -230,13 +235,15 @@ class BBSSettings(Settings):
             SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLOR_BG,                              '#ffffff',     SettingsFmt(str)),
 
             SettingsRule(BBSSettingsKey.CONFIG_EDITOR_BRUSHES_ZOOMLEVEL,                                3,             SettingsFmt(int, [0, 1, 2, 3, 4])),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_BRUSHES_COLWIDTH,                                 -1,            SettingsFmt(int)),
             SettingsRule(BBSSettingsKey.CONFIG_EDITOR_BRUSHES_SPLITTER_POSITION,                        [1000, 500],   SettingsFmt(int), SettingsFmt(int)),
 
             SettingsRule(BBSSettingsKey.CONFIG_EDITOR_GRADIENT_ZOOMLEVEL,                               3,             SettingsFmt(int, [0, 1, 2, 3, 4, 5, 6])),
             SettingsRule(BBSSettingsKey.CONFIG_EDITOR_GRADIENT_VIEWMODE,                                BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_LIST,
                                                                                                                        SettingsFmt(int,
                                                                                                                                    [BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_LIST,
-                                                                                                                                    BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_ICON])),
+                                                                                                                                    BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_ICON])
+                         ),
 
             SettingsRule(BBSSettingsKey.CONFIG_EDITOR_WINDOW_POSITION_X,                                -1,            SettingsFmt(int)),
             SettingsRule(BBSSettingsKey.CONFIG_EDITOR_WINDOW_POSITION_Y,                                -1,            SettingsFmt(int)),
@@ -245,14 +252,19 @@ class BBSSettings(Settings):
 
             SettingsRule(BBSSettingsKey.CONFIG_UI_POPUP_WIDTH,                                          -1,            SettingsFmt(int)),
             SettingsRule(BBSSettingsKey.CONFIG_UI_POPUP_HEIGHT,                                         -1,            SettingsFmt(int)),
+            SettingsRule(BBSSettingsKey.CONFIG_UI_POPUP_BRUSHES_COLWIDTH,                               -1,            SettingsFmt(int)),
             SettingsRule(BBSSettingsKey.CONFIG_UI_POPUP_BRUSHES_ZOOMLEVEL,                              3,             SettingsFmt(int, [0, 1, 2, 3, 4])),
             SettingsRule(BBSSettingsKey.CONFIG_UI_POPUP_BRUSHES_VIEWMODE,                               BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_LIST,
                                                                                                                        SettingsFmt(int,
                                                                                                                                    [BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_LIST,
-                                                                                                                                    BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_ICON])),
+                                                                                                                                    BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_ICON])
+                         ),
+            SettingsRule(BBSSettingsKey.CONFIG_UI_POPUP_BRUSHES_VIEWMODE_ICON_SPLITTER_POSITION,        [400, 1000],   SettingsFmt(int), SettingsFmt(int)),
 
             SettingsRule(BBSSettingsKey.CONFIG_BRUSHES_LIST_COUNT,                                      0,             SettingsFmt(int, (0, None))),
             SettingsRule(BBSSettingsKey.CONFIG_BRUSHES_LIST_BRUSHES,                                    [],            SettingsFmt(list)),
+            SettingsRule(BBSSettingsKey.CONFIG_BRUSHES_LIST_GROUPS,                                     [],            SettingsFmt(list)),
+            SettingsRule(BBSSettingsKey.CONFIG_BRUSHES_LIST_NODES,                                      [],            SettingsFmt(list)),
 
             SettingsRule(BBSSettingsKey.CONFIG_BRUSHES_LAST_SELECTED,                                   '',            SettingsFmt(str)),
             SettingsRule(BBSSettingsKey.CONFIG_BRUSHES_DEFAULT_SELECTIONMODE,                           BBSSettingsValues.DEFAULT_SELECTIONMODE_FIRST_FROM_LIST,
@@ -430,24 +442,63 @@ class BBSSettings(Settings):
         toMarker = "    <!--- (user brush definition:end) -->"
 
         for brush in self.option(BBSSettingsKey.CONFIG_BRUSHES_LIST_BRUSHES):
-            actionId = f'bulibrushswitch_brush_{brush["uuid"].strip("{}")}'
+            actionId = self.brushActionId(brush["uuid"])
             actionText = BBSSettings.brushActionText(brush['name'], brush['comments'])
             shortcut = ''
             if 'shortcut' in brush:
                 shortcut = brush['shortcut']
             actionsList.append(f"""
-    <Action name="{actionId}">
-      <icon></icon>
-      <text>{actionText}</text>
-      <whatsThis></whatsThis>
-      <toolTip></toolTip>
-      <iconText></iconText>
-      <activationFlags>0</activationFlags>
-      <activationConditions>0</activationConditions>
-      <shortcut>{shortcut}</shortcut>
-      <isCheckable>false</isCheckable>
-      <statusTip></statusTip>
-    </Action>""")
+                <Action name="{actionId}">
+                  <icon></icon>
+                  <text>{actionText}</text>
+                  <whatsThis></whatsThis>
+                  <toolTip></toolTip>
+                  <iconText></iconText>
+                  <activationFlags>0</activationFlags>
+                  <activationConditions>0</activationConditions>
+                  <shortcut>{shortcut}</shortcut>
+                  <isCheckable>false</isCheckable>
+                  <statusTip></statusTip>
+                </Action>""")
+
+        for group in self.option(BBSSettingsKey.CONFIG_BRUSHES_LIST_GROUPS):
+            actionId = self.groupActionId(group["uuid"], "N")
+            actionText = BBSSettings.groupActionText(group['name'], group['comments'], "N")
+            shortcut = ''
+            if 'shortcutNext' in group:
+                shortcut = group['shortcutNext']
+            actionsList.append(f"""
+                <Action name="{actionId}">
+                  <icon></icon>
+                  <text>{actionText}</text>
+                  <whatsThis></whatsThis>
+                  <toolTip></toolTip>
+                  <iconText></iconText>
+                  <activationFlags>0</activationFlags>
+                  <activationConditions>0</activationConditions>
+                  <shortcut>{shortcut}</shortcut>
+                  <isCheckable>false</isCheckable>
+                  <statusTip></statusTip>
+                </Action>""")
+
+            actionId = self.groupActionId(group["uuid"], "P")
+            actionText = BBSSettings.groupActionText(group['name'], group['comments'], "P")
+            shortcut = ''
+            if 'shortcutPrevious' in group:
+                shortcut = group['shortcutPrevious']
+            actionsList.append(f"""
+                <Action name="{actionId}">
+                  <icon></icon>
+                  <text>{actionText}</text>
+                  <whatsThis></whatsThis>
+                  <toolTip></toolTip>
+                  <iconText></iconText>
+                  <activationFlags>0</activationFlags>
+                  <activationConditions>0</activationConditions>
+                  <shortcut>{shortcut}</shortcut>
+                  <isCheckable>false</isCheckable>
+                  <statusTip></statusTip>
+                </Action>""")
 
         actionsList.append('')
 
@@ -605,13 +656,25 @@ class BBSSettings(Settings):
     def setBrushes(brushes):
         """A generic method to save brushes list definition
 
-        Given `brushes` is a BBSBrushes
+        Given `brushes` is a list of BBSBrush
         """
-        exportedBrushes = []
-        for brushId in brushes.idList():
-            brush = brushes.get(brushId)
-            exportedBrushes.append(brush.exportData())
-        BBSSettings.set(BBSSettingsKey.CONFIG_BRUSHES_LIST_BRUSHES, exportedBrushes)
+        BBSSettings.set(BBSSettingsKey.CONFIG_BRUSHES_LIST_BRUSHES, [brush.exportData() for brush in brushes])
+
+    @staticmethod
+    def setGroups(groups):
+        """A generic method to save groups list definition
+
+        Given `groups` is a list of BBSGroup
+        """
+        BBSSettings.set(BBSSettingsKey.CONFIG_BRUSHES_LIST_GROUPS, [group.exportData() for group in groups])
+
+    @staticmethod
+    def setNodes(nodes):
+        """A generic method to save nodes list definition
+
+        Given `nodes` is a list of strings/dict
+        """
+        BBSSettings.set(BBSSettingsKey.CONFIG_BRUSHES_LIST_NODES, nodes)
 
     @staticmethod
     def brushAction(brushId, brushName='', brushComments='', create=False, window=None):
@@ -622,6 +685,7 @@ class BBSSettings(Settings):
         brushId = brushId.strip("{}")
         actionId = BBSSettings.brushActionId(brushId)
         action = Krita.instance().action(actionId)
+
         if action is None and create:
             if window is None:
                 window = Krita.instance().activeWindow()
@@ -651,10 +715,52 @@ class BBSSettings(Settings):
         return title
 
     @staticmethod
-    def setShortcut(brush, shortcut):
-        """Create and/or update action for given `brush` with given `shortcut`
+    def groupAction(groupId, np, groupName='', groupComments='', create=False, window=None):
+        """Return action group properties
 
-        Method placed in settingsz as managing shortcut is part of settings :)
+        If not found, create it
+        """
+        actionId = BBSSettings.groupActionId(groupId, np)
+        action = Krita.instance().action(actionId)
+        if action is None and create:
+            if window is None:
+                window = Krita.instance().activeWindow()
+            if window:
+                action = window.createAction(actionId, BBSSettings.groupActionText(groupName, groupComments, np), None)
+                action.setData(f'{groupId}-{np}')
+
+        return action
+
+    @staticmethod
+    def groupActionId(groupId, np):
+        """Return actionid from a group id"""
+        return f'bulibrushswitch_group_{groupId}-{np}'
+
+    @staticmethod
+    def groupActionText(groupName, groupComments, np):
+        """Return title for action for given brush name/comment"""
+        if np == 'N':
+            title = f"{i18n('Activate next brush from group:')} {groupName}"
+        else:
+            title = f"{i18n('Activate previous brush from group:')} {groupName}"
+
+        comments = stripHtml(groupComments).split('\n')
+        if len(comments) == 1 and comments[0].strip() != '':
+            title += ' - '+comments[0]
+        elif len(comments) > 1:
+            for comment in comments:
+                if comment.strip() != '':
+                    title += ' - '+comment+'[...]'
+                    break
+        return title
+
+    @staticmethod
+    def setBrushShortcut(brush, shortcut):
+        """Create and/or update action for given `item` with given `shortcut`
+
+        `item` is a BBSBrush
+
+        Method placed in settings as managing shortcut is part of settings :)
         """
         window = Krita.instance().activeWindow()
         if window:
@@ -666,3 +772,31 @@ class BBSSettings(Settings):
                 else:
                     # remove shortcut
                     action.setShortcut(QKeySequence())
+
+    @staticmethod
+    def setGroupShortcut(group, shortcutNext, shortcutPrevious):
+        """Create and/or update action for given `item` with given `shortcut`
+
+        `item` is BBSGroup
+
+        Method placed in settings as managing shortcut is part of settings :)
+        """
+        window = Krita.instance().activeWindow()
+        if window:
+            actionNext = BBSSettings.groupAction(group.id(), 'N', group.name(), group.comments(), shortcutNext is not None)
+            if actionNext:
+                if shortcutNext:
+                    # assign shortcut
+                    actionNext.setShortcut(QKeySequence(shortcutNext))
+                else:
+                    # remove shortcut
+                    actionNext.setShortcut(QKeySequence())
+
+            actionPrevious = BBSSettings.groupAction(group.id(), 'P', group.name(), group.comments(), shortcutPrevious is not None)
+            if actionPrevious:
+                if shortcutPrevious:
+                    # assign shortcut
+                    actionPrevious.setShortcut(QKeySequence(shortcutPrevious))
+                else:
+                    # remove shortcut
+                    actionPrevious.setShortcut(QKeySequence())

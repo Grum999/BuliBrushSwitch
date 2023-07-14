@@ -89,6 +89,9 @@
     <file alias="filter_limitrange">light/32dp/filter_limitrange.svg</file>
     <file alias="filter_regex">light/32dp/filter_regex.svg</file>
     <file alias="filter_wholeword">light/32dp/filter_wholeword.svg</file>
+    <file alias="folder__filled_close">light/32dp/folder__filled_close.svg</file>
+    <file alias="folder__filled_open">light/32dp/folder__filled_open.svg</file>
+    <file alias="folder_close">light/32dp/folder_close.svg</file>
     <file alias="folder_open">light/32dp/folder_open.svg</file>
     <file alias="folder_open_add">light/32dp/folder_open_add.svg</file>
     <file alias="folder_open_cache">light/32dp/folder_open_cache.svg</file>
@@ -98,6 +101,7 @@
     <file alias="folder_open_new">light/32dp/folder_open_new.svg</file>
     <file alias="folder_open_pinned">light/32dp/folder_open_pinned.svg</file>
     <file alias="folder_open_recent">light/32dp/folder_open_recent.svg</file>
+    <file alias="folder_open_remove">light/32dp/folder_open_remove.svg</file>
     <file alias="format_text_align-center">light/32dp/format_text_align-center.svg</file>
     <file alias="format_text_align-justify">light/32dp/format_text_align-justify.svg</file>
     <file alias="format_text_align-left">light/32dp/format_text_align-left.svg</file>
@@ -298,6 +302,9 @@
     <file alias="filter_limitrange">light/32dp-disabled/filter_limitrange.svg</file>
     <file alias="filter_regex">light/32dp-disabled/filter_regex.svg</file>
     <file alias="filter_wholeword">light/32dp-disabled/filter_wholeword.svg</file>
+    <file alias="folder__filled_close">light/32dp-disabled/folder__filled_close.svg</file>
+    <file alias="folder__filled_open">light/32dp-disabled/folder__filled_open.svg</file>
+    <file alias="folder_close">light/32dp-disabled/folder_close.svg</file>
     <file alias="folder_open">light/32dp-disabled/folder_open.svg</file>
     <file alias="folder_open_add">light/32dp-disabled/folder_open_add.svg</file>
     <file alias="folder_open_cache">light/32dp-disabled/folder_open_cache.svg</file>
@@ -307,6 +314,7 @@
     <file alias="folder_open_new">light/32dp-disabled/folder_open_new.svg</file>
     <file alias="folder_open_pinned">light/32dp-disabled/folder_open_pinned.svg</file>
     <file alias="folder_open_recent">light/32dp-disabled/folder_open_recent.svg</file>
+    <file alias="folder_open_remove">light/32dp-disabled/folder_open_remove.svg</file>
     <file alias="format_text_align-center">light/32dp-disabled/format_text_align-center.svg</file>
     <file alias="format_text_align-justify">light/32dp-disabled/format_text_align-justify.svg</file>
     <file alias="format_text_align-left">light/32dp-disabled/format_text_align-left.svg</file>

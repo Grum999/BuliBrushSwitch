@@ -114,187 +114,223 @@ class EKritaTools:
         EKritaToolsId.SVG_SELECT: {
             'label': i18n('Select Shapes Tool'),
             'category': EKritaToolsCategory.SVG,
+            'icon': 'select',
             'widget': None
             },
         EKritaToolsId.SVG_TEXT: {
             'label': i18n('Text Tool'),
             'category': EKritaToolsCategory.SVG,
+            'icon': 'draw-text',
             'widget': None
             },
         EKritaToolsId.SVG_PATH: {
             'label': i18n('Edit Shapes Tool'),
             'category': EKritaToolsCategory.SVG,
+            'icon': 'shape_handling',
             'widget': None
             },
         EKritaToolsId.SVG_CALLIGRAPHY: {
             'label': i18n('Calligraphy'),
             'category': EKritaToolsCategory.SVG,
+            'icon': 'calligraphy',
             'widget': None
             },
 
         EKritaToolsId.TFM_TRANSFORM: {
             'label': i18n('Transform a layer or a selection'),
             'category': EKritaToolsCategory.TFM,
+            'icon': 'krita_tool_transform',
             'widget': None
             },
         EKritaToolsId.TFM_MOVE: {
             'label': i18n('Move a layer'),
             'category': EKritaToolsCategory.TFM,
+            'icon': 'krita_tool_move',
             'widget': None
             },
         EKritaToolsId.TFM_CROP: {
             'label': i18n('Crop the image to an area'),
             'category': EKritaToolsCategory.TFM,
+            'icon': 'tool_crop',
             'widget': None
             },
 
         EKritaToolsId.PAINT_BRUSH: {
             'label': i18n("Freehand Brush Tool"),
             'category': EKritaToolsCategory.PAINT,
+            'icon': 'krita_tool_freehand',
             'widget': None
             },
         EKritaToolsId.PAINT_LINE: {
             'label': i18n("Line Tool"),
             'category': EKritaToolsCategory.PAINT,
+            'icon': 'krita_tool_line',
             'widget': None
             },
         EKritaToolsId.PAINT_RECTANGLE: {
             'label': i18n("Rectangle Tool"),
             'category': EKritaToolsCategory.PAINT,
+            'icon': 'krita_tool_rectangle',
             'widget': None
             },
         EKritaToolsId.PAINT_ELLIPSE: {
             'label': i18n("Ellipse Tool"),
             'category': EKritaToolsCategory.PAINT,
+            'icon': 'krita_tool_ellipse',
             'widget': None
             },
         EKritaToolsId.PAINT_POLYGON: {
             'label': i18n("Polygon Tool: Shift-mouseclick ends the polygon."),
             'category': EKritaToolsCategory.PAINT,
+            'icon': 'krita_tool_polygon',
             'widget': None
             },
         EKritaToolsId.PAINT_POLYLINE: {
             'label': i18n("Polyline Tool: Shift-mouseclick ends the polyline."),
             'category': EKritaToolsCategory.PAINT,
+            'icon': 'polyline',
             'widget': None
             },
         EKritaToolsId.PAINT_PATH: {
             'label': i18n("Bezier Curve Tool: Shift-mouseclick ends the curve."),
             'category': EKritaToolsCategory.PAINT,
+            'icon': 'krita_draw_path',
             'widget': None
             },
         EKritaToolsId.PAINT_PENCIL: {
             'label': i18n("Freehand Path Tool"),
             'category': EKritaToolsCategory.PAINT,
+            'icon': 'krita_tool_freehandvector',
             'widget': None
             },
         EKritaToolsId.PAINT_DYNAMIC_BRUSH: {
             'label': i18n("Dynamic Brush Tool"),
             'category': EKritaToolsCategory.PAINT,
+            'icon': 'krita_tool_dyna',
             'widget': None
             },
         EKritaToolsId.PAINT_MULTI_BRUSH: {
             'label': i18n("Multibrush Tool"),
             'category': EKritaToolsCategory.PAINT,
+            'icon': 'krita_tool_multihand',
             'widget': None
             },
 
         EKritaToolsId.FILL_GRADIENT: {
             'label': i18n('Draw a gradient.'),
             'category': EKritaToolsCategory.FILL,
+            'icon': 'krita_tool_gradient',
             'widget': None
             },
         EKritaToolsId.FILL_COLORSAMPLER: {
             'label': i18n('Sample a colour from the image or current layer'),
             'category': EKritaToolsCategory.FILL,
+            'icon': 'krita_tool_color_picker',
             'widget': None
             },
         EKritaToolsId.FILL_COLORMASK: {
             'label': i18n('Colourise Mask Tool'),
             'category': EKritaToolsCategory.FILL,
+            'icon': 'krita_tool_lazybrush',
             'widget': None
             },
         EKritaToolsId.FILL_SMARTPATCH: {
             'label': i18n('Smart Patch Tool'),
             'category': EKritaToolsCategory.FILL,
+            'icon': 'krita_tool_smart_patch',
             'widget': None
             },
         EKritaToolsId.FILL_BUCKET: {
             'label': i18n('Fill a contiguous area of colour with a colour, or fill a selection.'),
             'category': EKritaToolsCategory.FILL,
+            'icon': 'krita_tool_color_fill',
             'widget': None
             },
         EKritaToolsId.FILL_ENCLOSEFILL: {
             'label': i18n('Enclose and Fill Tool'),
             'category': EKritaToolsCategory.FILL,
+            'icon': 'krita_tool_enclose_and_fill',
             'widget': None
             },
 
         EKritaToolsId.HELPER_ASSISTANT: {
             'label': i18n('Assistant Tool'),
             'category': EKritaToolsCategory.HELPER,
+            'icon': 'krita_tool_assistant',
             'widget': None
             },
         EKritaToolsId.HELPER_MEASURE: {
             'label': i18n('Measure the distance between two points'),
             'category': EKritaToolsCategory.HELPER,
+            'icon': 'krita_tool_measure',
             'widget': None
             },
         EKritaToolsId.HELPER_REFIMG: {
             'label': i18n('Reference Images Tool'),
             'category': EKritaToolsCategory.HELPER,
+            'icon': 'krita_tool_reference_images',
             'widget': None
             },
 
         EKritaToolsId.SELECT_RECTANGLE: {
             'label': i18n('Rectangular Selection Tool'),
             'category': EKritaToolsCategory.SELECT,
+            'icon': 'tool_rect_selection',
             'widget': None
             },
         EKritaToolsId.SELECT_ELLIPSE: {
             'label': i18n('Elliptical Selection Tool'),
             'category': EKritaToolsCategory.SELECT,
+            'icon': 'tool_elliptical_selection',
             'widget': None
             },
         EKritaToolsId.SELECT_POLYGON: {
             'label': i18n('Polygonal Selection Tool'),
             'category': EKritaToolsCategory.SELECT,
+            'icon': 'tool_polygonal_selection',
             'widget': None
             },
         EKritaToolsId.SELECT_OUTLINE: {
             'label': i18n('Freehand Selection Tool'),
             'category': EKritaToolsCategory.SELECT,
+            'icon': 'tool_outline_selection',
             'widget': None
             },
         EKritaToolsId.SELECT_CONTIGUOUS: {
             'label': i18n('Contiguous Selection Tool'),
             'category': EKritaToolsCategory.SELECT,
+            'icon': 'tool_contiguous_selection',
             'widget': None
             },
         EKritaToolsId.SELECT_SIMILAR: {
             'label': i18n('Similar Colour Selection Tool'),
             'category': EKritaToolsCategory.SELECT,
+            'icon': 'tool_similar_selection',
             'widget': None
             },
         EKritaToolsId.SELECT_PATH: {
             'label': i18n('Bezier Curve Selection Tool'),
             'category': EKritaToolsCategory.SELECT,
+            'icon': 'tool_path_selection',
             'widget': None
             },
         EKritaToolsId.SELECT_MAGNETIC: {
             'label': i18n('Magnetic Curve Selection Tool'),
             'category': EKritaToolsCategory.SELECT,
+            'icon': 'tool_magnetic_selection',
             'widget': None
             },
 
         EKritaToolsId.VIEW_ZOOM: {
             'label': i18n('Zoom Tool'),
             'category': EKritaToolsCategory.VIEW,
+            'icon': 'tool_zoom',
             'widget': None
             },
         EKritaToolsId.VIEW_PAN: {
             'label': i18n('Pan Tool'),
             'category': EKritaToolsCategory.VIEW,
+            'icon': 'tool_pan',
             'widget': None
             }
         }
@@ -385,6 +421,22 @@ class EKritaTools:
         """Return tool label definition for given id"""
         try:
             return EKritaTools.__TOOLS[id]['label']
+        except Exception:
+            raise EInvalidValue("Given `id` is not valid")
+
+    @staticmethod
+    def iconName(id):
+        """Return tool icon name definition for given id"""
+        try:
+            return EKritaTools.__TOOLS[id]['icon']
+        except Exception:
+            raise EInvalidValue("Given `id` is not valid")
+
+    @staticmethod
+    def icon(id):
+        """Return tool icon definition for given id"""
+        try:
+            return Krita.instance().icon(EKritaTools.__TOOLS[id]['icon'])
         except Exception:
             raise EInvalidValue("Given `id` is not valid")
 
