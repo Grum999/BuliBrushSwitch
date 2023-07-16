@@ -14,6 +14,8 @@
     <file alias="arrow_big_filled_right">light/32dp/arrow_big_filled_right.svg</file>
     <file alias="arrow_big_filled_up">light/32dp/arrow_big_filled_up.svg</file>
     <file alias="author">light/32dp/author.svg</file>
+    <file alias="author_check">light/32dp/author_check.svg</file>
+    <file alias="author_lock">light/32dp/author_lock.svg</file>
     <file alias="bookmark">light/32dp/bookmark.svg</file>
     <file alias="bookmark_add">light/32dp/bookmark_add.svg</file>
     <file alias="bookmark_remove">light/32dp/bookmark_remove.svg</file>
@@ -40,6 +42,7 @@
     <file alias="color_checkerboard">light/32dp/color_checkerboard.svg</file>
     <file alias="color_ngray">light/32dp/color_ngray.svg</file>
     <file alias="color_none">light/32dp/color_none.svg</file>
+    <file alias="color_opacity">light/32dp/color_opacity.svg</file>
     <file alias="color_white">light/32dp/color_white.svg</file>
     <file alias="column_resize">light/32dp/column_resize.svg</file>
     <file alias="comment">light/32dp/comment.svg</file>
@@ -227,6 +230,8 @@
     <file alias="arrow_big_filled_right">light/32dp-disabled/arrow_big_filled_right.svg</file>
     <file alias="arrow_big_filled_up">light/32dp-disabled/arrow_big_filled_up.svg</file>
     <file alias="author">light/32dp-disabled/author.svg</file>
+    <file alias="author_check">light/32dp-disabled/author_check.svg</file>
+    <file alias="author_lock">light/32dp-disabled/author_lock.svg</file>
     <file alias="bookmark">light/32dp-disabled/bookmark.svg</file>
     <file alias="bookmark_add">light/32dp-disabled/bookmark_add.svg</file>
     <file alias="bookmark_remove">light/32dp-disabled/bookmark_remove.svg</file>
@@ -253,6 +258,7 @@
     <file alias="color_checkerboard">light/32dp-disabled/color_checkerboard.svg</file>
     <file alias="color_ngray">light/32dp-disabled/color_ngray.svg</file>
     <file alias="color_none">light/32dp-disabled/color_none.svg</file>
+    <file alias="color_opacity">light/32dp-disabled/color_opacity.svg</file>
     <file alias="color_white">light/32dp-disabled/color_white.svg</file>
     <file alias="column_resize">light/32dp-disabled/column_resize.svg</file>
     <file alias="comment">light/32dp-disabled/comment.svg</file>
