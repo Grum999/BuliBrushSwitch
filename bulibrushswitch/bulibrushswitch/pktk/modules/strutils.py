@@ -236,6 +236,11 @@ def stripHtml(value):
     return QTextDocumentFragment.fromHtml(value).toPlainText()
 
 
+def nbsp(value):
+    """replace space with html &nbsp;"""
+    return value.replace(' ', "&nbsp;").replace('-', "&#8209;")
+
+
 def indent(text, firstIndent='', nextIndent='', strip=False):
     """Indent text
 
