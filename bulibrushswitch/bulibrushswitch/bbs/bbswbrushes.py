@@ -52,7 +52,7 @@ from bulibrushswitch.pktk.modules.edialog import EDialog
 from bulibrushswitch.pktk.modules.uitheme import UITheme
 from bulibrushswitch.pktk.modules.iconsizes import IconSizes
 from bulibrushswitch.pktk.modules.utils import replaceLineEditClearButton
-from bulibrushswitch.pktk.modules.strutils import stripHtml
+from bulibrushswitch.pktk.modules.strutils import (nbsp, stripHtml)
 from bulibrushswitch.pktk.modules.imgutils import (warningAreaBrush, qImageToPngQByteArray, bullet, buildIcon, roundedPixmap)
 from bulibrushswitch.pktk.modules.resutils import (ManagedResourceTypes, ManagedResource, ManagedResourcesModel)
 from bulibrushswitch.pktk.modules.ekrita import (EKritaBrushPreset, EKritaShortcuts, EKritaBlendingModes)
@@ -72,13 +72,96 @@ class BBSBaseNode(QObject):
     """Base class for brushes and groups"""
     updated = Signal(QObject, str)
 
-    INFO_COMPACT =            0b00000001
-    INFO_WITH_ICON =          0b00000010
-    INFO_WITH_DETAILS =       0b00000100
-    INFO_WITH_OPTIONS =       0b00001000
+    INFO_FMT_COMPACT =        0b0000000100000000
+    INFO_FMT_TOOLTIP =        0b0000001000000000
+    INFO_WITH_ICON =          0b0000000000000001
+    INFO_WITH_DETAILS =       0b0000000000000010
+    INFO_WITH_OPTIONS =       0b0000000000000100
+    INFO_WITH_BIGNAME =       0b0000000000001000
 
     KEY_UUID = 'uuid'
     KEY_POSITION = 'position'
+
+    TPL_INFO_TRSEP = '<tr><td colspan=2 class="tdSep">&nbsp;</td></tr>'
+    TPL_INFO_IMGSIZE = QSize(32, 32)
+    TPL_INFO_IMGSIZE2 = QSize(24, 24)
+    TPL_INFO_CSS = """<style>
+                        td.kbd {
+                            padding: 4px;
+                            font-family: monospace;
+                            font-weight: bold;
+                            background-color: #555555;
+                            border-top: 2px solid #777777;
+                            border-left: 2px solid #777777;
+                            border-bottom: 2px solid #333333;
+                            border-right: 2px solid #333333;
+                        }
+                        .tdSmallName {
+                            font-size: medium;
+                            padding: 4px;
+                            font-weight: bold;
+                        }
+                        .tdBigName {
+                            font-size: x-large;
+                            padding: 4px;
+                            font-weight: bold;
+                        }
+                        .tdImg {
+                            padding: 4px;
+                        }
+                        .tdComment {
+                            padding: 4px;
+                            background-color: #BG_COLOR_NAME#;
+                        }
+                        .tdSep {
+                            font-size: 6px;
+                            line-height: 6px;
+                        }
+                        .tdNfoName {
+                            padding-left: 4px;
+                            text-align: left;
+                            font-weight: bold;
+                            font-style: italic;
+                            font-size: small;
+                        }
+                        .tdNfoValue {
+                            padding-left: 35px;
+                            padding-right: 4px;
+                            text-align: right;
+                            font-style: italic;
+                            font-size: small;
+                        }
+                        .tdNfoShortValue {
+                            padding-left: 4px;
+                            text-align: left;
+                            font-style: italic;
+                            font-size: small;
+                        }
+                        table.cssTooltip .tdNfoShortcut {
+                            padding-left: 4px;
+                            text-align: left;
+                        }
+                        .tdNfoShortcut {
+                            padding-left: 0px;
+                            text-align: left;
+                            white-space: pre;
+                        }
+                        .tdNfoIcon {
+                            padding-top: 2px;
+                            padding-bottom: 2px;
+                            padding-left: 0px;
+                            padding-right: 0px;
+                            text-align: left;
+                        }
+                    </style>
+                """
+
+    @staticmethod
+    def fmtKbd(value):
+        """Format given shortcut value to render KBD style"""
+        value = value.replace("++", "\x01\x02").replace("+", "\x01").replace("\x02", "+")  # to manage "++"
+        returned = '<td valign="middle">+</td>'.join([f'<td class="kbd">{key}</td>' for key in value.split("\x01")])
+        return f"<table><tr>{returned}</tr></table>"
 
     def __init__(self, parent=None):
         super(BBSBaseNode, self).__init__(None)
@@ -170,6 +253,8 @@ class BBSBrush(BBSBaseNode):
     KRITA_BRUSH_GRADIENT = 0b00000100
     KRITA_BRUSH_TOOLOPT =  0b00001000
 
+    ICON_RADIUS = 8
+
     def __init__(self, brush=None):
         super(BBSBrush, self).__init__(None)
         self.__name = ''
@@ -197,6 +282,7 @@ class BBSBrush(BBSBaseNode):
         self.__brushNfoShort = ''
         self.__brushNfoOptions = ''
         self.__brushNfoComments = ''
+        self.__brushNfoOptionsShortcut = ''
 
         # this allows to keep current Krita's brush value
         # if None => nothing memorized
@@ -224,77 +310,80 @@ class BBSBrush(BBSBaseNode):
         - brush options     (dedicated BBSBrush options)
         - brush comments
         """
-        def yesno(value):
-            if value:
-                return i18n('Yes')
-            else:
-                return i18n('No')
-
         if not self.inUpdate():
-            self.__brushNfoFull = (f' <tr><td align="left"><b>{i18n("Blending mode")}:</b></td><td align="right">{self.__blendingMode}</td><td></td></tr>'
-                                   f' <tr><td align="left"><b>{i18n("Size")}:</b></td>         <td align="right">{self.__size:0.2f}px</td><td></td></tr>'
-                                   f' <tr><td align="left"><b>{i18n("Opacity")}:</b></td>      <td align="right">{100*self.__opacity:0.2f}%</td><td></td></tr>'
-                                   f' <tr><td align="left"><b>{i18n("Flow")}:</b></td>         <td align="right">{100*self.__flow:0.2f}%</td><td></td></tr>'
+            self.__brushNfoFull = (f' <tr><td class="tdNfoName">{nbsp(i18n("Blending mode"))}</td>'
+                                   f'<td class="tdNfoValue">{nbsp(self.__blendingMode)}</td></tr>'
+
+                                   f' <tr><td class="tdNfoName">{nbsp(i18n("Size"))}</td>         '
+                                   f'<td class="tdNfoValue">{self.__size:0.2f}px</td></tr>'
+
+                                   f' <tr><td class="tdNfoName">{nbsp(i18n("Opacity"))}</td>      '
+                                   f'<td class="tdNfoValue">{100*self.__opacity:0.2f}%</td></tr>'
+
+                                   f' <tr><td class="tdNfoName">{nbsp(i18n("Flow"))}</td>         '
+                                   f'<td class="tdNfoValue">{100*self.__flow:0.2f}%</td></tr>'
                                    )
 
-            self.__brushNfoShort = f' <tr><td align="left">{self.__size:0.2f}px - {self.__blendingMode}</td><td></td><td></td></tr>'
+            self.__brushNfoShort = f' <tr><td colspan=2 class="tdNfoShortValue">{self.__size:0.2f}px - {nbsp(self.__blendingMode)}</td></tr>'
 
             if self.__image:
-                self.__brushNfoImg = f'<img src="data:image/png;base64,{bytes(qImageToPngQByteArray(roundedPixmap(QPixmap.fromImage(self.__image), 8).toImage()).toBase64(QByteArray.Base64Encoding)).decode()}">'
+                self.__brushNfoImg = f'<img src="data:image/png;base64,{bytes(qImageToPngQByteArray(roundedPixmap(QPixmap.fromImage(self.__image), BBSBrush.ICON_RADIUS).toImage()).toBase64(QByteArray.Base64Encoding)).decode()}">'
             else:
                 self.__brushNfoImg = ''
 
             if not self.__shortcut.isEmpty():
-                shortcutText = f' <tr><td align="left"><b>{i18n("Shortcut")}</b></td><td align="right">{self.__shortcut.toString()}</td><td></td></tr>'
+                self.__brushNfoOptionsShortcut = f' <tr><td colspan=2 class="tdNfoShortcut">{BBSBaseNode.fmtKbd(self.__shortcut.toString())}</td></tr>'
             else:
-                shortcutText = ''
+                self.__brushNfoOptionsShortcut = ''
 
+            defaultPaintTool = ''
             if self.__defaultPaintTool is not None:
-                defaultPaintTool = f' <tr><td align="left"><b>{i18n("Default paint tool")}</b></td>'\
-                                   f'<td align="right">{EKritaTools.name(self.__defaultPaintTool)}</td><td></td></tr>'
-            else:
-                defaultPaintTool = ''
+                imgPaintTool = f'<img src="data:image/png;base64,{bytes(qImageToPngQByteArray(EKritaTools.icon(self.__defaultPaintTool).pixmap(BBSBaseNode.TPL_INFO_IMGSIZE).toImage()).toBase64(QByteArray.Base64Encoding)).decode()}">'
+                defaultPaintTool = f'<tr><td class="tdNfoIcon" width="72">{imgPaintTool}</td><td valign="middle" class="tdNfoShortValue">{nbsp(EKritaTools.name(self.__defaultPaintTool))}</td></tr>'
+
+            keepUserModifications = ''
+            if self.__keepUserModifications:
+                imgKeepUserModifications = f'<img src="data:image/png;base64,{bytes(qImageToPngQByteArray(buildIcon("pktk:author_check").pixmap(BBSBaseNode.TPL_INFO_IMGSIZE).toImage()).toBase64(QByteArray.Base64Encoding)).decode()}">'
+                keepUserModifications = f'<tr><td class="tdNfoIcon" width="72">{imgKeepUserModifications}</td><td valign="middle" class="tdNfoShortValue">{i18n("Keep user modifications")}</td></tr>'
 
             if self.__blendingMode == 'erase':
-                self.__brushNfoOptions = (f' {defaultPaintTool}'
-                                          f' <tr><td align="left"><b>{i18n("Keep user modifications")}</b></td><td align="right">{yesno(self.__blendingMode)}</td><td></td></tr>'
-                                          f' {shortcutText}'
-                                          )
+                self.__brushNfoOptions = f'{defaultPaintTool}{keepUserModifications}'
             else:
-                if self.__colorFg is None:
-                    useSpecificColor = yesno(False)
-                    imageNfo = ''
-                else:
-                    imageNfo = f'&nbsp;<img src="data:image/png;base64,'\
-                               f'{bytes(qImageToPngQByteArray(bullet(16, self.__colorFg,"roundSquare").toImage()).toBase64(QByteArray.Base64Encoding)).decode()}">'
+                useSpecificColor = ''
+                preserveAlpha = ''
+                ignoreToolOpacity = ''
+                ignoreEraserMode = ''
+
+                if self.__colorFg is not None:
+                    imgColorFg = f'<img src="data:image/png;base64,{bytes(qImageToPngQByteArray(bullet(BBSBaseNode.TPL_INFO_IMGSIZE.height(), self.__colorFg,"roundSquare", radius=4).toImage()).toBase64(QByteArray.Base64Encoding)).decode()}">'
+                    colorFg = f'<tr><td class="tdNfoIcon" width="72">{imgColorFg}</td><td valign="middle" class="tdNfoShortValue">{i18n("Foreground color")}</td></tr>'
+
+                    colorBg = ""
                     if self.__colorBg is not None:
-                        imageNfo += f'&nbsp;<img src="data:image/png;base64,'\
-                                    f'{bytes(qImageToPngQByteArray(bullet(16, self.__colorBg,"roundSquare").toImage()).toBase64(QByteArray.Base64Encoding)).decode()}">'
+                        imgColorBg = f'<img src="data:image/png;base64,{bytes(qImageToPngQByteArray(bullet(BBSBaseNode.TPL_INFO_IMGSIZE.height(), self.__colorBg,"roundSquare", radius=4).toImage()).toBase64(QByteArray.Base64Encoding)).decode()}">'
+                        colorBg = f'<tr><td class="tdNfoIcon" width="72">{imgColorBg}</td><td valign="middle" class="tdNfoShortValue">{i18n("Background color")}</td></tr>'
+
+                    colorGradient = ""
                     if self.__colorGradient is not None and self.__colorGradient.id() is not None:
-                        pngQByteArray = qImageToPngQByteArray(self.__colorGradient.thumbnail().scaledToHeight(16, Qt.SmoothTransformation).toImage())
-                        imageNfo += f'&nbsp;<img src="data:image/png;base64,'\
-                                    f'{bytes(pngQByteArray.toBase64(QByteArray.Base64Encoding)).decode()}">'
-                    useSpecificColor = yesno(True)
+                        pngQByteArray = qImageToPngQByteArray(roundedPixmap(self.__colorGradient.thumbnail().scaledToHeight(BBSBaseNode.TPL_INFO_IMGSIZE.height(), Qt.SmoothTransformation), 4).toImage())
+                        imgColorGradient = f'<img src="data:image/png;base64,{bytes(pngQByteArray.toBase64(QByteArray.Base64Encoding)).decode()}">'
+                        colorGradient = f'<tr><td class="tdNfoIcon" width="72">{imgColorGradient}</td><td valign="middle" class="tdNfoShortValue">{i18n("Gradient colors")}</td></tr>'
 
-                self.__brushNfoOptions = (f' {defaultPaintTool}'
+                    useSpecificColor = f'{colorFg}{colorBg}{colorGradient}'
 
-                                          f' <tr><td align="left"><b>{i18n("Use specific color")}:</b></td>'
-                                          f'     <td align="right">{useSpecificColor}</td><td>{imageNfo}</td></tr>'
+                if self.__preserveAlpha:
+                    imgPreserveAlpha = f'<img src="data:image/png;base64,{bytes(qImageToPngQByteArray(Krita.instance().icon("transparency-locked").pixmap(BBSBaseNode.TPL_INFO_IMGSIZE).toImage()).toBase64(QByteArray.Base64Encoding)).decode()}">'
+                    preserveAlpha = f'<tr><td class="tdNfoIcon" width="72">{imgPreserveAlpha}</td><td valign="middle" class="tdNfoShortValue">{i18n("Preserve Alpha")}</td></tr>'
 
-                                          f' <tr><td align="left"><b>{i18n("Preserve Alpha")}:</b></td>'
-                                          f'     <td align="right">{yesno(self.__preserveAlpha)}</td><td></td></tr>'
+                if self.__ignoreToolOpacity:
+                    imgIgnoreToolOpacity = f'<img src="data:image/png;base64,{bytes(qImageToPngQByteArray(buildIcon("pktk:color_opacity").pixmap(BBSBaseNode.TPL_INFO_IMGSIZE).toImage()).toBase64(QByteArray.Base64Encoding)).decode()}">'
+                    ignoreToolOpacity = f'<tr><td class="tdNfoIcon" width="72">{imgIgnoreToolOpacity}</td><td valign="middle" class="tdNfoShortValue">{i18n("Ignore tool opacity")}</td></tr>'
 
-                                          f' <tr><td align="left"><b>{i18n("Ignore tool opacity")}:</b></td>'
-                                          f'     <td align="right">{yesno(self.__ignoreToolOpacity)}</td><td></td></tr>'
+                if self.__ignoreEraserMode:
+                    imgIgnoreEraserMode = f'<img src="data:image/png;base64,{bytes(qImageToPngQByteArray(Krita.instance().icon("draw-eraser").pixmap(BBSBaseNode.TPL_INFO_IMGSIZE).toImage()).toBase64(QByteArray.Base64Encoding)).decode()}">'
+                    ignoreEraserMode = f'<tr><td class="tdNfoIcon" width="72">{imgIgnoreEraserMode}</td><td valign="middle" class="tdNfoShortValue">{i18n("Ignore eraser mode")}</td></tr>'
 
-                                          f' <tr><td align="left"><b>{i18n("Keep user modifications")}</b></td>'
-                                          f'     <td align="right">{yesno(self.__keepUserModifications)}</td><td></td></tr>'
-
-                                          f' <tr><td align="left"><b>{i18n("Ignore eraser mode")}:</b></td>'
-                                          f'     <td align="right">{yesno(self.__ignoreEraserMode)}</td><td></td></tr>'
-
-                                          f' {shortcutText}'
-                                          )
+                self.__brushNfoOptions = f'{useSpecificColor}{defaultPaintTool}{preserveAlpha}{ignoreToolOpacity}{ignoreEraserMode}{keepUserModifications}'
 
             self.__brushNfoComments = self.__comments
             if self.__brushNfoComments != '':
@@ -741,47 +830,76 @@ class BBSBrush(BBSBaseNode):
                 ==> brush image
 
             INFO_WITH_DETAILS
-                ==> brush name
+                INFO_WITH_BIGNAME
+                    ==> brush name (BIG)
+                !INFO_WITH_BIGNAME
+                    ==> brush name (normal)
 
             INFO_WITH_OPTIONS
-                !INFO_COMPACT
+                == shortcut
+                !INFO_FMT_COMPACT
                     ==> comment
                 ==> brush options
 
             INFO_WITH_DETAILS
-                !INFO_COMPACT
+                !INFO_FMT_COMPACT
                     ==> brush full info
-                INFO_COMPACT
+                INFO_FMT_COMPACT
                     ==> brush short info
         """
         returned = ''
-        if displayOption & BBSBrush.INFO_WITH_OPTIONS:
-            returned = self.__brushNfoOptions
+        tableWidth = ''
+        cssTooltip = ''
 
-            if not(displayOption & BBSBrush.INFO_COMPACT) and self.__brushNfoComments != '':
-                hr = ''
-                if returned != '':
-                    hr = "<tr><td colspan=3><hr></td></tr>"
-                returned = f"<tr><td colspan=3>{self.__brushNfoComments}</td></tr>{hr}{returned}"
+        if displayOption & BBSBaseNode.INFO_FMT_TOOLTIP:
+            tableWidth = " width='100%'"
+            cssTooltip = " cssTooltip"
 
-        if displayOption & BBSBrush.INFO_WITH_DETAILS:
-            hr = ''
-            if returned != '':
-                hr = "<tr><td colspan=3><hr></td></tr>"
-
-            if displayOption & BBSBrush.INFO_COMPACT:
-                returned = f'<small><i><table>{self.__brushNfoShort}{hr}{returned}</table></i></small>'
-            else:
-                returned = f'<small><i><table>{self.__brushNfoFull}{hr}{returned}</table></i></small>'
-
-            returned = f'<h1><b>{self.__name.replace("_", " ")}</b></h1>{returned}'
+        brushName = self.__name.replace("_", " ")
+        if displayOption & BBSBaseNode.INFO_WITH_BIGNAME:
+            brushName = f"<table{tableWidth}><tr><td class='tdBigName'>{brushName}</td></tr></table>"
         else:
-            returned = f'<small><i><table>{returned}</table></i></small>'
+            brushName = f"<table{tableWidth}><tr><td class='tdSmallName'>{brushName}</td></tr></table>"
 
-        if displayOption & BBSBrush.INFO_WITH_ICON and self.__brushNfoImg != '':
-            returned = f'<table><tr><td>{self.__brushNfoImg}</td><td>{returned}</td></tr></table>'
+        if displayOption & BBSBaseNode.INFO_WITH_DETAILS:
+            if displayOption & BBSBaseNode.INFO_FMT_COMPACT:
+                returned = f'{brushName}<table{tableWidth}>{self.__brushNfoShort}</table>'
+            else:
+                returned = f'{brushName}<table{tableWidth}>{self.__brushNfoFull}</table>'
 
-        return returned
+        if displayOption & BBSBaseNode.INFO_WITH_OPTIONS:
+            comments = ""
+            if not(displayOption & BBSBaseNode.INFO_FMT_COMPACT) and self.__brushNfoComments != '':
+                comments = f"<tr><td colspan=2 class='tdComment'>{self.__brushNfoComments}</td></tr>"
+
+            if self.__brushNfoOptionsShortcut != '':
+                returned = f"{returned}<table width='100%' class='{cssTooltip}'>{self.__brushNfoOptionsShortcut}</table>"
+
+            sepBefore = ""
+            sepAfter = ""
+            if comments != "" and returned != "":
+                sepBefore = BBSBaseNode.TPL_INFO_TRSEP
+            if comments != "" or returned != "":
+                sepAfter = BBSBaseNode.TPL_INFO_TRSEP
+
+            if self.__brushNfoOptions != "":
+                returned = f"{returned}<table width='100%'>{sepBefore}{comments}{sepAfter}{self.__brushNfoOptions}</table>"
+            elif comments != "":
+                returned = f"{returned}<table width='100%'>{sepBefore}{comments}</table>"
+
+        if displayOption & BBSBaseNode.INFO_WITH_ICON and self.__brushNfoImg != '':
+            returned = f'<table{tableWidth}><tr><td class="tdImg">{self.__brushNfoImg}</td><td width="95%" align="left">{returned}</td></tr></table>'
+
+        bgColor = QApplication.palette().color(QPalette.ToolTipBase)
+        if UITheme.theme() == UITheme.DARK_THEME:
+            bgColor = bgColor.lighter(200)
+        else:
+            bgColor = bgColor.darker(200)
+        bgColor.setAlpha(128)
+
+        tplCss = BBSBaseNode.TPL_INFO_CSS.replace('#BG_COLOR_NAME#', bgColor.name(QColor.HexArgb))
+
+        return f"<html><head>{tplCss}</head><body>{returned}</body></html>"
 
     def found(self):
         """Return True if brush preset exists in krita otherwise False"""
@@ -831,6 +949,7 @@ class BBSGroup(BBSBaseNode):
     KEY_EXPANDED = 'expanded'
 
     IMG_SIZE = 256
+    IMG_QSIZE = QSize(256, 256)
 
     def __init__(self, group=None):
         super(BBSGroup, self).__init__(None)
@@ -845,6 +964,8 @@ class BBSGroup(BBSBaseNode):
 
         self.__groupNfoOptions = ''
         self.__groupNfoComments = ''
+        self.__groupNfoOptionsShortcut = ''
+        self.__groupNfoImg = ''
 
         self.__imageOpen = None
         self.__imageClose = None
@@ -868,21 +989,18 @@ class BBSGroup(BBSBaseNode):
         - group options     (dedicated BBSGroup options)
         - group comments
         """
-        def yesno(value):
-            if value:
-                return i18n('Yes')
-            else:
-                return i18n('No')
-
         if not self.inUpdate():
-            shortcutText = ''
+            if self.image():
+                self.__groupNfoImg = f'<img src="data:image/png;base64,{bytes(qImageToPngQByteArray(self.image()).toBase64(QByteArray.Base64Encoding)).decode()}">'
+            else:
+                self.__groupNfoImg = ''
+
+            self.__groupNfoOptionsShortcut = ''
             if not self.__shortcutNext.isEmpty():
-                shortcutText += f' <tr><td align="left"><b>{i18n("Shortcut next")}</b></td><td align="right">{self.__shortcutNext.toString()}</td><td></td></tr>'
+                self.__groupNfoOptionsShortcut += f'<tr><td class="tdNfoShortcut">{BBSBaseNode.fmtKbd(self.__shortcutNext.toString())}</td><td width="90%" valign="middle" class="tdNfoShortValue">{i18n("Next brush")}</td></tr>'
 
             if not self.__shortcutPrevious.isEmpty():
-                shortcutText += f' <tr><td align="left"><b>{i18n("Shortcut previous")}</b></td><td align="right">{self.__shortcutPrevious.toString()}</td><td></td></tr>'
-
-            self.__groupNfoOptions = shortcutText
+                self.__groupNfoOptionsShortcut += f'<tr><td class="tdNfoShortcut">{BBSBaseNode.fmtKbd(self.__shortcutPrevious.toString())}</td><td width="90%" valign="middle" class="tdNfoShortValue">{i18n("Previous brush")}</td></tr>'
 
             self.__groupNfoComments = self.__comments
             if self.__groupNfoComments != '':
@@ -951,6 +1069,11 @@ class BBSGroup(BBSBaseNode):
             print("Unable to import group definition:", e)
             isValid = False
 
+        if self.id() == BBSGroupsProxyModel.UUID_FLATVIEW:
+            self.__imageOpen = buildIcon('pktk:list_view_icon').pixmap(BBSGroup.IMG_QSIZE).toImage()
+        elif self.id() == BBSGroupsProxyModel.UUID_USERVIEW:
+            self.__imageOpen = buildIcon('pktk:author').pixmap(BBSGroup.IMG_QSIZE).toImage()
+
         self.endUpdate()
         return isValid
 
@@ -984,11 +1107,14 @@ class BBSGroup(BBSBaseNode):
 
     def setColor(self, color):
         """Set group color"""
+        if self.id() in (BBSGroupsProxyModel.UUID_FLATVIEW, BBSGroupsProxyModel.UUID_USERVIEW):
+            return
+
         if WStandardColorSelector.isValidColorIndex(color) and self.__color != color:
             self.__color = color
 
             # need to build images according to colors
-            pixmapOpen = buildIcon('pktk:folder__filled_open').pixmap(QSize(BBSGroup.IMG_SIZE, BBSGroup.IMG_SIZE))
+            pixmapOpen = buildIcon('pktk:folder__filled_open').pixmap(BBSGroup.IMG_QSIZE)
             painterOpen = QPainter()
             painterOpen.begin(pixmapOpen)
             if self.__color != WStandardColorSelector.COLOR_NONE:
@@ -997,7 +1123,7 @@ class BBSGroup(BBSBaseNode):
             painterOpen.end()
             self.__imageOpen = pixmapOpen.toImage()
 
-            pixmapClose = buildIcon('pktk:folder__filled_close').pixmap(QSize(BBSGroup.IMG_SIZE, BBSGroup.IMG_SIZE))
+            pixmapClose = buildIcon('pktk:folder__filled_close').pixmap(BBSGroup.IMG_QSIZE)
             painterClose = QPainter()
             painterClose.begin(pixmapClose)
             if self.__color != WStandardColorSelector.COLOR_NONE:
@@ -1072,33 +1198,108 @@ class BBSGroup(BBSBaseNode):
                 N/A
 
             INFO_WITH_DETAILS
-                ==> group name
+                INFO_WITH_BIGNAME
+                    ==> group name (BIG)
+                !INFO_WITH_BIGNAME
+                    ==> group name (normal)
 
             INFO_WITH_OPTIONS
-                !INFO_COMPACT
+                == shortcut
+                !INFO_FMT_COMPACT
                     ==> comment
                 ==> group options
 
         """
         returned = ''
-        if displayOption & BBSGroup.INFO_WITH_OPTIONS:
-            returned = self.__groupNfoOptions
+        tableWidth = ''
+        cssTooltip = ''
+        childStatsNfoBrushes = ''
+        childStatsNfoGroups = ''
 
-            if not(displayOption & BBSBrush.INFO_COMPACT) and self.__groupNfoComments != '':
-                hr = ''
-                if returned != '':
-                    hr = "<tr><td colspan=3><hr></td></tr>"
-                returned = f"<tr><td colspan=3>{self.__groupNfoComments}</td></tr>{hr}{returned}"
+        if displayOption & BBSBaseNode.INFO_FMT_TOOLTIP:
+            tableWidth = " width='100%'"
+            cssTooltip = " cssTooltip"
 
-        if displayOption & BBSGroup.INFO_WITH_DETAILS:
-            if returned != '':
-                returned = f'<h1><b>{self.__name}</b></h1><small><i><table>{returned}</table></i></small>'
-            else:
-                returned = f'<h1><b>{self.__name}</b></h1>'
+        groupName = self.__name
+        if displayOption & BBSBaseNode.INFO_WITH_BIGNAME:
+            groupName = f"<table{tableWidth}><tr><td class='tdBigName'>{groupName}</td></tr></table>"
         else:
-            returned = f'<small><i><table>{returned}</table></i></small>'
+            groupName = f"<table{tableWidth}><tr><td class='tdSmallName'>{groupName}</td></tr></table>"
 
-        return returned
+        if displayOption & BBSBaseNode.INFO_WITH_DETAILS:
+            returned = groupName
+
+            imgWidth = 4 + BBSBaseNode.TPL_INFO_IMGSIZE2.width()
+
+            childStats = self.node().childStats()
+            if self.id() == BBSGroupsProxyModel.UUID_FLATVIEW:
+                childStats["brushes"] = childStats['total-brushes']
+                childStats['total-brushes'] = 0
+                childStats['groups'] = 0
+                childStats['total-groups'] = 0
+
+            imgBrushesStats = f'<img src="data:image/png;base64,{bytes(qImageToPngQByteArray(buildIcon("pktk:brush").pixmap(BBSBaseNode.TPL_INFO_IMGSIZE2).toImage()).toBase64(QByteArray.Base64Encoding)).decode()}">'
+            if childStats['brushes'] > 0:
+                childStatsNfoBrushes = f'{childStats["brushes"]}'
+
+            if childStats['total-brushes'] > 0 and childStats['total-brushes'] - childStats['brushes']:
+                if childStatsNfoBrushes != '':
+                    childStatsNfoBrushes += f'&nbsp;({nbsp(i18n("Including sub-groups:"))} {childStats["total-brushes"]})'
+                else:
+                    childStatsNfoBrushes = f'{childStats["total-brushes"]}&nbsp;({nbsp(i18n("Including sub-groups"))})'
+
+            if childStatsNfoBrushes != '':
+                childStatsNfoBrushes = f'<tr><td class="tdNfoIcon" width="{imgWidth}">{imgBrushesStats}</td><td valign="middle" class="tdNfoName">{i18n("Brushes")}</td><td valign="middle" class="tdNfoShortValue">{childStatsNfoBrushes}</td></tr>'
+
+            imgGroupsStats = f'<img src="data:image/png;base64,{bytes(qImageToPngQByteArray(buildIcon("pktk:folder_open").pixmap(BBSBaseNode.TPL_INFO_IMGSIZE2).toImage()).toBase64(QByteArray.Base64Encoding)).decode()}">'
+            if childStats['groups'] > 0:
+                childStatsNfoGroups = f'{childStats["groups"]}'
+
+            if childStats['total-groups'] > 0 and childStats['total-groups'] != childStats['groups']:
+                if childStatsNfoGroups != '':
+                    childStatsNfoGroups += f'&nbsp;({nbsp(i18n("Including sub-groups:"))} {childStats["total-groups"]})'
+                else:
+                    childStatsNfoGroups = f'{childStats["total-groups"]}&nbsp;({nbsp(i18n("Including sub-groups"))})'
+
+            if childStatsNfoGroups != '':
+                childStatsNfoGroups = f'<tr><td class="tdNfoIcon" width="{imgWidth}">{imgGroupsStats}</td><td valign="middle" class="tdNfoName">{i18n("Groups")}</td><td valign="middle" class="tdNfoShortValue">{childStatsNfoGroups}</td></tr>'
+
+            if childStatsNfoBrushes != '' or childStatsNfoGroups != '':
+                returned = f'{returned}<table{tableWidth}>{childStatsNfoBrushes}{childStatsNfoGroups}</table>'
+
+        if displayOption & BBSGroup.INFO_WITH_OPTIONS:
+            comments = ""
+            if not(displayOption & BBSBaseNode.INFO_FMT_COMPACT) and self.__groupNfoComments != '':
+                comments = f"<tr><td colspan=2 class='tdComment'>{self.__groupNfoComments}</td></tr>"
+
+            if self.__groupNfoOptionsShortcut != '':
+                returned = f"{returned}<table width='100%' class='{cssTooltip}'>{self.__groupNfoOptionsShortcut}</table>"
+
+            sepBefore = ""
+            sepAfter = ""
+            if comments != "" and returned != "":
+                sepBefore = BBSBaseNode.TPL_INFO_TRSEP
+            if comments != "" or returned != "":
+                sepAfter = BBSBaseNode.TPL_INFO_TRSEP
+
+            if self.__groupNfoOptions != "":
+                returned = f"{returned}<table width='100%'>{sepBefore}{comments}{sepAfter}{self.__groupNfoOptions}</table>"
+            elif comments != "":
+                returned = f"{returned}<table width='100%'>{sepBefore}{comments}</table>"
+
+        if displayOption & BBSBaseNode.INFO_WITH_ICON and self.__groupNfoImg != '':
+            returned = f'<table{tableWidth}><tr><td class="tdImg">{self.__groupNfoImg}</td><td width="95%" align="left">{returned}</td></tr></table>'
+
+        bgColor = QApplication.palette().color(QPalette.ToolTipBase)
+        if UITheme.theme() == UITheme.DARK_THEME:
+            bgColor = bgColor.lighter(200)
+        else:
+            bgColor = bgColor.darker(200)
+        bgColor.setAlpha(128)
+
+        tplCss = BBSBaseNode.TPL_INFO_CSS.replace('#BG_COLOR_NAME#', bgColor.name(QColor.HexArgb))
+
+        return f"<html><head>{tplCss}</head><body>{returned}</body></html>"
 
     def image(self, expandedStatus=None):
         """Return image for group
@@ -1106,6 +1307,9 @@ class BBSGroup(BBSBaseNode):
         if expandedStatus is none, return image according to expanded/collapsed status
         if expandedStatus is True, return image for exapanded status, otherwise return image for collapsed status
         """
+        if self.id() in (BBSGroupsProxyModel.UUID_FLATVIEW, BBSGroupsProxyModel.UUID_USERVIEW):
+            return self.__imageOpen
+
         if expandedStatus is None:
             expandedStatus = self.expanded()
 
@@ -1382,7 +1586,11 @@ class BBSModelNode(QStandardItem):
         """
         returned = {
                 'groups': 0,
-                'brushes': 0
+                'brushes': 0,
+                'sub-groups': 0,
+                'sub-brushes': 0,
+                'total-groups': 0,
+                'total-brushes': 0
             }
 
         if len(self.__childNodes):
@@ -1391,12 +1599,22 @@ class BBSModelNode(QStandardItem):
 
                 if isinstance(data, BBSBrush):
                     returned['brushes'] += 1
+                    returned['total-brushes'] += 1
                 else:
                     returned['groups'] += 1
+                    returned['total-groups'] += 1
 
                     stats = child.childStats()
-                    returned['brushes'] += stats['brushes']
-                    returned['groups'] += stats['groups']
+
+                    returned['sub-brushes'] += stats['total-brushes']
+                    returned['total-brushes'] += stats['total-brushes']
+
+                    returned['sub-groups'] += stats['total-groups']
+                    returned['total-groups'] += stats['total-groups']
+
+            # sub don't count childs from groups
+            returned['sub-brushes'] -= returned['brushes']
+            returned['sub-groups'] -= returned['groups']
         return returned
 
 
@@ -1630,7 +1848,11 @@ class BBSModel(QAbstractItemModel):
                 if not data.found():
                     return i18n(f"Brush <i><b>{data.name()}</b></i> is not installed and/or activated on this Krita installation")
                 else:
-                    return data.information(BBSBrush.INFO_WITH_DETAILS | BBSBrush.INFO_WITH_OPTIONS | BBSBrush.INFO_WITH_ICON)
+                    return data.information(BBSBaseNode.INFO_FMT_TOOLTIP |
+                                            BBSBaseNode.INFO_WITH_DETAILS |
+                                            BBSBaseNode.INFO_WITH_OPTIONS |
+                                            BBSBaseNode.INFO_WITH_ICON |
+                                            BBSBaseNode.INFO_WITH_BIGNAME)
         elif isinstance(data, BBSGroup):
             if role == Qt.DecorationRole:
                 image = data.image()
@@ -1640,7 +1862,11 @@ class BBSModel(QAbstractItemModel):
                 else:
                     return buildIcon('pktk:folder_open')
             elif role == Qt.ToolTipRole:
-                return data.information(BBSBrush.INFO_WITH_DETAILS | BBSBrush.INFO_WITH_OPTIONS)
+                return data.information(BBSBaseNode.INFO_FMT_TOOLTIP |
+                                        BBSBaseNode.INFO_WITH_DETAILS |
+                                        BBSBaseNode.INFO_WITH_OPTIONS |
+                                        BBSBaseNode.INFO_WITH_ICON |
+                                        BBSBaseNode.INFO_WITH_BIGNAME)
 
         return None
 
@@ -1978,11 +2204,13 @@ class BBSGroupsProxyModel(QAbstractProxyModel):
         super(BBSGroupsProxyModel, self).__init__(parent)
         # initialise dummy root nodes
         self.__flatViewNode = BBSModelNode(BBSGroup({BBSGroup.KEY_UUID: BBSGroupsProxyModel.UUID_FLATVIEW,
-                                                     BBSGroup.KEY_NAME: i18n("Flat view")
+                                                     BBSGroup.KEY_NAME: i18n("Flat view"),
+                                                     BBSGroup.KEY_COMMENTS: f'<p>{i18n("All brushes in a single view")}</p>'
                                                      }))
 
         self.__userViewNode = BBSModelNode(BBSGroup({BBSGroup.KEY_UUID: BBSGroupsProxyModel.UUID_USERVIEW,
                                                      BBSGroup.KEY_NAME: i18n("User view"),
+                                                     BBSGroup.KEY_COMMENTS: f'''<p>{i18n("Brushes provided as they've been organized by user (group, order)")}</p>''',
                                                      BBSGroup.KEY_EXPANDED: True
                                                      }))
 
@@ -2028,6 +2256,10 @@ class BBSGroupsProxyModel(QAbstractProxyModel):
     def setSourceModel(self, model):
         """Set model for proxy"""
         super(BBSGroupsProxyModel, self).setSourceModel(model)
+        rootNode = model.nodeForIndex(QModelIndex())
+        self.__flatViewNode.data().setNode(rootNode)
+        self.__userViewNode.data().setNode(rootNode)
+
         model.dataChanged.connect(self.__dataChanged)
 
     def mapFromSource(self, index):
@@ -2074,19 +2306,18 @@ class BBSGroupsProxyModel(QAbstractProxyModel):
         elif role == Qt.DisplayRole:
             return data.name()
         elif role == Qt.DecorationRole:
-            if data.id() == BBSGroupsProxyModel.UUID_FLATVIEW:
-                return buildIcon('pktk:list_view_icon')
-            elif data.id() == BBSGroupsProxyModel.UUID_USERVIEW:
-                return buildIcon('pktk:author')
+            image = data.image()
+            if image:
+                # QIcon
+                return QIcon(QPixmap.fromImage(image))
             else:
-                image = data.image()
-                if image:
-                    # QIcon
-                    return QIcon(QPixmap.fromImage(image))
-                else:
-                    return buildIcon('pktk:folder_open')
+                return buildIcon('pktk:folder_open')
         elif role == Qt.ToolTipRole:
-            return data.information(BBSBrush.INFO_WITH_DETAILS | BBSBrush.INFO_WITH_OPTIONS)
+            return data.information(BBSBaseNode.INFO_FMT_TOOLTIP |
+                                    BBSBaseNode.INFO_WITH_DETAILS |
+                                    BBSBaseNode.INFO_WITH_OPTIONS |
+                                    BBSBaseNode.INFO_WITH_ICON |
+                                    BBSBaseNode.INFO_WITH_BIGNAME)
 
         return None
 
@@ -2766,7 +2997,7 @@ class BBSModelDelegateTv(QStyledItemDelegate):
         """Return text for group/brush information"""
         compactSize = 0
         if self.__compactSize:
-            compactSize = BBSBaseNode.INFO_COMPACT
+            compactSize = BBSBaseNode.INFO_FMT_COMPACT
         textDocument = QTextDocument()
         textDocument.setHtml(item.information(BBSBaseNode.INFO_WITH_DETAILS | compactSize))
         return textDocument
@@ -2775,7 +3006,7 @@ class BBSModelDelegateTv(QStyledItemDelegate):
         """Return text for group/brush options (comments + option)"""
         compactSize = 0
         if self.__compactSize:
-            compactSize = BBSBaseNode.INFO_COMPACT
+            compactSize = BBSBaseNode.INFO_FMT_COMPACT
 
         textDocument = QTextDocument()
         textDocument.setHtml(item.information(BBSBaseNode.INFO_WITH_OPTIONS | compactSize))
@@ -2849,7 +3080,7 @@ class BBSModelDelegateTv(QStyledItemDelegate):
             textOffset = iconOffset + self.__iconSize + BBSModelDelegateTv.MARGIN_TEXT
             bgRect = QRectF(option.rect.topLeft() + QPointF(iconOffset, 0), self.__iconQSizeF).marginsRemoved(self.__iconMargins)
             bgRect.setHeight(bgRect.width())
-            bRadius = max(2, self.__iconSize * 0.050)
+            bRadius = round(max(2, self.__iconSize * 0.050))
             rectTxt = QRectF(option.rect.left() + textOffset, option.rect.top()+4, option.rect.width()-4-textOffset, option.rect.height()-1)
 
             # Initialise pixmap (brush icon or folder icon)
@@ -2988,7 +3219,7 @@ class BBSModelDelegateLv(QStyledItemDelegate):
             margin = max(1, round(self.__iconSize * 0.05))
             self.__iconAndMarginSize = QSize(self.__iconSize + (margin << 1), self.__iconSize + (margin << 1))
             self.__tl = QPoint(margin, margin)
-            self.__bRadius = max(2, self.__iconSize * 0.050)
+            self.__bRadius = round(max(2, self.__iconSize * 0.050))
 
     def paint(self, painter, option, index):
         """Paint list item"""
