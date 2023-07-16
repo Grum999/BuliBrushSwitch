@@ -1,4 +1,4 @@
-# Buli Brush Switch :: Release 1.0.0 [2022-xx-xx]
+# Buli Brush Switch :: Release 1.0.0 [2023-xx-xx]
 
 # Krita Interface
 
@@ -14,7 +14,45 @@ Review button in Krita toolbar to let it being rendered exactly like the *Brush 
 *(Top: Linux / Bottom: Windows)*
 
 
+# Main Interface
+
+## Icon view
+Icon view from main popup interface has been reviewed to take in account groups management:
+    - Flat view
+    - User view
+
+![Icon view mode](./../screenshots/r1-0-0_mainui-icon_viewmode.png)
+
+
 # Main settings
+
+## Improve layout for brushes informations
+[Feature request #15](https://github.com/Grum999/BuliBrushSwitch/issues/15)
+
+Layout and informations provided are now more readable:
+    - Only display active options
+    - Reduce text and use icons
+
+![New brushes information layout](./../screenshots/r1-0-0_mainsettings-new_layout.png)
+
+## Organize brushes within groups
+[Feature request #9](https://github.com/Grum999/BuliBrushSwitch/issues/9)
+
+Brushes can now be organized withins groups
+Group editor provides:
+    - Group color
+    - Shorcuts to activate previous/next brush in group
+    - Editor to write a description
+
+![Group editor](./../screenshots/r1-0-0_mainsettings-groups_editor.png)
+
+## Re-organize brushes & and groups with Drag'n'Drop
+[Feature request #3](https://github.com/Grum999/BuliBrushSwitch/issues/3)
+
+Brushes and groups can be re-organized with Drag'n'Drop
+
+![Drag'n'Drop](./../screenshots/r1-0-0_mainsettings-dnd.png)
+
 
 ## Let user choose scratchpad background color
 [Feature request #4](https://github.com/Grum999/BuliBrushSwitch/issues/4)
@@ -23,13 +61,12 @@ An additional color button menu has been added; there's now:
     - One button to choose brush color in scratchpad
     - One button to choose background color for scratchpad
 
-![Popup brushes list](./../screenshots/r1-0-0_mainsettings-scratchpad_bg_color.png)
+![scratchpad with backkground color](./../screenshots/r1-0-0_mainsettings-scratchpad_bg_color.png)
 
 # Brushes settings
 
 ## Redesign
 With new options, user interface has been redesigned to be less messy.
-
 
 ## Color button when *No color*
 [Feature request #6](https://github.com/Grum999/BuliBrushSwitch/issues/6)

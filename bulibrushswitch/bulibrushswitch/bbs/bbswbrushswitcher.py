@@ -40,6 +40,7 @@ from .bbssettings import (
     )
 
 from .bbswbrushes import (
+        BBSBaseNode,
         BBSGroup,
         BBSBrush,
         BBSWBrushesTv,
@@ -261,7 +262,11 @@ class BBSWBrushSwitcher(QWidget):
         if updated:
             # update icon...
             self.__tbBrush.setIcon(QIcon(QPixmap.fromImage(selectedBrush.image())))
-            self.__tbBrush.setToolTip(selectedBrush.information(BBSBrush.INFO_WITH_DETAILS | BBSBrush.INFO_WITH_OPTIONS))
+            self.__tbBrush.setToolTip(selectedBrush.information(BBSBaseNode.INFO_FMT_TOOLTIP |
+                                                                BBSBaseNode.INFO_WITH_DETAILS |
+                                                                BBSBaseNode.INFO_WITH_OPTIONS |
+                                                                BBSBaseNode.INFO_WITH_ICON |
+                                                                BBSBaseNode.INFO_WITH_BIGNAME))
 
     @pyqtSlot(bool)
     def __setSelectedBrushFromAction(self, checked):

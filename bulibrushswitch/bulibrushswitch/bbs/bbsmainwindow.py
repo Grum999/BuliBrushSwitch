@@ -502,11 +502,11 @@ class BBSMainWindow(EDialog):
             stats = group.node().childStats()
             includingGroups = ''
             groups = ''
-            if stats['groups'] > 0:
+            if stats['total-groups'] > 0:
                 includingGroups = i18n(' (Including groups sub-items)')
-                groups = f"<li>{i18n('Groups:')} {stats['groups']}</li>"
+                groups = f"<li>{i18n('Groups:')} {stats['total-groups']}</li>"
 
-            if stats['brushes'] > 0:
+            if stats['total-brushes'] > 0:
                 returned += f"<hr><small><b><i>&gt; {i18n('Deletion of group will also delete')}{includingGroups}<ul><li>{i18n('Brushes:')} {stats['brushes']}</li>{groups}</ul></i></b></small>"
 
             return returned
