@@ -94,11 +94,13 @@ def checkerBoardImage(size, checkerSize=32):
     return pixmap
 
 
-def roundedPixmap(pixmap, radius, size=None):
+def roundedPixmap(pixmap, radius=0.25, size=None):
     """return `pixmap` to given `size`, with rounded `radius`
 
     If `size` is None, use pixmap size
-    """
+    If `radius` is given as integer, radius size is absolute (given in pixels)
+    If `radius` is given as float, radius size is relative (given in percent)
+   """
     if not isinstance(pixmap, QPixmap):
         raise EInvalidType('Given `pixmap` must be a <QPixmap>')
     elif not isinstance(radius, (int, float)) or radius < 0:
@@ -107,6 +109,13 @@ def roundedPixmap(pixmap, radius, size=None):
     if size is None:
         size = pixmap.size()
 
+    if isinstance(radius, float):
+        # given as percent, then relative
+        radius *= 100
+        radiusSizeMode = Qt.RelativeSize
+    else:
+        radiusSizeMode = Qt.AbsoluteSize
+
     workPixmap = QPixmap(size)
     workPixmap.fill(Qt.transparent)
 
@@ -114,7 +123,7 @@ def roundedPixmap(pixmap, radius, size=None):
     painter.setRenderHint(QPainter.Antialiasing)
     painter.setPen(QPen(Qt.NoPen))
     painter.setBrush(QBrush(Qt.black))
-    painter.drawRoundedRect(0, 0, size.width(), size.height(), radius, radius, Qt.AbsoluteSize)
+    painter.drawRoundedRect(0, 0, size.width(), size.height(), radius, radius, radiusSizeMode)
     painter.setCompositionMode(QPainter.CompositionMode_SourceAtop)
     if size != pixmap.size():
         painter.drawPixmap(0, 0, pixmap.scaled(size, Qt.KeepAspectRatio, Qt.SmoothTransformation))
@@ -125,13 +134,16 @@ def roundedPixmap(pixmap, radius, size=None):
     return workPixmap
 
 
-def bullet(size=16, color=QColor(255, 255, 255), shape='square', scaleShape=1.0):
+def bullet(size=16, color=QColor(255, 255, 255), shape='square', scaleShape=1.0, radius=0.25):
     """Draw a bullet and return it as a QPixmap
 
     Given `size` define size of pixmap (width=height)
     Given `color` define color bullet
     Given `shape` define bullet shape ('circle' or 'square')
     Given `scaleShape` define size of bullet in pixmap (1.0 = 100% / 0.5=50% for example)
+
+    If `radius` is given as integer, radius size is absolute (given in pixels)
+    If `radius` is given as float, radius size is relative (given in percent)
     """
     pixmap = QPixmap(size, size)
     pixmap.fill(Qt.transparent)
@@ -146,8 +158,15 @@ def bullet(size=16, color=QColor(255, 255, 255), shape='square', scaleShape=1.0)
     if shape == 'square':
         canvas.fillRect(QRectF(offset, offset, shapeWidth, shapeWidth, color))
     elif shape == 'roundSquare':
+        if isinstance(radius, float):
+            # given as percent, then relative
+            radius *= 100
+            radiusSizeMode = Qt.RelativeSize
+        else:
+            radiusSizeMode = Qt.AbsoluteSize
+
         canvas.setBrush(color)
-        canvas.drawRoundedRect(QRectF(offset, offset, shapeWidth, shapeWidth), 25, 25, Qt.RelativeSize)
+        canvas.drawRoundedRect(QRectF(offset, offset, shapeWidth, shapeWidth), radius, radius, radiusSizeMode)
     elif shape == 'circle':
         canvas.setBrush(color)
         canvas.drawEllipse(QRectF(offset, offset, shapeWidth, shapeWidth))
