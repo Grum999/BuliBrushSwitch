@@ -1464,7 +1464,7 @@ class BBSModelNode(QStandardItem):
             raise EInvalidType("Given `childNode` must be a <BBSModelNode>")
         elif isinstance(childNode.data(), self.__dataNode.acceptedChild()):
             self.beginUpdate()
-            self.__childNodes.append(childNode)
+            self.insertChild(999999, childNode)
             self.endUpdate()
 
     def removeChild(self, childNode):
@@ -1496,6 +1496,7 @@ class BBSModelNode(QStandardItem):
             return returned
 
     def insertChild(self, position, childNode):
+        self.beginUpdate()
         row = 0
         for i, child in enumerate(self.__childNodes):
             if child.data().position() >= position:
@@ -1506,6 +1507,7 @@ class BBSModelNode(QStandardItem):
         childNode.data().setPosition(position)
         childNode.setParentNode(self)
         childNode.endUpdate()
+        self.endUpdate()
 
     def remove(self):
         """Remove item from parent"""
@@ -1912,12 +1914,23 @@ class BBSModel(QAbstractItemModel):
             return index.internalPointer()
 
     def removeNode(self, node):
+        """Delete a node from model, update model properly to update view according to MVC principle"""
         if isinstance(node, BBSModelNode):
             row = node.row()
             index = self.createIndex(row, 0, node)
             self.beginRemoveRows(self.parent(index), row, row)
             node.parentNode().removeChild(row)
             self.endRemoveRows()
+
+    def insertNode(self, node, parentNode):
+        """Insert a node in model, update model properly to update view according to MVC principle"""
+        if isinstance(node, BBSModelNode):
+            row = parentNode.childCount()
+            parentIndex = self.__getIdIndex(parentNode.data().id())
+
+            self.beginInsertRows(parentIndex, row, row)
+            parentNode.appendChild(node)
+            self.endInsertRows()
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         """Return label for given data section"""
@@ -2089,7 +2102,7 @@ class BBSModel(QAbstractItemModel):
             elif isinstance(itemToAdd, BBSBaseNode):
                 if isinstance(itemToAdd, parent.data().acceptedChild()):
                     self.__beginUpdate()
-                    parent.appendChild(BBSModelNode(itemToAdd, parent))
+                    self.insertNode(BBSModelNode(itemToAdd, parent), parent)
                     self.__endUpdate()
         elif isinstance(parent, str):
             # a string --> assume it's an Id
