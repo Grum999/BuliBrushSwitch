@@ -251,17 +251,34 @@ class BBSWBrushSwitcher(QWidget):
                 selectedBrush = self.__bbsModel.getFromId(self.__selectedBrushId, False)
                 updated = True
         else:
+            # not in list, use the first one
             selectedBrush = self.__getFirstBrush()
             if selectedBrush is not None and self.__selectedBrushId != selectedBrush.id():
-                # not in list, use the first one
                 self.__selectedBrushId = selectedBrush.id()
                 updated = True
 
-        BBSSettings.set(BBSSettingsKey.CONFIG_BRUSHES_LAST_SELECTED, self.__selectedBrushId)
-
         if updated:
-            # update icon...
-            self.__tbBrush.setIcon(QIcon(QPixmap.fromImage(selectedBrush.image())))
+            if selectedBrush is None or not selectedBrush.found():
+                # brush not found?
+                # use the first one
+                selectedBrush = self.__getFirstBrush()
+                if selectedBrush is not None and self.__selectedBrushId != selectedBrush.id():
+                    self.__selectedBrushId = selectedBrush.id()
+                    brushImg = selectedBrush.image()
+                else:
+                    # we have a problem...
+                    # - all brushes from BBS has been deleted? (should not be possible)
+                    # - all brushes in BBS are refering unexisting brushes
+                    # need to create a default brush
+                    brushImg = buildIcon("pktk:warning").pixmap(BBSBaseNode.IMG_QSIZE).toImage()
+                    self.__selectedBrushId = selectedBrush.id()
+            else:
+                brushImg = selectedBrush.image()
+
+            BBSSettings.set(BBSSettingsKey.CONFIG_BRUSHES_LAST_SELECTED, self.__selectedBrushId)
+
+            # update toolbutton icon...
+            self.__tbBrush.setIcon(QIcon(QPixmap.fromImage(brushImg)))
             self.__tbBrush.setToolTip(selectedBrush.information(BBSBaseNode.INFO_FMT_TOOLTIP |
                                                                 BBSBaseNode.INFO_WITH_DETAILS |
                                                                 BBSBaseNode.INFO_WITH_OPTIONS |
@@ -474,7 +491,11 @@ class BBSWBrushSwitcher(QWidget):
                 brushesAndGroups.append(group)
 
         self.__bbsModel.importData(brushesAndGroups, BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_LIST_NODES))
-        self.__setSelectedBrushId(self.__selectedBrushId)
+
+        if self.__selectedBrushId is None:
+            self.__setSelectedBrushId(BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_LAST_SELECTED))
+        else:
+            self.__setSelectedBrushId(self.__selectedBrushId)
 
     def __displayPopupUi(self):
         """Display popup user interface"""
@@ -629,7 +650,6 @@ class BBSWBrushSwitcher(QWidget):
                 self.__loopingGroup.resetBrushIfNeeded()
                 self.__loopingGroup = None
 
-
         if selectedBrush == self.__selectedBrush:
             selectedBrush = None
             selectedBrushId = None
@@ -640,7 +660,7 @@ class BBSWBrushSwitcher(QWidget):
         applyBrushColor = True
         applyBrushTool = True
 
-        if selectedBrush is None:
+        if selectedBrush is None or not selectedBrush.found():
             # "deactivate" current brush
             self.__disconnectResourceSignal()
 
@@ -676,7 +696,7 @@ class BBSWBrushSwitcher(QWidget):
 
             self.__selectedBrush.restoreKritaBrush(applyBrushColor, applyBrushTool)
 
-        if selectedBrush is None:
+        if selectedBrush is None or not selectedBrush.found():
             # "deactivate" current brush
             # no need anymore to be aware for brushes change
             self.__disconnectResourceSignal()

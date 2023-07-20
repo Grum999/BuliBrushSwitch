@@ -178,6 +178,121 @@ class BBSSettings(Settings):
         cls.__fullSave = fullSave
         return super().save()
 
+    @staticmethod
+    def getADefaultBrushDefinition():
+        """method return a default minimal brush definition as a dictionary (that can be used to initialise a BBSBrush)"""
+        def getFirstValidBrush():
+            # if we're looking for an eraser, try to get the most basic one
+            #   "a) Eraser Circle"
+            #   "a) Eraser Small"
+            #   "a) Eraser Soft"
+            defaultEraserList = ["a) Eraser Circle", "a) Eraser Small", "a) Eraser Soft"]
+            for eraserName in defaultEraserList:
+                preset = EKritaBrushPreset.getPreset(eraserName)
+                if preset and preset.name() == eraserName:
+                    return preset
+
+            # just return the first available brush
+            return EKritaBrushPreset.getPreset()
+
+        brushName = getFirstValidBrush()
+
+        # build default configurations
+        if brushName.name() == 'a) Eraser Circle':
+            brushDict = {
+                    "blendingMode": "erase",
+                    "color": "",
+                    "colorBg": "",
+                    "comments": "",
+                    "flow": 1.0,
+                    "ignoreEraserMode": True,
+                    "keepUserModifications": True,
+                    "name": "a) Eraser Circle",
+                    "opacity": 1.0,
+                    "position": 0,
+                    "size": 50.0,
+                    "eraserMode": True,
+                    "preserveAlpha": False,
+                    "ignoreToolOpacity": False,
+                    "defaultPaintTool": None,
+                    "shortcut": '',
+                    "uuid": '1367df61-b0e2-4304-9b51-ff04c102659e'
+                }
+        elif brushName.name() == 'a) Eraser Small':
+            brushDict = {
+                    "blendingMode": "erase",
+                    "color": "",
+                    "colorBg": "",
+                    "comments": "",
+                    "flow": 1.0,
+                    "ignoreEraserMode": True,
+                    "keepUserModifications": True,
+                    "name": "a) Eraser Small",
+                    "opacity": 1.0,
+                    "position": 0,
+                    "size": 25.0,
+                    "eraserMode": True,
+                    "preserveAlpha": False,
+                    "ignoreToolOpacity": False,
+                    "defaultPaintTool": None,
+                    "shortcut": '',
+                    "uuid": '1367df61-b0e2-4304-9b51-ff04c102659e'
+                }
+        elif brushName.name() == 'a) Eraser Soft':
+            brushDict = {
+                    "blendingMode": "erase",
+                    "color": "",
+                    "colorBg": "",
+                    "comments": "",
+                    "flow": 1.0,
+                    "ignoreEraserMode": True,
+                    "keepUserModifications": True,
+                    "name": "a) Eraser Soft",
+                    "opacity": 1.0,
+                    "position": 0,
+                    "size": 60.0,
+                    "eraserMode": True,
+                    "preserveAlpha": False,
+                    "ignoreToolOpacity": False,
+                    "defaultPaintTool": None,
+                    "shortcut": '',
+                    "uuid": '1367df61-b0e2-4304-9b51-ff04c102659e'
+                }
+        else:
+            # in this case, it's a little bit more difficult because we don't
+            # really know brush properties (it could be possible to get brush
+            # properties, but it needs some extra works:
+            #  - get in memory current active brush
+            #  - load brush
+            #  - get brush properties
+            #  - restore previous brush...
+            # possible, but I think we're here in a really specific situation
+            # (users for which default erasers brushes have been removed... X_X)
+            #
+            # just build "something"
+            brushDict = {
+                    "blendingMode": "normal",
+                    "color": "#000000",
+                    "colorBg": "",
+                    "comments": "",
+                    "flow": 1.0,
+                    "ignoreEraserMode": True,
+                    "keepUserModifications": True,
+                    "name": brushName.name(),
+                    "opacity": 1.0,
+                    "position": 0,
+                    "size": 60.0,
+                    "eraserMode": False,
+                    "preserveAlpha": False,
+                    "ignoreToolOpacity": False,
+                    "defaultPaintTool": None,
+                    "shortcut": '',
+                    "uuid": '1367df61-b0e2-4304-9b51-ff04c102659e'
+                }
+
+        return brushDict
+
+
     def __init__(self, pluginId=None):
         """Initialise settings"""
         if pluginId is None or pluginId == '':
@@ -286,19 +401,6 @@ class BBSSettings(Settings):
 
         Do additional checks
         """
-        def getFirstValidBrush():
-            # if we're looking for an eraser, try to get the most basic one
-            #   "a) Eraser Circle"
-            #   "a) Eraser Small"
-            #   "a) Eraser Soft"
-            defaultEraserList = ["a) Eraser Circle", "a) Eraser Small", "a) Eraser Soft"]
-            for eraserName in defaultEraserList:
-                preset = EKritaBrushPreset.getPreset(eraserName)
-                if preset and preset.name() == eraserName:
-                    return preset
-
-            # just return the first available brush
-            return EKritaBrushPreset.getPreset()
 
         # need to check brushes
         # - At least we need one brush
@@ -310,102 +412,7 @@ class BBSSettings(Settings):
         brushes = self.option(BBSSettingsKey.CONFIG_BRUSHES_LIST_BRUSHES)
         if len(brushes) == 0:
             # note: we normaly here have a dictionary, not a BBSBrush
-            brushName = getFirstValidBrush()
-
-            # build default configurations
-            if brushName.name() == 'a) Eraser Circle':
-                brushDict = {
-                        "blendingMode": "erase",
-                        "color": "",
-                        "colorBg": "",
-                        "comments": "",
-                        "flow": 1.0,
-                        "ignoreEraserMode": True,
-                        "keepUserModifications": True,
-                        "name": "a) Eraser Circle",
-                        "opacity": 1.0,
-                        "position": 0,
-                        "size": 50.0,
-                        "eraserMode": True,
-                        "preserveAlpha": False,
-                        "ignoreToolOpacity": False,
-                        "defaultPaintTool": None,
-                        "shortcut": '',
-                        "uuid": '1367df61-b0e2-4304-9b51-ff04c102659e'
-                    }
-            elif brushName.name() == 'a) Eraser Small':
-                brushDict = {
-                        "blendingMode": "erase",
-                        "color": "",
-                        "colorBg": "",
-                        "comments": "",
-                        "flow": 1.0,
-                        "ignoreEraserMode": True,
-                        "keepUserModifications": True,
-                        "name": "a) Eraser Small",
-                        "opacity": 1.0,
-                        "position": 0,
-                        "size": 25.0,
-                        "eraserMode": True,
-                        "preserveAlpha": False,
-                        "ignoreToolOpacity": False,
-                        "defaultPaintTool": None,
-                        "shortcut": '',
-                        "uuid": '1367df61-b0e2-4304-9b51-ff04c102659e'
-                    }
-            elif brushName.name() == 'a) Eraser Soft':
-                brushDict = {
-                        "blendingMode": "erase",
-                        "color": "",
-                        "colorBg": "",
-                        "comments": "",
-                        "flow": 1.0,
-                        "ignoreEraserMode": True,
-                        "keepUserModifications": True,
-                        "name": "a) Eraser Soft",
-                        "opacity": 1.0,
-                        "position": 0,
-                        "size": 60.0,
-                        "eraserMode": True,
-                        "preserveAlpha": False,
-                        "ignoreToolOpacity": False,
-                        "defaultPaintTool": None,
-                        "shortcut": '',
-                        "uuid": '1367df61-b0e2-4304-9b51-ff04c102659e'
-                    }
-            else:
-                # in this case, it's a little bit more difficult because we don't
-                # really know brush properties (it could be possible to get brush
-                # properties, but it needs some extra works:
-                #  - get in memory current active brush
-                #  - load brush
-                #  - get brush properties
-                #  - restore previous brush...
-                # possible, but I think we're here in a really specific situation
-                # (users for which default erasers brushes have been removed... X_X)
-                #
-                # just build "something"
-                brushDict = {
-                        "blendingMode": "normal",
-                        "color": "#000000",
-                        "colorBg": "",
-                        "comments": "",
-                        "flow": 1.0,
-                        "ignoreEraserMode": True,
-                        "keepUserModifications": True,
-                        "name": brushName.name(),
-                        "opacity": 1.0,
-                        "position": 0,
-                        "size": 60.0,
-                        "eraserMode": False,
-                        "preserveAlpha": False,
-                        "ignoreToolOpacity": False,
-                        "defaultPaintTool": None,
-                        "shortcut": '',
-                        "uuid": '1367df61-b0e2-4304-9b51-ff04c102659e'
-                    }
-
-            brushes.append(brushDict)
+            brushes.append(BBSSettings.getADefaultBrushDefinition())
             self.setOption(BBSSettingsKey.CONFIG_BRUSHES_LIST_BRUSHES, brushes)
 
     def configurationSavedEvent(self, fileSaved):
