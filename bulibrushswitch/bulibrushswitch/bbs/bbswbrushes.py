@@ -156,6 +156,9 @@ class BBSBaseNode(QObject):
                     </style>
                 """
 
+    IMG_SIZE = 256
+    IMG_QSIZE = QSize(256, 256)
+
     @staticmethod
     def fmtKbd(value):
         """Format given shortcut value to render KBD style"""
@@ -948,9 +951,6 @@ class BBSGroup(BBSBaseNode):
     KEY_RESET_EXIT_GROUP = 'resetWhenExitGroupLoop'
     KEY_EXPANDED = 'expanded'
 
-    IMG_SIZE = 256
-    IMG_QSIZE = QSize(256, 256)
-
     def __init__(self, group=None):
         super(BBSGroup, self).__init__(None)
 
@@ -1070,9 +1070,9 @@ class BBSGroup(BBSBaseNode):
             isValid = False
 
         if self.id() == BBSGroupsProxyModel.UUID_FLATVIEW:
-            self.__imageOpen = buildIcon('pktk:list_view_icon').pixmap(BBSGroup.IMG_QSIZE).toImage()
+            self.__imageOpen = buildIcon('pktk:list_view_icon').pixmap(BBSBaseNode.IMG_QSIZE).toImage()
         elif self.id() == BBSGroupsProxyModel.UUID_USERVIEW:
-            self.__imageOpen = buildIcon('pktk:author').pixmap(BBSGroup.IMG_QSIZE).toImage()
+            self.__imageOpen = buildIcon('pktk:author').pixmap(BBSBaseNode.IMG_QSIZE).toImage()
 
         self.endUpdate()
         return isValid
@@ -1114,21 +1114,21 @@ class BBSGroup(BBSBaseNode):
             self.__color = color
 
             # need to build images according to colors
-            pixmapOpen = buildIcon('pktk:folder__filled_open').pixmap(BBSGroup.IMG_QSIZE)
+            pixmapOpen = buildIcon('pktk:folder__filled_open').pixmap(BBSBaseNode.IMG_QSIZE)
             painterOpen = QPainter()
             painterOpen.begin(pixmapOpen)
             if self.__color != WStandardColorSelector.COLOR_NONE:
                 painterOpen.setCompositionMode(QPainter.CompositionMode_SourceAtop)
-                painterOpen.fillRect(0, 0, BBSGroup.IMG_SIZE, BBSGroup.IMG_SIZE, WStandardColorSelector.getColor(self.__color))
+                painterOpen.fillRect(0, 0, BBSBaseNode.IMG_SIZE, BBSBaseNode.IMG_SIZE, WStandardColorSelector.getColor(self.__color))
             painterOpen.end()
             self.__imageOpen = pixmapOpen.toImage()
 
-            pixmapClose = buildIcon('pktk:folder__filled_close').pixmap(BBSGroup.IMG_QSIZE)
+            pixmapClose = buildIcon('pktk:folder__filled_close').pixmap(BBSBaseNode.IMG_QSIZE)
             painterClose = QPainter()
             painterClose.begin(pixmapClose)
             if self.__color != WStandardColorSelector.COLOR_NONE:
                 painterClose.setCompositionMode(QPainter.CompositionMode_SourceAtop)
-                painterClose.fillRect(0, 0, BBSGroup.IMG_SIZE, BBSGroup.IMG_SIZE, WStandardColorSelector.getColor(self.__color))
+                painterClose.fillRect(0, 0, BBSBaseNode.IMG_SIZE, BBSBaseNode.IMG_SIZE, WStandardColorSelector.getColor(self.__color))
             painterClose.end()
             self.__imageClose = pixmapClose.toImage()
 
@@ -1843,7 +1843,7 @@ class BBSModel(QAbstractItemModel):
                     # QIcon
                     return QIcon(QPixmap.fromImage(image))
                 else:
-                    return BBSModel.buildIcon('pktk:warning')
+                    return buildIcon('pktk:warning')
             elif role == Qt.ToolTipRole:
                 if not data.found():
                     return i18n(f"Brush <i><b>{data.name()}</b></i> is not installed and/or activated on this Krita installation")
@@ -2364,12 +2364,12 @@ class BBSGroupsProxyModel(QAbstractProxyModel):
             if data.id() == BBSGroupsProxyModel.UUID_USERVIEW:
                 srcIndex = self.sourceModel().index(row, column, QModelIndex())
                 srcNode = srcIndex.data(BBSModel.ROLE_NODE)
-                if isinstance(srcNode.data(), BBSGroup):
+                if srcNode and isinstance(srcNode.data(), BBSGroup):
                     return self.createIndex(row, column, srcNode)
                 return QModelIndex()
             else:
                 childNode = node.child(row)
-                if isinstance(childNode.data(), BBSGroup):
+                if childNode and isinstance(childNode.data(), BBSGroup):
                     return self.createIndex(row, column, node.child(row))
 
         return QModelIndex()
@@ -3242,7 +3242,7 @@ class BBSModelDelegateLv(QStyledItemDelegate):
                 if (option.state & QStyle.State_Selected) == QStyle.State_Selected:
                     option.state &= ~QStyle.State_Selected
                 painter.setBrush(warningAreaBrush())
-                painter.drawRoundedRect(option.rect, self.__bRadius, self.__bRadius)
+                painter.drawRoundedRect(QRect(option.rect.topLeft() + self.__tl, self.__iconQSize), self.__bRadius, self.__bRadius)
                 # unable to get brush? return warning icon instead
                 pixmap = buildIcon('pktk:warning').pixmap(self.__iconQSize)
             else:
