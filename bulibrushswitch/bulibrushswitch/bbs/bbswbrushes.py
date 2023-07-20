@@ -956,7 +956,7 @@ class BBSGroup(BBSBaseNode):
 
         self.__name = ''
         self.__comments = ''
-        self.__color = WStandardColorSelector.COLOR_NONE
+        self.__color = None
         self.__expanded = True
         self.__shortcutNext = QKeySequence()
         self.__shortcutPrevious = QKeySequence()
@@ -972,6 +972,9 @@ class BBSGroup(BBSBaseNode):
 
         # to manage next/prev
         self.__currentBrushIndexInGroup = -1
+
+        # force a default color to generate group icon
+        self.setColor(WStandardColorSelector.COLOR_NONE)
 
         if isinstance(group, BBSGroup):
             # clone group
@@ -1115,21 +1118,21 @@ class BBSGroup(BBSBaseNode):
 
             # need to build images according to colors
             pixmapOpen = buildIcon('pktk:folder__filled_open').pixmap(BBSBaseNode.IMG_QSIZE)
-            painterOpen = QPainter()
-            painterOpen.begin(pixmapOpen)
             if self.__color != WStandardColorSelector.COLOR_NONE:
+                painterOpen = QPainter()
+                painterOpen.begin(pixmapOpen)
                 painterOpen.setCompositionMode(QPainter.CompositionMode_SourceAtop)
                 painterOpen.fillRect(0, 0, BBSBaseNode.IMG_SIZE, BBSBaseNode.IMG_SIZE, WStandardColorSelector.getColor(self.__color))
-            painterOpen.end()
+                painterOpen.end()
             self.__imageOpen = pixmapOpen.toImage()
 
             pixmapClose = buildIcon('pktk:folder__filled_close').pixmap(BBSBaseNode.IMG_QSIZE)
-            painterClose = QPainter()
-            painterClose.begin(pixmapClose)
             if self.__color != WStandardColorSelector.COLOR_NONE:
+                painterClose = QPainter()
+                painterClose.begin(pixmapClose)
                 painterClose.setCompositionMode(QPainter.CompositionMode_SourceAtop)
                 painterClose.fillRect(0, 0, BBSBaseNode.IMG_SIZE, BBSBaseNode.IMG_SIZE, WStandardColorSelector.getColor(self.__color))
-            painterClose.end()
+                painterClose.end()
             self.__imageClose = pixmapClose.toImage()
 
             self.applyUpdate('color')
@@ -1386,11 +1389,11 @@ class BBSGroup(BBSBaseNode):
             self.resetBrush()
 
     def resetWhenExitGroupLoop(self):
-        """Return if group reset current bursh to first one after exiting loop selection"""
+        """Return if group reset current brush to first one after exiting loop selection"""
         return self.__resetWhenExitGroupLoop
 
     def setResetWhenExitGroupLoop(self, value):
-        """Return if group reset current bursh to first one after exiting loop selection"""
+        """Return if group reset current brush to first one after exiting loop selection"""
         if isinstance(value, bool) and value != self.__resetWhenExitGroupLoop:
             self.__resetWhenExitGroupLoop = value
             self.applyUpdate('resetWhenExitGroupLoop')
