@@ -106,6 +106,7 @@
     <file alias="folder_open_pinned">dark/32dp/folder_open_pinned.svg</file>
     <file alias="folder_open_recent">dark/32dp/folder_open_recent.svg</file>
     <file alias="folder_open_remove">dark/32dp/folder_open_remove.svg</file>
+    <file alias="folder_tune">dark/32dp/folder_tune.svg</file>
     <file alias="format_text_align-center">dark/32dp/format_text_align-center.svg</file>
     <file alias="format_text_align-justify">dark/32dp/format_text_align-justify.svg</file>
     <file alias="format_text_align-left">dark/32dp/format_text_align-left.svg</file>
@@ -323,6 +324,7 @@
     <file alias="folder_open_pinned">dark/32dp-disabled/folder_open_pinned.svg</file>
     <file alias="folder_open_recent">dark/32dp-disabled/folder_open_recent.svg</file>
     <file alias="folder_open_remove">dark/32dp-disabled/folder_open_remove.svg</file>
+    <file alias="folder_tune">dark/32dp-disabled/folder_tune.svg</file>
     <file alias="format_text_align-center">dark/32dp-disabled/format_text_align-center.svg</file>
     <file alias="format_text_align-justify">dark/32dp-disabled/format_text_align-justify.svg</file>
     <file alias="format_text_align-left">dark/32dp-disabled/format_text_align-left.svg</file>
