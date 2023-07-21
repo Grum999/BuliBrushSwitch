@@ -25,6 +25,8 @@
 #       A brush definition (managed by BNBrushes collection)
 #
 # -----------------------------------------------------------------------------
+
+
 import ctypes
 import json
 import re
@@ -1457,7 +1459,7 @@ class BBSModelNode(QStandardItem):
         return self.__childNodes[row]
 
     def appendChild(self, childNode):
-        """Add a new child """
+        """Add a new child at the end of child list"""
         if isinstance(childNode, list):
             self.beginUpdate()
             for childNodeToAdd in childNode:
@@ -1466,8 +1468,11 @@ class BBSModelNode(QStandardItem):
         elif not isinstance(childNode, BBSModelNode):
             raise EInvalidType("Given `childNode` must be a <BBSModelNode>")
         elif isinstance(childNode.data(), self.__dataNode.acceptedChild()):
+            self.__childNodes.append(childNode)
             self.beginUpdate()
-            self.insertChild(999999, childNode)
+            childNode.beginUpdate()
+            childNode.setParentNode(self)
+            childNode.endUpdate()
             self.endUpdate()
 
     def removeChild(self, childNode):
@@ -1917,7 +1922,7 @@ class BBSModel(QAbstractItemModel):
             return index.internalPointer()
 
     def removeNode(self, node):
-        """Delete a node from model, update model properly to update view according to MVC principle"""
+        """Delete a BBSModelNode from model, update model properly to update view according to MVC principle"""
         if isinstance(node, BBSModelNode):
             row = node.row()
             index = self.createIndex(row, 0, node)
@@ -1926,8 +1931,8 @@ class BBSModel(QAbstractItemModel):
             self.endRemoveRows()
 
     def insertNode(self, node, parentNode):
-        """Insert a node in model, update model properly to update view according to MVC principle"""
-        if isinstance(node, BBSModelNode):
+        """Insert a BBSModelNode in model, update model properly to update view according to MVC principle"""
+        if isinstance(node, BBSModelNode) and isinstance(parentNode, BBSModelNode):
             row = parentNode.childCount()
             parentIndex = self.__getIdIndex(parentNode.data().id())
 
