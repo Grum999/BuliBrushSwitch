@@ -616,7 +616,7 @@ class BBSMainWindow(EDialog):
         self.tbEdit.setEnabled(nbSelectedItems == 1)
         self.tbDelete.setEnabled(nbSelectedItems >= 1)
 
-        if len(self.__bbsModel.idIndexes({'brushes': True})) > 0:
+        if len(self.__bbsModel.idIndexes({'groups': False})) > 0:
             # need at elast one brush defined!
             self.pbOk.setEnabled(True)
             self.pbOk.setToolTip("")
