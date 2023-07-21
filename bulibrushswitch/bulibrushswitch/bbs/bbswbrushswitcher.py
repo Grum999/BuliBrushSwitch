@@ -817,6 +817,7 @@ class BBSWBrushSwitcherUi(QFrame):
         self.__tvBrushes.setModel(self.__bbsModel)
         self.__tvBrushes.setIconSizeIndex(BBSSettings.get(BBSSettingsKey.CONFIG_UI_POPUP_BRUSHES_ZOOMLEVEL))
         self.__tvBrushes.setIndentation(0)
+        self.__tvBrushes.setAlternatingRowColors(True)
         self.__tvBrushes.setCompactIconSizeIndex(2)
         self.__tvBrushes.iconSizeIndexChanged.connect(self.__brushesSizeIndexChanged)
         self.__tvBrushes.collapsed.connect(self.__groupExpandCollapse)
