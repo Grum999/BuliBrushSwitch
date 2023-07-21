@@ -25,6 +25,8 @@
 #       A brush definition (managed by BNBrushes collection)
 #
 # -----------------------------------------------------------------------------
+
+
 import ctypes
 import json
 import re
@@ -956,7 +958,7 @@ class BBSGroup(BBSBaseNode):
 
         self.__name = ''
         self.__comments = ''
-        self.__color = WStandardColorSelector.COLOR_NONE
+        self.__color = None
         self.__expanded = True
         self.__shortcutNext = QKeySequence()
         self.__shortcutPrevious = QKeySequence()
@@ -972,6 +974,9 @@ class BBSGroup(BBSBaseNode):
 
         # to manage next/prev
         self.__currentBrushIndexInGroup = -1
+
+        # force a default color to generate group icon
+        self.setColor(WStandardColorSelector.COLOR_NONE)
 
         if isinstance(group, BBSGroup):
             # clone group
@@ -1115,21 +1120,21 @@ class BBSGroup(BBSBaseNode):
 
             # need to build images according to colors
             pixmapOpen = buildIcon('pktk:folder__filled_open').pixmap(BBSBaseNode.IMG_QSIZE)
-            painterOpen = QPainter()
-            painterOpen.begin(pixmapOpen)
             if self.__color != WStandardColorSelector.COLOR_NONE:
+                painterOpen = QPainter()
+                painterOpen.begin(pixmapOpen)
                 painterOpen.setCompositionMode(QPainter.CompositionMode_SourceAtop)
                 painterOpen.fillRect(0, 0, BBSBaseNode.IMG_SIZE, BBSBaseNode.IMG_SIZE, WStandardColorSelector.getColor(self.__color))
-            painterOpen.end()
+                painterOpen.end()
             self.__imageOpen = pixmapOpen.toImage()
 
             pixmapClose = buildIcon('pktk:folder__filled_close').pixmap(BBSBaseNode.IMG_QSIZE)
-            painterClose = QPainter()
-            painterClose.begin(pixmapClose)
             if self.__color != WStandardColorSelector.COLOR_NONE:
+                painterClose = QPainter()
+                painterClose.begin(pixmapClose)
                 painterClose.setCompositionMode(QPainter.CompositionMode_SourceAtop)
                 painterClose.fillRect(0, 0, BBSBaseNode.IMG_SIZE, BBSBaseNode.IMG_SIZE, WStandardColorSelector.getColor(self.__color))
-            painterClose.end()
+                painterClose.end()
             self.__imageClose = pixmapClose.toImage()
 
             self.applyUpdate('color')
@@ -1386,11 +1391,11 @@ class BBSGroup(BBSBaseNode):
             self.resetBrush()
 
     def resetWhenExitGroupLoop(self):
-        """Return if group reset current bursh to first one after exiting loop selection"""
+        """Return if group reset current brush to first one after exiting loop selection"""
         return self.__resetWhenExitGroupLoop
 
     def setResetWhenExitGroupLoop(self, value):
-        """Return if group reset current bursh to first one after exiting loop selection"""
+        """Return if group reset current brush to first one after exiting loop selection"""
         if isinstance(value, bool) and value != self.__resetWhenExitGroupLoop:
             self.__resetWhenExitGroupLoop = value
             self.applyUpdate('resetWhenExitGroupLoop')
@@ -1454,7 +1459,7 @@ class BBSModelNode(QStandardItem):
         return self.__childNodes[row]
 
     def appendChild(self, childNode):
-        """Add a new child """
+        """Add a new child at the end of child list"""
         if isinstance(childNode, list):
             self.beginUpdate()
             for childNodeToAdd in childNode:
@@ -1463,8 +1468,11 @@ class BBSModelNode(QStandardItem):
         elif not isinstance(childNode, BBSModelNode):
             raise EInvalidType("Given `childNode` must be a <BBSModelNode>")
         elif isinstance(childNode.data(), self.__dataNode.acceptedChild()):
-            self.beginUpdate()
             self.__childNodes.append(childNode)
+            self.beginUpdate()
+            childNode.beginUpdate()
+            childNode.setParentNode(self)
+            childNode.endUpdate()
             self.endUpdate()
 
     def removeChild(self, childNode):
@@ -1496,6 +1504,7 @@ class BBSModelNode(QStandardItem):
             return returned
 
     def insertChild(self, position, childNode):
+        self.beginUpdate()
         row = 0
         for i, child in enumerate(self.__childNodes):
             if child.data().position() >= position:
@@ -1506,6 +1515,7 @@ class BBSModelNode(QStandardItem):
         childNode.data().setPosition(position)
         childNode.setParentNode(self)
         childNode.endUpdate()
+        self.endUpdate()
 
     def remove(self):
         """Remove item from parent"""
@@ -1912,12 +1922,23 @@ class BBSModel(QAbstractItemModel):
             return index.internalPointer()
 
     def removeNode(self, node):
+        """Delete a BBSModelNode from model, update model properly to update view according to MVC principle"""
         if isinstance(node, BBSModelNode):
             row = node.row()
             index = self.createIndex(row, 0, node)
             self.beginRemoveRows(self.parent(index), row, row)
             node.parentNode().removeChild(row)
             self.endRemoveRows()
+
+    def insertNode(self, node, parentNode):
+        """Insert a BBSModelNode in model, update model properly to update view according to MVC principle"""
+        if isinstance(node, BBSModelNode) and isinstance(parentNode, BBSModelNode):
+            row = parentNode.childCount()
+            parentIndex = self.__getIdIndex(parentNode.data().id())
+
+            self.beginInsertRows(parentIndex, row, row)
+            parentNode.appendChild(node)
+            self.endInsertRows()
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         """Return label for given data section"""
@@ -2089,7 +2110,7 @@ class BBSModel(QAbstractItemModel):
             elif isinstance(itemToAdd, BBSBaseNode):
                 if isinstance(itemToAdd, parent.data().acceptedChild()):
                     self.__beginUpdate()
-                    parent.appendChild(BBSModelNode(itemToAdd, parent))
+                    self.insertNode(BBSModelNode(itemToAdd, parent), parent)
                     self.__endUpdate()
         elif isinstance(parent, str):
             # a string --> assume it's an Id
