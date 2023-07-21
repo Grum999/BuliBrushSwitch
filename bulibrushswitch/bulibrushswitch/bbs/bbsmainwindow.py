@@ -55,6 +55,7 @@ from .bbssettings import (
         BBSSettingsValues
     )
 
+from bulibrushswitch.pktk.modules.imgutils import buildIcon
 from bulibrushswitch.pktk.modules.edialog import EDialog
 
 from bulibrushswitch.pktk.widgets.wstandardcolorselector import WStandardColorSelector
@@ -69,6 +70,9 @@ from bulibrushswitch.pktk.modules.ekrita_tools import EKritaTools
 # -----------------------------------------------------------------------------
 class BBSMainWindow(EDialog):
     """Main BuliBrushSwitch window"""
+
+    PAGE_GENERAL = 0
+    PAGE_GROUPS_AND_BRUSHES = 1
 
     @staticmethod
     def open(bbsName="BuliBrushSwitch", bbsVersion="testing", parent=None):
@@ -152,6 +156,17 @@ class BBSMainWindow(EDialog):
 
     def __initialiseUi(self):
         """Initialise window interface"""
+
+        self.__itemPageGeneral = QListWidgetItem(buildIcon("pktk:tune"), i18n("General"))
+        self.__itemPageGeneral.setData(Qt.UserRole, BBSMainWindow.PAGE_GENERAL)
+        self.__itemPageGroupsAndBrushes = QListWidgetItem(buildIcon("pktk:folder_brush"), i18n("Brushes"))
+        self.__itemPageGroupsAndBrushes.setData(Qt.UserRole, BBSMainWindow.PAGE_GROUPS_AND_BRUSHES)
+
+        self.lwPages.itemSelectionChanged.connect(self.__pageChanged)
+        self.lwPages.addItem(self.__itemPageGeneral)
+        self.lwPages.addItem(self.__itemPageGroupsAndBrushes)
+        self.__setPage(BBSMainWindow.PAGE_GENERAL)
+
         self.__actionSelectBrushScratchpadColorFg = WMenuColorPicker()
         self.__actionSelectBrushScratchpadColorFg.colorPicker().colorUpdated.connect(self.__actionBrushScratchpadSetColorFg)
         self.__actionSelectBrushScratchpadColorFg.colorPicker().setOptionCompactUi(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_COMPACT))
@@ -287,6 +302,17 @@ class BBSMainWindow(EDialog):
             self.tvBrushes.header().resizeSection(BBSModel.COLNUM_BRUSH, colSize)
         else:
             self.tvBrushes.resizeColumnToContents(BBSModel.COLNUM_BRUSH)
+
+    def __pageChanged(self):
+        """Setting page changed, display it"""
+        self.swPages.setCurrentIndex(self.lwPages.currentItem().data(Qt.UserRole))
+
+    def __setPage(self, value):
+        """Set page
+
+        Select icon, switch to panel
+        """
+        self.lwPages.setCurrentRow(value)
 
     def __saveShortcutConfig(self):
         """Save current action shortcuts
