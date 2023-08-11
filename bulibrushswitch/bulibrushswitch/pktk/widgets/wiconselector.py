@@ -21,7 +21,6 @@ from PyQt5.QtWidgets import (
         QWidget
     )
 
-from ..modules.edialog import EDialog
 from ..modules.utils import (loadXmlUi, replaceLineEditClearButton)
 from ..modules.iconsizes import IconSizes
 from ..modules.imgutils import (buildIcon, getIconList, QUriIcon)

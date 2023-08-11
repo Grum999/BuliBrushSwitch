@@ -24,12 +24,12 @@ from PyQt5.QtWidgets import (
         QWidget
     )
 
-from ..modules.edialog import EDialog
 from ..modules.utils import (loadXmlUi, replaceLineEditClearButton, JsonQObjectEncoder, JsonQObjectDecoder)
 from ..modules.strutils import (stripHtml, wildcardToRegEx)
 from ..modules.iconsizes import IconSizes
 from ..modules.imgutils import (buildIcon, QUriIcon, QIconPickable)
 from ..pktk import *
+from .wedialog import WEDialog
 from .wiconselector import (WIconSelector, WIconSelectorDialog)
 from .wlineedit import WLineEdit
 from .wtextedit import (WTextEdit, WTextEditDialog, WTextEditBtBarOption)
@@ -2628,7 +2628,7 @@ class WSetupManager(QWidget):
         return self.__hasModificationToSave
 
 
-class SetupManagerPropertyEditor(EDialog):
+class SetupManagerPropertyEditor(WEDialog):
     """A simple dialog box to edit group/setup properties"""
 
     PROPERTY_NAME = 'name'
