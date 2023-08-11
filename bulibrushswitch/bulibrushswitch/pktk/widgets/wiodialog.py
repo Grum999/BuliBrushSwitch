@@ -47,8 +47,13 @@
 # - WDialogProgress:
 #       A generic progress dialog box
 #
+# - WDialogFile:
+#       A generic open/save file dialog, extending Qt QFileDialog and providing
+#       ability to use user defined preview & settings widgets
+#
 # -----------------------------------------------------------------------------
 import re
+import os.path
 
 import PyQt5.uic
 
@@ -61,7 +66,8 @@ from PyQt5.QtWidgets import (
         QFrame,
         QHBoxLayout,
         QVBoxLayout,
-        QWidget
+        QWidget,
+        QFileDialog
     )
 
 from .wcolorselector import (
@@ -71,6 +77,7 @@ from .wcolorselector import (
 
 from ..modules.utils import replaceLineEditClearButton
 from ..modules.imgutils import buildIcon
+from .wimageview import (WImageView, WImageFilePreview)
 from ..pktk import *
 
 
@@ -1338,3 +1345,546 @@ class WDialogProgress(WDialogMessage):
 
         dlgBox.show()
         return dlgBox
+
+
+class WDialogFile(QFileDialog):
+    """A file dialog with options
+
+    Extend Qt QFileDialog to provide a customisable dialog box
+
+    Given `options` can be:
+
+        OPTION_MESSAGE: <str>                       Message (html) to display, or None (default) to disable message
+        OPTION_PREVIEW_WIDTH: <int>                 Width for preview area, or None for default value
+        OPTION_PREVIEW_WIDGET: <str>, <qwidget>     Widget used to display preview
+                                                    Provided value can be:
+                                                    - <str> value 'image': default internal image preview with be used
+                                                    - <qwidget>: must be a WDialogFile.WSubWidget()
+        OPTION_SETTINGS_WIDGET: <qwidget>           A widget used to provide additional UI settings to file dialog
+                                                    - <qwidget>: must be a WDialogFile.WSubWidget()
+
+        Usual file dialog
+        +------------------------------------------------------------------------------+
+        | Title                                                                        |
+        +------------------------------------------------------------------------------+
+        |                                                                              |
+        | Files area                                                                   |
+        |                                                                              |
+        |                                                                              |
+        |                                                                              |
+        |                                                                              |
+        |                                                                              |
+        |                                                                              |
+        |                                                                              |
+        |                                                                              |
+        |                                                                              |
+        |                                                                              |
+        +------------------------------------------------------------------------------+
+        | [File name......................]                                [open|save] |
+        | [Filter.........................]                                   [cancel] |
+        +------------------------------------------------------------------------------+
+
+        With possible options file dialog
+        +------------------------------------------------------------------------------+
+        | Title                                                                        |
+        +-----------------------------------------------------------+------------------+
+        | Message area                                              |                  |
+        |                                                           |                  |
+        |                                                           |                  |
+        +-----------------------------------------------------------+                  |
+        |                                                           |                  |
+        | Files area                                                | Preview Area     |
+        |                                                           |                  |
+        |                                                           |                  |
+        |                                                           |                  |
+        |                                                           |                  |
+        |                                                           |                  |
+        |                                                           |                  |
+        |                                                           |                  |
+        +-----------------------------------------------------------+                  |
+        |                                                           |                  |
+        | Additional settings area                                  |                  |
+        |                                                           |                  |
+        +-----------------------------------------------------------+                  |
+        | [File name......................]             [open|save] |                  |
+        | [Filter.........................]             [cancel]    |                  |
+        +-----------------------------------------------------------+------------------+
+
+    """
+
+    class WSubWidget(QWidget):
+        """A default sub-widget that can be extended to create:
+           - Preview widget
+           - Settings widget
+        """
+        def __init__(self, parent=None):
+            super(WDialogFile.WSubWidget, self).__init__(parent)
+
+        def setFile(self, fileName):
+            """Called when dialog box select a file
+
+            Given `fileNames` is an list of <str>
+            Method must return True (if file accepted), or False
+
+            Method must manage common case:
+            - no file
+            - one file
+            - unexisting file, unreadable file, ...
+            """
+            raise EInvalidStatus("Abstract widget method `setFile()` must be implemented")
+
+        def information(self):
+            """Called by dialog box to return informations from widget
+
+            Example:
+                - for a preview, return number of records, image size, ...
+                - for a setting, return settings values from widget
+
+            returned result can be of any type (None, str, list, dict, ...)
+            """
+            return None
+
+    class WSubWidgetImgPreview(WSubWidget):
+        """A default sub-widget that can be extended to create:
+           - Preview widget
+           - Settings widget
+        """
+        def __init__(self, parent=None):
+            super(WDialogFile.WSubWidgetImgPreview, self).__init__(parent)
+
+            self.__imageSize = QSize()
+
+            self.__imageFilePreview = WImageFilePreview(self)
+            self.__imageFilePreview.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
+            self.__imageFilePreview.setBackgroundType(WImageView.BG_TRANSPARENT)
+
+            self.__lblSize = QLabel(self)
+            font = self.__lblSize.font()
+            font.setPointSize(8)
+            self.__lblSize.setFont(font)
+            self.__lblSize.setAlignment(Qt.AlignLeft)
+            self.__lblSize.setStyleSheet('font-style: italic')
+
+            layout = QVBoxLayout()
+            layout.addWidget(self.__imageFilePreview)
+            layout.addWidget(self.__lblSize)
+            self.setLayout(layout)
+
+        def setFile(self, fileName):
+            """When fileName is provided, update image preview content"""
+            self.__imageSize = QSize()
+
+            if fileName == '':
+                self.__imageFilePreview.hidePreview(i18n("No file selected"))
+                self.__lblSize.setText('')
+            else:
+                if os.path.isfile(fileName):
+                    imgNfo = QImageReader(fileName)
+
+                    if imgNfo.canRead():
+                        pixmap = QPixmap(fileName)
+                        self.__imageSize = pixmap.size()
+
+                        self.__imageFilePreview.showPreview(pixmap)
+                        self.__lblSize.setText(f'{pixmap.width()}x{pixmap.height()}')
+
+                        if imgNfo.imageCount() > 1:
+                            self.__imageFilePreview.showAnimatedFrames(fileName, imgNfo.imageCount())
+                        else:
+                            self.__imageFilePreview.hideAnimatedFrames()
+                    else:
+                        self.__imageFilePreview.hidePreview(i18n("Can't read file"))
+                        self.__lblSize.setText('')
+                else:
+                    self.__imageFilePreview.setText(i18n("No preview available"))
+                    self.__lblSize.setText('')
+
+            # always return True; if dialog box can't read image, maybe krita will be able
+            return True
+
+        def information(self):
+            """Return dimension of image"""
+            return self.__imageSize
+
+    PREVIEW_WIDTH = 250
+
+    OPTION_MESSAGE =                0b00000001
+    OPTION_PREVIEW_WIDTH =          0b00000010
+    OPTION_PREVIEW_WIDGET =         0b00000011
+    OPTION_SETTINGS_WIDGET =        0b00000100
+
+    OPTION_ACCEPT_MODE =            0b01000000
+    OPTION_FILE_SELECTION_MODE =    0b01000001
+
+    @staticmethod
+    def openFile(caption=None, directory=None, filter=None, options=None):
+        """A predefined function to open ONE file
+
+        If action is cancelled, return None
+        Otherwise return a <dict> with following keys:
+            - 'file':           selected file name (<str>)
+            - 'previewNfo':     information from preview if there's preview, otherwise None
+            - 'settingsNfo':    information from settings if there's settings, otherwise None
+        """
+        if options is None:
+            options = {}
+
+        options[WDialogFile.OPTION_ACCEPT_MODE] = WDialogFile.AcceptOpen
+        if WDialogFile.OPTION_FILE_SELECTION_MODE in options and options[WDialogFile.OPTION_FILE_SELECTION_MODE] not in (WDialogFile.AnyFile, WDialogFile.ExistingFile):
+            options[WDialogFile.OPTION_FILE_SELECTION_MODE] = WDialogFile.ExistingFile
+
+        dlgBox = WDialogFile(caption, directory, filter, options)
+
+        if dlgBox.exec() == WDialogFile.Accepted:
+            return {
+                    'file': dlgBox.file(),
+                    'previewNfo': dlgBox.widgetPreviewInformation(),
+                    'settingsNfo': dlgBox.widgetSettingsInformation()
+                }
+        else:
+            return None
+
+    @staticmethod
+    def openFiles(caption=None, directory=None, filter=None, options=None):
+        """A predefined function to open MULTIPLE files
+
+        If action is cancelled, return None
+        Otherwise return a <dict> with following keys:
+            - 'files':          selected file names (<list> of <str>)
+            - 'previewNfo':     information from preview if there's preview, otherwise None
+            - 'settingsNfo':    information from settings if there's settings, otherwise None
+        """
+        if options is None:
+            options = {}
+
+        options[WDialogFile.OPTION_ACCEPT_MODE] = WDialogFile.AcceptOpen
+        options[WDialogFile.OPTION_FILE_SELECTION_MODE] = WDialogFile.ExistingFiles
+
+        dlgBox = WDialogFile(caption, directory, filter, options)
+        if dlgBox.exec() == WDialogFile.Accepted:
+            return {
+                    'files': dlgBox.files(),
+                    'previewNfo': dlgBox.widgetPreviewInformation(),
+                    'settingsNfo': dlgBox.widgetSettingsInformation()
+                }
+        else:
+            return None
+
+    @staticmethod
+    def openDirectory(caption=None, directory=None, filter=None, options=None):
+        """A predefined function to open a DIERCTORY
+
+        If action is cancelled, return None
+        Otherwise return a <dict> with following keys:
+            - 'directory':      selected directory (<str>)
+            - 'previewNfo':     information from preview if there's preview, otherwise None
+            - 'settingsNfo':    information from settings if there's settings, otherwise None
+        """
+        if options is None:
+            options = {}
+
+        options[WDialogFile.OPTION_ACCEPT_MODE] = WDialogFile.AcceptOpen
+        options[WDialogFile.OPTION_FILE_SELECTION_MODE] = WDialogFile.Directory
+
+        dlgBox = WDialogFile(caption, directory, filter, options)
+        if dlgBox.exec() == WDialogFile.Accepted:
+            return {
+                    'directory': dlgBox.file(),
+                    'previewNfo': dlgBox.widgetPreviewInformation(),
+                    'settingsNfo': dlgBox.widgetSettingsInformation()
+                }
+        else:
+            return None
+
+    @staticmethod
+    def saveFile(caption=None, directory=None, filter=None, options=None):
+        """A predefined function to save a file
+
+        If action is cancelled, return None
+        Otherwise return a <dict> with following keys:
+            - 'file':           selected file name (<str>)
+            - 'previewNfo':     information from preview if there's preview, otherwise None
+            - 'settingsNfo':    information from settings if there's settings, otherwise None
+        """
+        options[WDialogFile.OPTION_ACCEPT_MODE] = WDialogFile.AcceptSave
+        options[WDialogFile.OPTION_FILE_SELECTION_MODE] = WDialogFile.AnyFile
+
+        dlgBox = WDialogFile(caption, directory, filter, options)
+        if dlgBox.exec() == WDialogFile.Accepted:
+            return {
+                    'file': dlgBox.file(),
+                    'previewNfo': dlgBox.widgetPreviewInformation(),
+                    'settingsNfo': dlgBox.widgetSettingsInformation()
+                }
+        else:
+            return None
+
+    def __init__(self, caption=None, directory=None, filter=None, options=None):
+        super(WDialogFile, self).__init__(None, caption, directory, filter)
+
+        self.__originalDlgBoxLayout = self.layout()
+
+        self.setOption(QFileDialog.DontUseNativeDialog, True)
+        self.setMaximumSize(0xffffff, 0xffffff)
+
+        self.__selectedFile = ''
+        self.__selectedFiles = []
+
+        # default options
+        self.__options = {WDialogFile.OPTION_MESSAGE: '',
+                          WDialogFile.OPTION_PREVIEW_WIDTH: WDialogFile.PREVIEW_WIDTH,
+                          WDialogFile.OPTION_PREVIEW_WIDGET: None,
+                          WDialogFile.OPTION_SETTINGS_WIDGET: None,
+
+                          WDialogFile.OPTION_ACCEPT_MODE: WDialogFile.AcceptOpen,
+                          WDialogFile.OPTION_FILE_SELECTION_MODE: WDialogFile.ExistingFile
+                          }
+
+        # check and apply provided options
+        if isinstance(options, dict):
+            # checking validty of given given options and  initialise self.__options
+            if WDialogFile.OPTION_PREVIEW_WIDGET in options:
+                if options[WDialogFile.OPTION_PREVIEW_WIDGET] == 'image':
+                    # if image preview is required, initialise internal image preview widget
+                    self.__options[WDialogFile.OPTION_PREVIEW_WIDGET] = WDialogFile.WSubWidgetImgPreview(self)
+                elif isinstance(options[WDialogFile.OPTION_PREVIEW_WIDGET], WDialogFile.WSubWidget):
+                    self.__options[WDialogFile.OPTION_PREVIEW_WIDGET] = options[WDialogFile.OPTION_PREVIEW_WIDGET]
+                    self.__options[WDialogFile.OPTION_PREVIEW_WIDGET].setParent(self)
+                else:
+                    raise EInvalidType("Given `options` key 'DialogFile.OPTION_PREVIEW_WIDGET' is not valid")
+
+            if WDialogFile.OPTION_SETTINGS_WIDGET in options and isinstance(options[WDialogFile.OPTION_SETTINGS_WIDGET], QWidget) and \
+               hasattr(options[WDialogFile.OPTION_SETTINGS_WIDGET], 'setFile') and callable(options[WDialogFile.OPTION_SETTINGS_WIDGET].setFile):
+                self.__options[WDialogFile.OPTION_SETTINGS_WIDGET] = options[WDialogFile.OPTION_SETTINGS_WIDGET]
+                self.__options[WDialogFile.OPTION_SETTINGS_WIDGET].setParent(self)
+
+            if WDialogFile.OPTION_PREVIEW_WIDTH in options and \
+               isinstance(options[WDialogFile.OPTION_PREVIEW_WIDTH], int) and \
+               options[WDialogFile.OPTION_PREVIEW_WIDTH] > 0:
+                self.__options[WDialogFile.OPTION_PREVIEW_WIDTH] = options[WDialogFile.OPTION_PREVIEW_WIDTH]
+
+            if WDialogFile.OPTION_MESSAGE in options and isinstance(options[WDialogFile.OPTION_MESSAGE], str):
+                self.__options[WDialogFile.OPTION_MESSAGE] = options[WDialogFile.OPTION_MESSAGE]
+
+            if WDialogFile.OPTION_FILE_SELECTION_MODE in options and options[WDialogFile.OPTION_FILE_SELECTION_MODE] in (WDialogFile.AnyFile,
+                                                                                                                         WDialogFile.ExistingFile,
+                                                                                                                         WDialogFile.Directory,
+                                                                                                                         WDialogFile.ExistingFiles):
+                self.__options[WDialogFile.OPTION_FILE_SELECTION_MODE] = options[WDialogFile.OPTION_FILE_SELECTION_MODE]
+
+            if WDialogFile.OPTION_ACCEPT_MODE in options and options[WDialogFile.OPTION_ACCEPT_MODE] in (WDialogFile.AcceptOpen, WDialogFile.AcceptSave):
+                self.__options[WDialogFile.OPTION_ACCEPT_MODE] = options[WDialogFile.OPTION_ACCEPT_MODE]
+
+        # --------------------------------------
+        # start to reorganize file dialog layout
+        # --------------------------------------
+
+        # add preview if needed
+        if self.__options[WDialogFile.OPTION_PREVIEW_WIDGET] is not None:
+            self.__newDlgBoxWidget = QWidget()
+            self.__newDlgBoxWidget.setLayout(self.__originalDlgBoxLayout)
+
+            self.__newDlgBoxLayout = QVBoxLayout()
+            self.__newDlgBoxLayout.setContentsMargins(0, 0, 0, 0)
+            self.setLayout(self.__newDlgBoxLayout)
+
+            self.__splitter = QSplitter()
+            self.__splitter.addWidget(self.__newDlgBoxWidget)
+            self.__splitter.addWidget(self.__options[WDialogFile.OPTION_PREVIEW_WIDGET])
+            self.__newDlgBoxLayout.addWidget(self.__splitter)
+
+            self.__options[WDialogFile.OPTION_PREVIEW_WIDGET].setMinimumSize(self.__options[WDialogFile.OPTION_PREVIEW_WIDTH], 0)
+
+        offsetRow = 0
+        self.__teMessage = None
+        self.__message = None
+
+        # insert message if needed
+        if not(self.__options[WDialogFile.OPTION_MESSAGE] is None or self.__options[WDialogFile.OPTION_MESSAGE] == ''):
+            offsetRow = 1
+            self.__message = self.__options[WDialogFile.OPTION_MESSAGE]
+
+            self.__teMessage = QTextEdit(self)
+            self.__teMessage.setReadOnly(True)
+            self.__teMessage.setSizePolicy(QSizePolicy(QSizePolicy.Preferred, QSizePolicy.MinimumExpanding))
+            self.__teMessage.setHtml(self.__message)
+
+            # Insert message in dialog box layout
+            #   insertAtRow=0
+            #   rowSpan=1 (only one row)
+            #   columnSpan=-1 (extend to the right edge of layout)
+            self.__insertRowGridLayout(self.__teMessage, self.__originalDlgBoxLayout, 0, 1, -1)
+
+        # insert settings widget if needed
+        if self.__options[WDialogFile.OPTION_SETTINGS_WIDGET]:
+            offsetRow += 2
+            self.__insertRowGridLayout(self.__options[WDialogFile.OPTION_SETTINGS_WIDGET], self.__originalDlgBoxLayout, offsetRow, 1, 3)
+
+        # custom widgets on dialog box, need to take care of returned value for setFile() method
+        if self.__options[WDialogFile.OPTION_PREVIEW_WIDGET] or self.__options[WDialogFile.OPTION_SETTINGS_WIDGET]:
+            self.currentChanged.connect(self.__changed)
+
+        self.fileSelected.connect(self.__fileSelected)
+        self.filesSelected.connect(self.__filesSelected)
+
+        # apply accept mode and selection mode according to option
+        self.setAcceptMode(self.__options[WDialogFile.OPTION_ACCEPT_MODE])
+        self.setFileMode(self.__options[WDialogFile.OPTION_FILE_SELECTION_MODE])
+
+    def __insertRowGridLayout(self, insertWidget, gridLayout, insertAtRow=0, rowSpan=1, columnSpan=1):
+        """Insert a row in a grid layout"""
+        # the dirty way to reorganize layout...
+        # in synthesis: QGridLayout doesn't allows to INSERT rows
+        # solution: 1) take all items from layout (until there's no item in layout)
+        #           2) append message
+        #           3) append taken item in initial order, with row offset + 1
+        rows = {}
+        while gridLayout.count():
+            # take all items
+            # returned position is an array:
+            #   0: row
+            #   1: column
+            #   2: rowSpan
+            #   3: columnSpan
+            position = gridLayout.getItemPosition(0)
+
+            if not position[0] in rows:
+                # row not yet processed
+                # initialise dictionary for row
+                rows[position[0]] = []
+
+            rows[position[0]].append((position, gridLayout.takeAt(0)))
+
+        # appends taken items
+        rowOffset = 0
+        for row in list(rows.keys()):
+            if insertAtRow == row:
+                # insert expected widget at expected row
+                rowOffset += 1
+                gridLayout.addWidget(insertWidget, insertAtRow, 0, rowSpan, columnSpan)
+
+            # append original items
+            for itemNfo in rows[row]:
+                # 0: position
+                #       0: row
+                #       1: column
+                #       2: rowSpan
+                #       3: columnSpan
+                # 1: item
+                gridLayout.addItem(itemNfo[1], itemNfo[0][0]+rowOffset, itemNfo[0][1], itemNfo[0][2], itemNfo[0][3])
+
+    def showEvent(self, event):
+        """Dialog box become visible, can recalculate size"""
+        if self.__teMessage is not None:
+            # Ideal size can't be applied until widgets are shown because document
+            # size (especially height) can't be known unless QTextEdit widget is visible
+            self.__applyMessageIdealSize(self.__message)
+            # calculate QDialog size according to content
+            self.adjustSize()
+            # and finally, remove constraint for QTextEdit size (let user resize dialog box if needed)
+            self.__teMessage.setMinimumSize(0, 0)
+
+        if self.__options[WDialogFile.OPTION_SETTINGS_WIDGET] is not None:
+            # calculate QDialog size according to content
+            self.adjustSize()
+
+        self.resize(self.width() + self.__options[WDialogFile.OPTION_PREVIEW_WIDTH], self.height())
+
+    def __applyMessageIdealSize(self, message):
+        """Try to calculate and apply ideal size for dialog box"""
+        # get primary screen (screen on which dialog is displayed) size
+        rect = QGuiApplication.primaryScreen().size()
+        # and determinate maximum size to apply to dialog box when displayed
+        # => note, it's not the maximum window size (user can increase size with grip),
+        #    but the maximum we allow to use to determinate window size at display
+        # => factor are arbitrary :)
+        maxW = round(rect.width() * 0.5 if rect.width() > 1920 else rect.width() * 0.7 if rect.width() > 1024 else rect.width() * 0.9)
+        maxH = round(rect.height() * 0.5 if rect.height() > 1080 else rect.height() * 0.7 if rect.height() > 1024 else rect.height() * 0.9)
+        # let's define some minimal dimension for message box...
+        minW = 320
+        minH = 140
+
+        # an internal document used to calculate ideal width
+        # (ie: using no-wrap for space allows to have an idea of maximum text width)
+        document = QTextDocument()
+        document.setDefaultStyleSheet("p { white-space: nowrap; }")
+        document.setHtml(message)
+
+        # then define our QTextEdit width taking in account ideal size, maximum and minimum allowed width on screen
+        self.__teMessage.setMinimumWidth(max(minW, min(maxW, document.idealWidth())))
+
+        docHeight = round(self.__teMessage.document().size().height()+25)
+        # now QTextEdit widget has a width defined, we can retrieve height of document
+        # (ie: document's height = as if we don't have scrollbars)
+        # add a security margin of +25 pixels
+        minHeight = max(minH, min(maxH, docHeight))
+        maxHeight = min(maxH, max(minH, docHeight))
+
+        self.__teMessage.setMinimumHeight(minHeight)
+        self.__teMessage.setMaximumHeight(maxHeight)
+
+    def __changed(self, path):
+        """File has been changed"""
+        def updateOpenBtn(isValid, enabledUpdate):
+            button = None
+            if buttonBox := self.findChild(QDialogButtonBox):
+                if self.acceptMode() == QFileDialog.AcceptOpen:
+                    button = buttonBox.button(QDialogButtonBox.Open)
+
+            if button:
+                button.setUpdatesEnabled(enabledUpdate)
+                # if button is disabled by QFileDialog, keep it disabled
+                isValid &= button.isEnabled()
+                button.setEnabled(isValid)
+
+        isValid = True
+        if self.__options[WDialogFile.OPTION_PREVIEW_WIDGET]:
+            isValid &= self.__options[WDialogFile.OPTION_PREVIEW_WIDGET].setFile(path)
+
+        if self.__options[WDialogFile.OPTION_SETTINGS_WIDGET]:
+            isValid &= self.__options[WDialogFile.OPTION_SETTINGS_WIDGET].setFile(path)
+
+        # if widget indicate file is not valid, disable Open button
+        # -- a dirty trick to update open button: update it after a short time
+        #    because native QFileDialog enabled/disable button after currentChanged signal, according to selected file(s)
+        #    5ms should be enough
+        updateOpenBtn(isValid, False)
+        QTimer.singleShot(5, lambda: updateOpenBtn(isValid, True))
+
+    def __fileSelected(self, file):
+        """A file has been selected
+        Set when:
+            WDialogFile.AnyFile
+            WDialogFile.ExistingFile
+            WDialogFile.Directory
+        """
+        self.__selectedFile = file
+
+    def __filesSelected(self, files):
+        """One or files file have been selected
+        Set when:
+            WDialogFile.ExistingFiles
+        """
+        self.__selectedFiles = files
+
+    def file(self):
+        """return selected file name"""
+        return self.__selectedFile
+
+    def files(self):
+        """return list of selected files"""
+        return self.__selectedFiles
+
+    def widgetPreviewInformation(self):
+        """Return eventual information from preview widget, or None"""
+        if self.__options[WDialogFile.OPTION_PREVIEW_WIDGET] is None:
+            return None
+        return self.__options[WDialogFile.OPTION_PREVIEW_WIDGET].information()
+
+    def widgetSettingsInformation(self):
+        """Return eventual information from settings widget, or None"""
+        if self.__options[WDialogFile.OPTION_SETTINGS_WIDGET] is None:
+            return None
+        return self.__options[WDialogFile.OPTION_SETTINGS_WIDGET].information()
+
+
