@@ -54,10 +54,9 @@ from .bbswbrushes import (
 from .bbsmainwindow import BBSMainWindow
 
 from bulibrushswitch.pktk.modules.imgutils import buildIcon
-from bulibrushswitch.pktk.modules.edialog import EDialog
-from bulibrushswitch.pktk.modules.about import AboutWindow
 from bulibrushswitch.pktk.modules.ekrita import EKritaBrushPreset
 from bulibrushswitch.pktk.modules.ekrita_tools import EKritaTools
+from bulibrushswitch.pktk.widgets.wabout import WAboutWindow
 from bulibrushswitch.pktk.widgets.wseparator import WVLine
 from bulibrushswitch.pktk.widgets.wtoolbarbutton import WToolbarButton
 
@@ -605,7 +604,7 @@ class BBSWBrushSwitcher(QWidget):
 
     def openAbout(self):
         """Open settings dialog box"""
-        AboutWindow(self.__bbsName, self.__bbsVersion, os.path.join(os.path.dirname(__file__), 'resources', 'png', 'buli-powered-big.png'), None, ':BuliBrushSwitch')
+        WAboutWindow(self.__bbsName, self.__bbsVersion, os.path.join(os.path.dirname(__file__), 'resources', 'png', 'buli-powered-big.png'), None, ':BuliBrushSwitch')
 
     def brushesModel(self):
         """Return brush list model"""

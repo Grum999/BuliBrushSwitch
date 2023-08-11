@@ -50,7 +50,6 @@ from .bbssettings import (
         BBSSettingsValues
     )
 
-from bulibrushswitch.pktk.modules.edialog import EDialog
 from bulibrushswitch.pktk.modules.uitheme import UITheme
 from bulibrushswitch.pktk.modules.iconsizes import IconSizes
 from bulibrushswitch.pktk.modules.utils import replaceLineEditClearButton
@@ -59,6 +58,7 @@ from bulibrushswitch.pktk.modules.imgutils import (warningAreaBrush, qImageToPng
 from bulibrushswitch.pktk.modules.resutils import (ManagedResourceTypes, ManagedResource, ManagedResourcesModel)
 from bulibrushswitch.pktk.modules.ekrita import (EKritaBrushPreset, EKritaShortcuts, EKritaBlendingModes)
 from bulibrushswitch.pktk.modules.ekrita_tools import (EKritaToolsCategory, EKritaTools)
+from bulibrushswitch.pktk.widgets.wedialog import WEDialog
 from bulibrushswitch.pktk.widgets.wtextedit import (WTextEdit, WTextEditDialog, WTextEditBtBarOption)
 from bulibrushswitch.pktk.widgets.wcolorbutton import WColorButton
 from bulibrushswitch.pktk.widgets.wcolorselector import WColorPicker
@@ -3341,7 +3341,7 @@ class BBSModelDelegateLv(QStyledItemDelegate):
         return self.__iconAndMarginSize
 
 
-class BBSBrushesEditor(EDialog):
+class BBSBrushesEditor(WEDialog):
     """A simple dialog box to edit brush properties"""
     @staticmethod
     def edit(title, brush):
@@ -3696,7 +3696,7 @@ class BBSBrushesEditor(EDialog):
         return returned
 
 
-class BBSGroupEditor(EDialog):
+class BBSGroupEditor(WEDialog):
     """A simple dialog box to edit group properties"""
     @staticmethod
     def edit(title, group):

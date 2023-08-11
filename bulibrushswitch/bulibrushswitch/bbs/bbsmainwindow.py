@@ -57,8 +57,8 @@ from .bbssettings import (
     )
 
 from bulibrushswitch.pktk.modules.imgutils import buildIcon
-from bulibrushswitch.pktk.modules.edialog import EDialog
 
+from bulibrushswitch.pktk.widgets.wedialog import WEDialog
 from bulibrushswitch.pktk.widgets.wstandardcolorselector import WStandardColorSelector
 from bulibrushswitch.pktk.widgets.wmenuitem import (WMenuBrushesPresetSelector, WMenuColorPicker)
 from bulibrushswitch.pktk.widgets.wcolorselector import WColorPicker
@@ -70,7 +70,7 @@ from bulibrushswitch.pktk.modules.ekrita_tools import EKritaTools
 
 
 # -----------------------------------------------------------------------------
-class BBSMainWindow(EDialog):
+class BBSMainWindow(WEDialog):
     """Main BuliBrushSwitch window"""
 
     PAGE_GENERAL = 0
