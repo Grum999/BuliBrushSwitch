@@ -291,3 +291,8 @@ def indent(text, firstIndent='', nextIndent='', strip=False):
 def boolYesNo(value):
     """Return yes or no according to value is True or False"""
     return i18n("Yes") if value else i18n("No")
+
+
+def wildcardToRegEx(pattern):
+    """Convert a wildcard expression to regular expression"""
+    return re.escape(pattern).replace("\\*", ".*").replace("\\?", ".")
