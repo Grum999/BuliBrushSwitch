@@ -54,10 +54,9 @@ from .bbswbrushes import (
 from .bbsmainwindow import BBSMainWindow
 
 from bulibrushswitch.pktk.modules.imgutils import buildIcon
-from bulibrushswitch.pktk.modules.edialog import EDialog
-from bulibrushswitch.pktk.modules.about import AboutWindow
 from bulibrushswitch.pktk.modules.ekrita import EKritaBrushPreset
 from bulibrushswitch.pktk.modules.ekrita_tools import EKritaTools
+from bulibrushswitch.pktk.widgets.wabout import WAboutWindow
 from bulibrushswitch.pktk.widgets.wseparator import WVLine
 from bulibrushswitch.pktk.widgets.wtoolbarbutton import WToolbarButton
 
@@ -431,7 +430,8 @@ class BBSWBrushSwitcher(QWidget):
                     except Exception:
                         pass
 
-        brushesAndGroups = []
+        brushesList = []
+        groupsList = []
 
         # create BBSBrush object + link action shortcuts
         brushesDictList = BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_LIST_BRUSHES)
@@ -452,7 +452,7 @@ class BBSWBrushSwitcher(QWidget):
 
                     action.triggered.connect(self.__setSelectedBrushFromAction)
                     action.changed.connect(self.__setShortcutFromAction)
-                brushesAndGroups.append(brush)
+                brushesList.append(brush)
 
         groupsDictList = BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_LIST_GROUPS)
         for groupNfo in groupsDictList:
@@ -488,9 +488,11 @@ class BBSWBrushSwitcher(QWidget):
                     actionPrevious.triggered.connect(self.__setSelectedGroupPreviousFromAction)
                     actionPrevious.changed.connect(self.__setShortcutFromAction)
 
-                brushesAndGroups.append(group)
+                groupsList.append(group)
 
-        self.__bbsModel.importData(brushesAndGroups, BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_LIST_NODES))
+        self.__bbsModel.importData({'brushes': brushesList,
+                                    'groups': groupsList,
+                                    'nodes': BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_LIST_NODES)})
 
         if self.__selectedBrushId is None:
             self.__setSelectedBrushId(BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_LAST_SELECTED))
@@ -602,7 +604,7 @@ class BBSWBrushSwitcher(QWidget):
 
     def openAbout(self):
         """Open settings dialog box"""
-        AboutWindow(self.__bbsName, self.__bbsVersion, os.path.join(os.path.dirname(__file__), 'resources', 'png', 'buli-powered-big.png'), None, ':BuliBrushSwitch')
+        WAboutWindow(self.__bbsName, self.__bbsVersion, os.path.join(os.path.dirname(__file__), 'resources', 'png', 'buli-powered-big.png'), None, ':BuliBrushSwitch')
 
     def brushesModel(self):
         """Return brush list model"""

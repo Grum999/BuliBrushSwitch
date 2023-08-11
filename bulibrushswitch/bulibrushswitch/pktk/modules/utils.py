@@ -181,7 +181,7 @@ def loadXmlUi(fileName, parent):
     properties with icon reference
     """
     # load UI
-    PyQt5.uic.loadUi(fileName, parent, PkTk.packageName())
+    returned = PyQt5.uic.loadUi(fileName, parent, PkTk.packageName())
 
     # Parse XML file and retrieve all object for which an icon is set
     tree = ET.parse(fileName)
@@ -192,6 +192,7 @@ def loadXmlUi(fileName, parent):
                 for nodeIcon in list(nodeIconSet):
                     # store on object resource path for icons
                     widget.setProperty(f"__bcIcon_{nodeIcon.tag}", nodeIcon.text)
+    return returned
 
 
 def cloneRect(rect):
@@ -271,6 +272,9 @@ class JsonQObjectEncoder(json.JSONEncoder):
                     'objType': "bytes",
                     'b64': base64.b64encode(objectToEncode).decode()
                 }
+        elif hasattr(objectToEncode, 'exportData') and callable(objectToEncode.exportData):
+            return objectToEncode.exportData()
+
         # Let the base class default method raise the TypeError
         return super(JsonQObjectEncoder, self).default(objectToEncode)
 

@@ -23,6 +23,8 @@ from PyQt5.QtWidgets import QFileDialog
 
 import os.path
 
+print("[DEPRECATED] wefiledialog.py/WEFileDialog class is DEPRECATED --> Use wiodialog.py/WDialogFile instead")
+
 
 class WEFileDialog(QFileDialog):
     """A file dialog with image preview"""
@@ -30,7 +32,7 @@ class WEFileDialog(QFileDialog):
     PREVIEW_WIDTH = 250
 
     def __init__(self, caption=None, directory=None, filter=None, message=None, withImagePreview=True):
-        QFileDialog.__init__(self, None, caption, directory, filter)
+        super(WEFileDialog, self).__init__(None, caption, directory, filter)
 
         self.setOption(QFileDialog.DontUseNativeDialog, True)
         self.setMaximumSize(0xffffff, 0xffffff)

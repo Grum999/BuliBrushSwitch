@@ -26,7 +26,10 @@ Icon view from main popup interface has been reviewed to take in account groups 
 
 # Main settings
 
-## Improve layout for brushes informations
+## Redesign
+With new Setups manager, user interface has been redesigned.
+
+## Brushes - Improve layout for brushes informations
 [Feature request #15](https://github.com/Grum999/BuliBrushSwitch/issues/15)
 
 Layout and informations provided are now more readable:
@@ -35,7 +38,7 @@ Layout and informations provided are now more readable:
 
 ![New brushes information layout](./../screenshots/r1-0-0_mainsettings-new_layout.png)
 
-## Organize brushes within groups
+## Brushes - Organize brushes within groups
 [Feature request #9](https://github.com/Grum999/BuliBrushSwitch/issues/9)
 
 Brushes can now be organized withins groups
@@ -46,7 +49,7 @@ Group editor provides:
 
 ![Group editor](./../screenshots/r1-0-0_mainsettings-groups_editor.png)
 
-## Re-organize brushes & and groups with Drag'n'Drop
+## Brushes - Re-organize brushes & and groups with Drag'n'Drop
 [Feature request #3](https://github.com/Grum999/BuliBrushSwitch/issues/3)
 
 Brushes and groups can be re-organized with Drag'n'Drop
@@ -54,14 +57,30 @@ Brushes and groups can be re-organized with Drag'n'Drop
 ![Drag'n'Drop](./../screenshots/r1-0-0_mainsettings-dnd.png)
 
 
-## Let user choose scratchpad background color
+## Brushes - Let user choose scratchpad background color
 [Feature request #4](https://github.com/Grum999/BuliBrushSwitch/issues/4)
 
 An additional color button menu has been added; there's now:
     - One button to choose brush color in scratchpad
     - One button to choose background color for scratchpad
 
-![scratchpad with backkground color](./../screenshots/r1-0-0_mainsettings-scratchpad_bg_color.png)
+![scratchpad with background color](./../screenshots/r1-0-0_mainsettings-scratchpad_bg_color.png)
+
+
+## Setups manager
+[Feature request #16](https://github.com/Grum999/BuliBrushSwitch/issues/16)
+
+The Setups manager allows to create and organize differents *BuliBrushSwitch* configuration.
+
+Instead of having a unique big configuration with a lot of brushes, users can create different configuration according to their need.
+Also, configuration in Setups manager can be exported/imported:
+    - For backup
+    - If working on multiple computer
+
+![Setup manager - main window](./../screenshots/r1-0-0_mainsettings-sm-main_window.png)
+![Setup manager - setup proeprties](./../screenshots/r1-0-0_mainsettings-sm-setup_properties.png)
+
+
 
 # Brushes settings
 

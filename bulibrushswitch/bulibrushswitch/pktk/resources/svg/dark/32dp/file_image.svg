@@ -4,7 +4,7 @@
    version="1.1"
    id="svg6"
    sodipodi:docname="file_image.svg"
-   inkscape:version="1.1 (c4e8f9e, 2021-05-24)"
+   inkscape:version="1.2.2 (b0a8486, 2022-12-01)"
    width="32"
    height="32"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
@@ -26,7 +26,7 @@
     </rdf:RDF>
   </metadata>
   <sodipodi:namedview
-     pagecolor="#ffffff"
+     pagecolor="#808080"
      bordercolor="#666666"
      borderopacity="1"
      objecttolerance="10"
@@ -39,9 +39,9 @@
      id="namedview8"
      showgrid="true"
      inkscape:snap-page="true"
-     inkscape:zoom="16"
-     inkscape:cx="17.09375"
-     inkscape:cy="28.375"
+     inkscape:zoom="90.509668"
+     inkscape:cx="9.4575532"
+     inkscape:cy="19.450961"
      inkscape:window-x="3840"
      inkscape:window-y="0"
      inkscape:window-maximized="0"
@@ -52,10 +52,15 @@
      inkscape:snap-global="true"
      inkscape:snap-nodes="true"
      inkscape:bbox-paths="true"
-     inkscape:snap-smooth-nodes="true">
+     inkscape:snap-smooth-nodes="true"
+     inkscape:showpageshadow="0"
+     inkscape:deskcolor="#d1d1d1">
     <inkscape:grid
        type="xygrid"
-       id="grid845" />
+       id="grid845"
+       units="px"
+       spacingx="0.5"
+       spacingy="0.5" />
   </sodipodi:namedview>
   <defs
      id="defs3051">
@@ -68,8 +73,8 @@
       </style>
   </defs>
   <path
-     id="path863"
+     id="path14957"
      style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:2"
-     d="M 8 4 C 6.9 4 6 4.9 6 6 L 6 26 C 6 27.1 6.9 28 8 28 L 16 28 L 18 28 L 24 22 L 24 20 L 24 16 L 24 6 C 24 4.9 23.1 4 22 4 L 20 4 L 8 4 z M 8 6 L 20 6 L 22 6 L 22 16 L 22 16.998047 L 19 14 L 13.753906 19.248047 L 11.644531 17.138672 L 11.595703 17.138672 L 8 20.732422 L 8 6 z M 13 8 A 2.9999998 3 0 0 0 10 11 A 2.9999998 3 0 0 0 13 14 A 2.9999998 3 0 0 0 16 11 A 2.9999998 3 0 0 0 13 8 z M 15 19 L 16 19 L 22.675781 19 L 22.675781 20 L 16 20 L 16 23.416016 L 16 26 L 16 26.675781 L 15 26.675781 L 15 26 L 15 23.416016 L 15 20 L 15 19 z "
+     d="M 8 4 C 6.9000044 4 6 4.9000044 6 6 L 6 26 C 6 27.099996 6.9000044 28 8 28 L 16 28 L 18 28 L 24 22 L 24 20 L 24 16 L 24 6 C 24 4.9000044 23.099996 4 22 4 L 20 4 L 8 4 z M 8 6 L 20 6 L 22 6 L 22 16 L 22 16.998047 L 19 14 L 14.496094 18.505859 L 13.753906 19.248047 L 11.644531 17.138672 L 11.595703 17.138672 L 8 20.732422 L 8 6 z M 13 8 A 2.9999998 3 0 0 0 10 11 A 2.9999998 3 0 0 0 13 14 A 2.9999998 3 0 0 0 16 11 A 2.9999998 3 0 0 0 13 8 z M 16.001953 19 L 17 19 L 23.009766 19 L 23.009766 21 L 17 21 L 17 27.003906 L 15 27.003906 L 15 21 L 15 20.001953 L 16.001953 19 z "
      transform="scale(0.5)" />
 </svg>

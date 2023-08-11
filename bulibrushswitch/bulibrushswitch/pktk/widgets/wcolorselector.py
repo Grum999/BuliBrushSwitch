@@ -3007,7 +3007,6 @@ class WColorPicker(QWidget):
         """
         # note: use of None value....
         #       I really should define a dedicated method for None case, and really use this only with True/False value but ok it currently work
-
         if value is not None:
             if not self.__constraintSize:
                 # if size is not constrained, deactivate compact size
@@ -3318,7 +3317,11 @@ class WColorPicker(QWidget):
         self.setOptionDisplayAsPctColorHSL('colorHSL%' in layout)
         self.setOptionDisplayAsPctColorAlpha('colorAlpha%' in layout)
 
-        self.setOptionCompactUi('compactUi' in layout)
+        if 'compactUi' in layout:
+            self.setConstraintSize(True)
+            self.setOptionCompactUi(True)
+        else:
+            self.setOptionCompactUi(False)
 
         for item in layout:
             if r := re.match('colorPalette:(.*)', item, re.IGNORECASE):

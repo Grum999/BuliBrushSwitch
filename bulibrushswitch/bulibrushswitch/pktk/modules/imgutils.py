@@ -194,6 +194,9 @@ def buildIcon(icons, size=None):
     - A string "pktk:XXXX"
         Where XXXX is name of a PkTk icon
         Return QIcon() will provide normal/disable icons
+    - A string "krita:XXXX"
+        Where XXXX is name of a Krita icon
+        Return QIcon() will provide normal/disable icons
     - A list of tuple
         Each tuple can be:
             (QPixmap, )
@@ -247,8 +250,51 @@ def buildIcon(icons, size=None):
     elif isinstance(icons, str) and (rfind := re.match("pktk:(.*)", icons)):
         return buildIcon([(f':/pktk/images/normal/{rfind.groups()[0]}', QIcon.Normal),
                           (f':/pktk/images/disabled/{rfind.groups()[0]}', QIcon.Disabled)], size)
+    elif isinstance(icons, str) and (rfind := re.match("krita:(.*)", icons)):
+        return Krita.instance().icon(rfind.groups()[0])
     else:
         raise EInvalidType("Given `icons` must be a <str> or a <list> of <tuples>")
+
+
+def getIconList(source=[]):
+    """Return a list of icon uri for given `source"
+
+    Given `source` van be:
+    - icons from pktk library:  'pktk'
+    - icons from Krita:         'krita'
+
+    if source is not provided, return a list of uri from all sources
+    """
+    if not isinstance(source, list):
+        raise EInvalidType("Given `source` must be a <list>")
+    elif len(source) == 0:
+        source = ('pktk', 'krita')
+
+    addPkTk = ('pktk' in source)
+    addKrita = ('krita' in source)
+
+    if not (addPkTk | addKrita):
+        raise EInvalidValue("Given `source` must be empty or contain at least 'pktk' or 'krita'")
+
+    returned = []
+    resIterator = QDirIterator(":", QDirIterator.Subdirectories)
+
+    while resIterator.hasNext():
+        resName = resIterator.filePath()
+
+        if addPkTk:
+            if name := re.search("^:/pktk/images/normal/(.+)$", resName):
+                returned.append(f'pktk:{name.groups()[0]}')
+
+        if addKrita:
+            if name := re.match("^:/(?:16_dark|dark)_(.*)\.svg$", resName):
+                returned.append(f'krita:{name.groups()[0]}')
+
+        resIterator.next()
+
+    returned.sort()
+
+    return returned
 
 
 def qImageToPngQByteArray(image):
@@ -435,3 +481,85 @@ class QIconPickable(QIcon):
     def __setstate__(self, ba):
         stream = QDataStream(ba, QIODevice.ReadOnly)
         stream >> self
+
+    def toB64(self, pktkFormat=True):
+        """Return a base64 string from current object"""
+        returned = bytes(self.__getstate__().toBase64()).decode()
+        if pktkFormat:
+            returned = f'qicon:b64={returned}'
+
+        return returned
+
+    def fromB64(self, value):
+        """Set from a base64 string"""
+        if b64 := re.search("^qicon:b64=(.*)", value):
+            value = b64.groups()[0]
+
+        self.__setstate__(QByteArray.fromBase64(value.encode()))
+
+
+class QUriIcon(QObject):
+    """Associate an uri with QIcon"""
+    def __init__(self, uri=None, icon=None, maxSize=None):
+        self.__icon = None
+        self.__uri = ''
+        self.__maxSize = None
+
+        if isinstance(maxSize, QSize):
+            self.__maxSize = maxSize
+
+        self.setUri(uri, icon)
+
+    def __repr__(self):
+        """Return string reprensentation for object"""
+        if self.__uri == '':
+            return "<QUriIcon(None)>"
+        else:
+            return f"<QUriIcon({self.__uri})>"
+
+    def uri(self):
+        """Return uri for icon"""
+        return self.__uri
+
+    def setUri(self, uri, icon=None):
+        """Set uri for icon
+
+        Given `uri` can be:{argument
+        - a QUriIcon
+        - a string ('pktk:xxx', 'krita:xxx', or a filename)
+
+        If `uri` is a string and `icon` a <QIcon>, given icon is used for given uri
+        """
+        loadIcon = None
+        if uri is None:
+            self.__uri = ''
+        elif isinstance(uri, QUriIcon):
+            self.setUri(uri.uri(), uri.icon())
+            return
+        elif not isinstance(uri, str):
+            raise EInvalidType('Given `uri` must be a <str> or <QUriIcon>')
+        elif re.match("^(pktk|krita):", uri):
+            loadIcon = QIconPickable(buildIcon(uri))
+        else:
+            # a file?
+            if self.__maxSize is None:
+                loadIcon = QIconPickable(uri)
+            else:
+                pixmap = QPixmap(uri)
+                if pixmap.width() > self.__maxSize.width() or pixmap.height() > self.__maxSize.height():
+                    # scale only if given image is greater than expected size:
+                    pixmap = pixmap.scaled(self.__maxSize, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                loadIcon = QIconPickable(pixmap)
+
+        if isinstance(icon, QIcon) and isinstance(uri, str):
+            # an icon is provided, use it
+            loadIcon = icon
+
+        if loadIcon is not None:
+            # icon is valid
+            self.__uri = uri
+            self.__icon = loadIcon
+
+    def icon(self):
+        """Return QIconPickable icon or None"""
+        return self.__icon

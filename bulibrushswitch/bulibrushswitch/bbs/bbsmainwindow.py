@@ -47,7 +47,8 @@ from .bbswbrushes import (
         BBSGroup,
         BBSModel,
         BBSBrushesEditor,
-        BBSGroupEditor
+        BBSGroupEditor,
+        BBSViewer
     )
 from .bbssettings import (
         BBSSettings,
@@ -55,20 +56,26 @@ from .bbssettings import (
         BBSSettingsValues
     )
 
-from bulibrushswitch.pktk.modules.edialog import EDialog
+from bulibrushswitch.pktk.modules.imgutils import buildIcon
 
+from bulibrushswitch.pktk.widgets.wedialog import WEDialog
 from bulibrushswitch.pktk.widgets.wstandardcolorselector import WStandardColorSelector
 from bulibrushswitch.pktk.widgets.wmenuitem import (WMenuBrushesPresetSelector, WMenuColorPicker)
 from bulibrushswitch.pktk.widgets.wcolorselector import WColorPicker
-from bulibrushswitch.pktk.widgets.wiodialog import (WDialogBooleanInput, WDialogMessage)
+from bulibrushswitch.pktk.widgets.wiodialog import (WDialogBooleanInput, WDialogRadioButtonChoiceInput, WDialogMessage)
+from bulibrushswitch.pktk.widgets.wsetupmanager import WSetupManager
 
 from bulibrushswitch.pktk.modules.ekrita import EKritaBrushPreset
 from bulibrushswitch.pktk.modules.ekrita_tools import EKritaTools
 
 
 # -----------------------------------------------------------------------------
-class BBSMainWindow(EDialog):
+class BBSMainWindow(WEDialog):
     """Main BuliBrushSwitch window"""
+
+    PAGE_GENERAL = 0
+    PAGE_GROUPS_AND_BRUSHES = 1
+    PAGE_SETUP_MANAGER = 2
 
     @staticmethod
     def open(bbsName="BuliBrushSwitch", bbsVersion="testing", parent=None):
@@ -118,24 +125,30 @@ class BBSMainWindow(EDialog):
         self.__bbsModel = BBSModel()
 
         # create BBSBrush object + link action shortcuts
-        brushesAndGroups = []
+        brushesList = []
+        groupsList = []
         brushesDictList = BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_LIST_BRUSHES)
         for brushNfo in brushesDictList:
             brush = BBSBrush()
             if brush.importData(brushNfo):
-                brushesAndGroups.append(brush)
+                brushesList.append(brush)
 
         groupsDictList = BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_LIST_GROUPS)
         for groupNfo in groupsDictList:
             group = BBSGroup()
             if group.importData(groupNfo):
-                brushesAndGroups.append(group)
+                groupsList.append(group)
 
-        self.__bbsModel.importData(brushesAndGroups, BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_LIST_NODES))
+        self.__bbsModel.importData({'brushes': brushesList,
+                                    'groups': groupsList,
+                                    'nodes': BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_LIST_NODES)})
 
         # keep a saved view of current brush shortcuts
         self.__savedShortcuts = {}
         self.__createdShortcuts = []
+
+        # is brushes setup has been modified
+        self.__groupsAndBrushesModified = False
 
         self.setModal(True)
         self.setWindowTitle(i18n(f'{bbsName} v{bbsVersion}'))
@@ -152,6 +165,33 @@ class BBSMainWindow(EDialog):
 
     def __initialiseUi(self):
         """Initialise window interface"""
+        def setupPropertiesEditorOpen(item):
+            # When setup manager properties editor is open, update comment editor color layout with the same than one
+            # used for brushes description
+            self.wsmSetups.setPropertiesEditorColorPickerLayout(BBSSettings.getTxtColorPickerLayout())
+
+        def setupPropertiesEditorClose(item, accepted):
+            # When setup manager properties editor is close, update settings for color layout used for brushes description
+            if accepted:
+                BBSSettings.setTxtColorPickerLayout(self.wsmSetups.propertiesEditorColorPickerLayout())
+
+        def updateLastSetupFileName(fileName=''):
+            # when a setup file is opened/saved, keep it in settings
+            BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SETUPMANAGER_LASTFILE, fileName)
+
+        self.__itemPageGeneral = QListWidgetItem(buildIcon("pktk:tune"), i18n("General settings"))
+        self.__itemPageGeneral.setData(Qt.UserRole, BBSMainWindow.PAGE_GENERAL)
+        self.__itemPageGroupsAndBrushes = QListWidgetItem(buildIcon("pktk:folder_brush"), i18n("Brushes"))
+        self.__itemPageGroupsAndBrushes.setData(Qt.UserRole, BBSMainWindow.PAGE_GROUPS_AND_BRUSHES)
+        self.__itemPageSetupManager = QListWidgetItem(buildIcon("pktk:folder_tune"), i18n("Setups manager"))
+        self.__itemPageSetupManager.setData(Qt.UserRole, BBSMainWindow.PAGE_SETUP_MANAGER)
+
+        self.lwPages.itemSelectionChanged.connect(self.__pageChanged)
+        self.lwPages.addItem(self.__itemPageGeneral)
+        self.lwPages.addItem(self.__itemPageGroupsAndBrushes)
+        self.lwPages.addItem(self.__itemPageSetupManager)
+        self.__setPage(BBSMainWindow.PAGE_GROUPS_AND_BRUSHES)
+
         self.__actionSelectBrushScratchpadColorFg = WMenuColorPicker()
         self.__actionSelectBrushScratchpadColorFg.colorPicker().colorUpdated.connect(self.__actionBrushScratchpadSetColorFg)
         self.__actionSelectBrushScratchpadColorFg.colorPicker().setOptionCompactUi(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_FG_COMPACT))
@@ -236,7 +276,6 @@ class BBSMainWindow(EDialog):
         self.tbBrushScratchpadColorFg.setMenu(menuBrushScratchpadColorFg)
         self.tbBrushScratchpadColorBg.setMenu(menuBrushScratchpadColorBg)
 
-
         self.hsItemsThumbSize.setValue(self.tvBrushes.iconSizeIndex())
         self.hsItemsThumbSize.valueChanged.connect(self.__itemsSizeIndexSliderChanged)
 
@@ -265,6 +304,22 @@ class BBSMainWindow(EDialog):
         # self.__scratchpadTestBrush.setMode('painting') -- bug if set? (don't remember why commented ^_^')
         self.wBrushScratchpad.layout().addWidget(self.__scratchpadTestBrush)
 
+        # -- Setups Manager
+        self.wsmSetups.setupApplied.connect(self.__applySetupFromManager)
+        self.wsmSetups.setPropertiesEditorSetupPreviewWidgetClass(BBSViewer)
+        self.wsmSetups.setExtensionFilter(f"{i18n('BuliBrushSwitch Setups')} (*.bbssetups)")
+        self.wsmSetups.setStoredDataFormat('bbs--brushes+groups_setups', '1.0.0')
+        self.wsmSetups.setIconSizeIndex(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SETUPMANAGER_ZOOMLEVEL))
+        self.wsmSetups.setColumnSetupWidth(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SETUPMANAGER_COLWIDTH))
+        self.wsmSetups.setPropertiesEditorIconSelectorViewMode(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SETUPMANAGER_PROPERTIES_DLGBOX_ICON_VIEWMODE))
+        self.wsmSetups.setPropertiesEditorIconSelectorIconSizeIndex(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SETUPMANAGER_PROPERTIES_DLGBOX_ICON_ZOOMLEVEL))
+        self.wsmSetups.openSetup(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SETUPMANAGER_LASTFILE), False)
+        self.wsmSetups.setupPropertiesEditorOpen.connect(setupPropertiesEditorOpen)
+        self.wsmSetups.setupPropertiesEditorClose.connect(setupPropertiesEditorClose)
+        self.wsmSetups.setupFileOpened.connect(updateLastSetupFileName)
+        self.wsmSetups.setupFileSaved.connect(updateLastSetupFileName)
+        self.wsmSetups.setupFileNew.connect(updateLastSetupFileName)
+
         # -- dialog box bottom buttons
         self.pbOk.clicked.connect(self.__acceptChange)
         self.pbCancel.clicked.connect(self.__rejectChange)
@@ -287,6 +342,25 @@ class BBSMainWindow(EDialog):
             self.tvBrushes.header().resizeSection(BBSModel.COLNUM_BRUSH, colSize)
         else:
             self.tvBrushes.resizeColumnToContents(BBSModel.COLNUM_BRUSH)
+
+    def __pageChanged(self):
+        """Setting page changed, display it"""
+        # current page
+        page = self.lwPages.currentItem().data(Qt.UserRole)
+
+        if page == BBSMainWindow.PAGE_SETUP_MANAGER:
+            # if going to setup manager page, update setup manager data
+            self.wsmSetups.setCurrentSetupData(self.__bbsModel.exportData(True))
+
+        # activate page
+        self.swPages.setCurrentIndex(page)
+
+    def __setPage(self, value):
+        """Set page
+
+        Select icon, switch to panel
+        """
+        self.lwPages.setCurrentRow(value)
 
     def __saveShortcutConfig(self):
         """Save current action shortcuts
@@ -507,7 +581,8 @@ class BBSMainWindow(EDialog):
                 groups = f"<li>{i18n('Groups:')} {stats['total-groups']}</li>"
 
             if stats['total-brushes'] > 0:
-                returned += f"<hr><small><b><i>&gt; {i18n('Deletion of group will also delete')}{includingGroups}<ul><li>{i18n('Brushes:')} {stats['brushes']}</li>{groups}</ul></i></b></small>"
+                returned += f"<hr><small><b><i>&gt; {i18n('Deletion of group will also delete')}{includingGroups}" \
+                            f"<ul><li>{i18n('Brushes:')} {stats['brushes']}</li>{groups}</ul></i></b></small>"
 
             return returned
 
@@ -549,7 +624,7 @@ class BBSMainWindow(EDialog):
                 txtGroups.append("<br></li></ul>")
 
             if WDialogBooleanInput.display(self.__bbsName+' - ' + "/".join(title),
-                                           "".join(txtBrushes + txtGroups + [f'<br><h2>{i18n("Do you confirm action?")}</h2>']),
+                                           "".join(txtBrushes + txtGroups + [f'<br><b>{i18n("Do you confirm action?")}</b>']),
                                            minSize=QSize(950, 400)):
                 for brush in brushes:
                     BBSSettings.setBrushShortcut(brush, QKeySequence())
@@ -625,6 +700,19 @@ class BBSMainWindow(EDialog):
             self.pbOk.setEnabled(False)
             self.pbOk.setToolTip(i18n("At least, one brush is mandatory!"))
 
+    def __applySetupFromManager(self, setup):
+        """A setup is applied from setup manager"""
+        choice = WDialogRadioButtonChoiceInput.display(f'{self.__bbsName}  - {i18n("Loading setup")}',
+                                                       f'<b>{i18n("How to load setup?")}</b>',
+                                                       choicesValue=[i18n("Overrides current setup"), i18n("Merge to current setup")],
+                                                       minSize=QSize(950, 200))
+        if choice is None:
+            # cancel
+            return
+
+        self.__bbsModel.importData(setup.data(), choice == 1)
+        self.__groupsAndBrushesModified = False
+
     def __saveSettings(self):
         """Save current settings"""
         if self.rbFirstFromList.isChecked():
@@ -691,13 +779,25 @@ class BBSMainWindow(EDialog):
 
         BBSSettings.set(BBSSettingsKey.CONFIG_BRUSHES_LIST_COUNT, len(self.__bbsModel.idIndexes()))
 
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SETUPMANAGER_ZOOMLEVEL, self.wsmSetups.iconSizeIndex())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SETUPMANAGER_COLWIDTH, self.wsmSetups.columnSetupWidth())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SETUPMANAGER_PROPERTIES_DLGBOX_ICON_VIEWMODE, self.wsmSetups.propertiesEditorIconSelectorViewMode())
+        BBSSettings.set(BBSSettingsKey.CONFIG_EDITOR_SETUPMANAGER_PROPERTIES_DLGBOX_ICON_ZOOMLEVEL, self.wsmSetups.propertiesEditorIconSelectorIconSizeIndex())
+
         exportedData = self.__bbsModel.exportData()
+
         BBSSettings.setBrushes(exportedData['brushes'])
         BBSSettings.setGroups(exportedData['groups'])
         BBSSettings.setNodes(exportedData['nodes'])
 
         if BBSSettings.modified():
             BBSSettings.save()
+
+        if self.wsmSetups.hasModificationToSave():
+            if WDialogBooleanInput.display(f'{self.__bbsName}  - {i18n("Configuration setups")}',
+                                           f'{i18n("Current configuration from Setups Manager has been modified")}<br><b>{i18n("Do you want to save it?")}</b>',
+                                           minSize=QSize(950, 400)):
+                self.wsmSetups.saveSetup()
 
     def __rejectChange(self):
         """User clicked on cancel button"""

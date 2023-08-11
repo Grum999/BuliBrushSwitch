@@ -28,6 +28,7 @@
     <file alias="brush_edit">dark/32dp/brush_edit.svg</file>
     <file alias="brush_r90">dark/32dp/brush_r90.svg</file>
     <file alias="brush_remove">dark/32dp/brush_remove.svg</file>
+    <file alias="brush_tune">dark/32dp/brush_tune.svg</file>
     <file alias="cache_refresh">dark/32dp/cache_refresh.svg</file>
     <file alias="calendar_month">dark/32dp/calendar_month.svg</file>
     <file alias="clear">dark/32dp/clear.svg</file>
@@ -69,6 +70,7 @@
     <file alias="edit_undo">dark/32dp/edit_undo.svg</file>
     <file alias="export_list">dark/32dp/export_list.svg</file>
     <file alias="file">dark/32dp/file.svg</file>
+    <file alias="file_add">dark/32dp/file_add.svg</file>
     <file alias="file_backup">dark/32dp/file_backup.svg</file>
     <file alias="file_close">dark/32dp/file_close.svg</file>
     <file alias="file_close_all">dark/32dp/file_close_all.svg</file>
@@ -94,6 +96,7 @@
     <file alias="filter_wholeword">dark/32dp/filter_wholeword.svg</file>
     <file alias="folder__filled_close">dark/32dp/folder__filled_close.svg</file>
     <file alias="folder__filled_open">dark/32dp/folder__filled_open.svg</file>
+    <file alias="folder_brush">dark/32dp/folder_brush.svg</file>
     <file alias="folder_close">dark/32dp/folder_close.svg</file>
     <file alias="folder_open">dark/32dp/folder_open.svg</file>
     <file alias="folder_open_add">dark/32dp/folder_open_add.svg</file>
@@ -105,6 +108,7 @@
     <file alias="folder_open_pinned">dark/32dp/folder_open_pinned.svg</file>
     <file alias="folder_open_recent">dark/32dp/folder_open_recent.svg</file>
     <file alias="folder_open_remove">dark/32dp/folder_open_remove.svg</file>
+    <file alias="folder_tune">dark/32dp/folder_tune.svg</file>
     <file alias="format_text_align-center">dark/32dp/format_text_align-center.svg</file>
     <file alias="format_text_align-justify">dark/32dp/format_text_align-justify.svg</file>
     <file alias="format_text_align-left">dark/32dp/format_text_align-left.svg</file>
@@ -201,6 +205,7 @@
     <file alias="text_t_r90">dark/32dp/text_t_r90.svg</file>
     <file alias="toolbar">dark/32dp/toolbar.svg</file>
     <file alias="tune">dark/32dp/tune.svg</file>
+    <file alias="tune_apply">dark/32dp/tune_apply.svg</file>
     <file alias="tune_img_slider">dark/32dp/tune_img_slider.svg</file>
     <file alias="tune_slider">dark/32dp/tune_slider.svg</file>
     <file alias="tune_toolbar">dark/32dp/tune_toolbar.svg</file>
@@ -244,6 +249,7 @@
     <file alias="brush_edit">dark/32dp-disabled/brush_edit.svg</file>
     <file alias="brush_r90">dark/32dp-disabled/brush_r90.svg</file>
     <file alias="brush_remove">dark/32dp-disabled/brush_remove.svg</file>
+    <file alias="brush_tune">dark/32dp-disabled/brush_tune.svg</file>
     <file alias="cache_refresh">dark/32dp-disabled/cache_refresh.svg</file>
     <file alias="calendar_month">dark/32dp-disabled/calendar_month.svg</file>
     <file alias="clear">dark/32dp-disabled/clear.svg</file>
@@ -285,6 +291,7 @@
     <file alias="edit_undo">dark/32dp-disabled/edit_undo.svg</file>
     <file alias="export_list">dark/32dp-disabled/export_list.svg</file>
     <file alias="file">dark/32dp-disabled/file.svg</file>
+    <file alias="file_add">dark/32dp-disabled/file_add.svg</file>
     <file alias="file_backup">dark/32dp-disabled/file_backup.svg</file>
     <file alias="file_close">dark/32dp-disabled/file_close.svg</file>
     <file alias="file_close_all">dark/32dp-disabled/file_close_all.svg</file>
@@ -310,6 +317,7 @@
     <file alias="filter_wholeword">dark/32dp-disabled/filter_wholeword.svg</file>
     <file alias="folder__filled_close">dark/32dp-disabled/folder__filled_close.svg</file>
     <file alias="folder__filled_open">dark/32dp-disabled/folder__filled_open.svg</file>
+    <file alias="folder_brush">dark/32dp-disabled/folder_brush.svg</file>
     <file alias="folder_close">dark/32dp-disabled/folder_close.svg</file>
     <file alias="folder_open">dark/32dp-disabled/folder_open.svg</file>
     <file alias="folder_open_add">dark/32dp-disabled/folder_open_add.svg</file>
@@ -321,6 +329,7 @@
     <file alias="folder_open_pinned">dark/32dp-disabled/folder_open_pinned.svg</file>
     <file alias="folder_open_recent">dark/32dp-disabled/folder_open_recent.svg</file>
     <file alias="folder_open_remove">dark/32dp-disabled/folder_open_remove.svg</file>
+    <file alias="folder_tune">dark/32dp-disabled/folder_tune.svg</file>
     <file alias="format_text_align-center">dark/32dp-disabled/format_text_align-center.svg</file>
     <file alias="format_text_align-justify">dark/32dp-disabled/format_text_align-justify.svg</file>
     <file alias="format_text_align-left">dark/32dp-disabled/format_text_align-left.svg</file>
@@ -417,6 +426,7 @@
     <file alias="text_t_r90">dark/32dp-disabled/text_t_r90.svg</file>
     <file alias="toolbar">dark/32dp-disabled/toolbar.svg</file>
     <file alias="tune">dark/32dp-disabled/tune.svg</file>
+    <file alias="tune_apply">dark/32dp-disabled/tune_apply.svg</file>
     <file alias="tune_img_slider">dark/32dp-disabled/tune_img_slider.svg</file>
     <file alias="tune_slider">dark/32dp-disabled/tune_slider.svg</file>
     <file alias="tune_toolbar">dark/32dp-disabled/tune_toolbar.svg</file>

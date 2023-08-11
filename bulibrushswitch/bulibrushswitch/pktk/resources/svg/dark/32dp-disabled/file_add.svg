@@ -3,7 +3,7 @@
    viewBox="0 0 16 16"
    version="1.1"
    id="svg6"
-   sodipodi:docname="file.svg"
+   sodipodi:docname="file_add.svg"
    inkscape:version="1.2.2 (b0a8486, 2022-12-01)"
    width="32"
    height="32"
@@ -39,9 +39,9 @@
      id="namedview8"
      showgrid="true"
      inkscape:snap-page="true"
-     inkscape:zoom="8"
-     inkscape:cx="5.125"
-     inkscape:cy="25.4375"
+     inkscape:zoom="22.627417"
+     inkscape:cx="-3.1377863"
+     inkscape:cy="13.324543"
      inkscape:window-x="3840"
      inkscape:window-y="0"
      inkscape:window-maximized="0"
@@ -67,8 +67,7 @@
       </style>
   </defs>
   <path
-     style="fill:#ffffff;fill-opacity:1;stroke:none"
-     d="M 4,2 C 3.45,2 3,2.45 3,3 v 10 c 0,0.55 0.45,1 1,1 h 4 1 l 3,-3 V 10 8 3 C 12,2.45 11.55,2 11,2 h -1 z m 0,1 h 6 1 v 5 2 H 8 v 3 H 4 Z"
      id="path37"
-     inkscape:connector-curvature="0" />
+     style="fill:#ffffff;fill-opacity:0.5;stroke:none"
+     d="M 4 2 C 3.4500011 2 3 2.4500011 3 3 L 3 13 C 3 13.549998 3.450001 14 4 14 L 8 14 L 9 14 L 12 11 L 12 10 L 12 8 L 11 8 L 11 10 L 8 10 L 8 13 L 4 13 L 4 3 L 10 3 L 10 2 L 4 2 z M 11 2 L 11 4 L 9 4 L 9 5 L 11 5 L 11 7 L 12 7 L 12 5 L 14 5 L 14 4 L 12 4 L 12 2 L 11 2 z " />
 </svg>

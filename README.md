@@ -182,10 +182,12 @@ To **unselect** a brush from plugin list:
 _[2022-xx-xx] Version 1.0.0_ *[Show detailed release content](./releases-notes/RELEASE-1.0.0.md)*
 - Implement - Krita Interface - *Improve toolbar button*
 - Implement - Main Interface - *Icon view*
-- Implement - Main Settings - *Improve layout for brushes informations*
-- Implement - Main Settings - *Organize brushes within groups*
-- Implement - Main Settings - *Re-organize brushes & and groups with Drag'n'Drop*
-- Implement - Main Settings - *Let user choose scratchpad background color*
+- Implement - Main Settings - *Redesign*
+- Implement - Main Settings - *Brushes - Improve layout for brushes informations*
+- Implement - Main Settings - *Brushes - Organize brushes within groups*
+- Implement - Main Settings - *Brushes - Re-organize brushes & and groups with Drag'n'Drop*
+- Implement - Main Settings - *Brushes - Let user choose scratchpad background color*
+- Implement - Main Settings - *Setups manager*
 - Implement - Brush Settings - *Color button when **No color***
 - Implement - Brush Settings - *Take in account the preserve Alpha option*
 - Implement - Brush Settings - *Gradient color*

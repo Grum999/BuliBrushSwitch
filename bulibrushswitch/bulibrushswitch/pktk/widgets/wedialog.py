@@ -14,7 +14,7 @@
 #
 # Main class from this module
 #
-# - EDialog:
+# - WEDialog:
 #       A QDialog for which UI file can be provided in constructor
 #
 # -----------------------------------------------------------------------------
@@ -34,31 +34,29 @@ from ..pktk import *
 
 # -----------------------------------------------------------------------------
 
-print("[DEPRECATED] edialog.py/EDialog class is DEPRECATED --> Use wedialog.py/WEDialog instead")
 
-
-class EDialog(QDialog):
+class WEDialog(QDialog):
     """Extended QDialog provides some signals and event to manage ui"""
 
     dialogShown = pyqtSignal()
 
+    @staticmethod
+    def loadUi(fileName, parent):
+        """Create an WEDialog object from given XML .ui file"""
+        # temporary add <plugin> path to sys.path to let 'pktk.widgets.xxx' being accessible during xmlLoad()
+        sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+        returned = loadXmlUi(fileName, parent)
+        sys.path.pop()
+        return returned
+
     def __init__(self, uiFile=None, parent=None):
-        super(EDialog, self).__init__(parent)
+        super(WEDialog, self).__init__(parent)
         self.__eventCallBack = {}
         if isinstance(uiFile, str):
             # temporary add <plugin> path to sys.path to let 'pktk.widgets.xxx' being accessible during xmlLoad()
             sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
             loadXmlUi(uiFile, self)
             sys.path.pop()
-
-    @staticmethod
-    def loadUi(fileName):
-        """Create an EDialog object from given XML .ui file"""
-        # temporary add <plugin> path to sys.path to let 'pktk.widgets.xxx' being accessible during xmlLoad()
-        sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-        returned = loadXmlUi(uiFile, self)
-        sys.path.pop()
-        return returned
 
     def showEvent(self, event):
         """Event trigerred when dialog is shown
@@ -69,16 +67,16 @@ class EDialog(QDialog):
            =======
                 # define callback function
                 def my_callback_function():
-                    # EDialog shown!"
+                    # WEDialog shown!"
                     pass
 
                 # initialise a dialog from an xml .ui file
-                dlgMain = EDialog.loadUi(uiFileName)
+                dlgMain = WEDialog.loadUi(uiFileName)
 
                 # execute my_callback_function() when dialog became visible
                 dlgMain.dialogShown.connect(my_callback_function)
         """
-        super(EDialog, self).showEvent(event)
+        super(WEDialog, self).showEvent(event)
         self.dialogShown.emit()
 
     def eventFilter(self, object, event):
@@ -86,7 +84,7 @@ class EDialog(QDialog):
         if object in self.__eventCallBack.keys():
             return self.__eventCallBack[object](event)
 
-        return super(EDialog, self).eventFilter(object, event)
+        return super(WEDialog, self).eventFilter(object, event)
 
     def setEventCallback(self, object, method):
         """Add an event callback method for given object
@@ -102,7 +100,7 @@ class EDialog(QDialog):
 
 
                 # initialise a dialog from an xml .ui file
-                dlgMain = EDialog.loadUi(uiFileName)
+                dlgMain = WEDialog.loadUi(uiFileName)
 
                 # define callback for widget from ui
                 dlgMain.setEventCallback(dlgMain.my_widget, my_callback_function)
