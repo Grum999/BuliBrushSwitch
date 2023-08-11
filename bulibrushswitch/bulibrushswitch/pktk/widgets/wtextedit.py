@@ -147,6 +147,8 @@ class WTextEdit(QWidget):
     """A small text editor widget with a basic formatting toolbar"""
     colorMenuUiChanged = Signal(list)       # layout for fg/bg color menu has been modified
 
+    DEFAULT_FONT_SIZE = 12
+
     DEFAULT_TOOLBAR = (WTextEditBtBarOption.UNDOREDO |
                        WTextEditBtBarOption.COPYPASTE |
                        WTextEditBtBarOption.FONT |
@@ -358,9 +360,9 @@ class WTextEdit(QWidget):
         self.__textEdit.setAutoFormatting(QTextEdit.AutoAll)
         self.__textEdit.cursorPositionChanged.connect(self.__updateToolbar)
 
-        font = QFont('Sans serif', 10)
+        font = QFont('Sans serif', WTextEdit.DEFAULT_FONT_SIZE)
         self.__textEdit.setFont(font)
-        self.__textEdit.setFontPointSize(10)
+        self.__textEdit.setFontPointSize(WTextEdit.DEFAULT_FONT_SIZE)
 
     def __initToolBar(self):
         """Initialise toolbar widget
