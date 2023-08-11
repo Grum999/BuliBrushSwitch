@@ -57,7 +57,7 @@
         </property>
         <property name="maximumSize">
          <size>
-          <width>250</width>
+          <width>300</width>
           <height>16777215</height>
          </size>
         </property>
@@ -84,7 +84,7 @@
         </property>
         <property name="gridSize">
          <size>
-          <width>225</width>
+          <width>300</width>
           <height>64</height>
          </size>
         </property>
@@ -96,7 +96,7 @@
       <item>
        <widget class="QStackedWidget" name="swPages">
         <property name="currentIndex">
-         <number>0</number>
+         <number>1</number>
         </property>
         <widget class="QWidget" name="pgGeneralSettings">
          <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -272,7 +272,7 @@
            <number>0</number>
           </property>
           <item>
-           <widget class="QLabel" name="lable_2">
+           <widget class="QLabel" name="label_2b">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
               <horstretch>0</horstretch>
@@ -296,7 +296,7 @@
              <string>Groups &amp; Brushes</string>
             </property>
             <property name="margin">
-             <number>4</number>
+             <number>0</number>
             </property>
            </widget>
           </item>
@@ -464,7 +464,7 @@
                      </widget>
                     </item>
                     <item>
-                     <spacer name="horizontalSpacer_3">
+                     <spacer name="horizontalSpacer_2">
                       <property name="orientation">
                        <enum>Qt::Horizontal</enum>
                       </property>
@@ -475,31 +475,6 @@
                        </size>
                       </property>
                      </spacer>
-                    </item>
-                    <item>
-                     <widget class="QSlider" name="hsItemsThumbSize">
-                      <property name="maximumSize">
-                       <size>
-                        <width>150</width>
-                        <height>16777215</height>
-                       </size>
-                      </property>
-                      <property name="toolTip">
-                       <string>Thumbnail size</string>
-                      </property>
-                      <property name="maximum">
-                       <number>4</number>
-                      </property>
-                      <property name="pageStep">
-                       <number>1</number>
-                      </property>
-                      <property name="value">
-                       <number>3</number>
-                      </property>
-                      <property name="orientation">
-                       <enum>Qt::Horizontal</enum>
-                      </property>
-                     </widget>
                     </item>
                    </layout>
                   </widget>
@@ -542,6 +517,71 @@
                    <property name="expandsOnDoubleClick">
                     <bool>false</bool>
                    </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QWidget" name="widget_8" native="true">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                   <layout class="QHBoxLayout" name="horizontalLayout_7">
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                    <item>
+                     <spacer name="horizontalSpacer_3">
+                      <property name="orientation">
+                       <enum>Qt::Horizontal</enum>
+                      </property>
+                      <property name="sizeHint" stdset="0">
+                       <size>
+                        <width>40</width>
+                        <height>20</height>
+                       </size>
+                      </property>
+                     </spacer>
+                    </item>
+                    <item>
+                     <widget class="QSlider" name="hsItemsThumbSize">
+                      <property name="maximumSize">
+                       <size>
+                        <width>150</width>
+                        <height>16777215</height>
+                       </size>
+                      </property>
+                      <property name="toolTip">
+                       <string>Thumbnail size</string>
+                      </property>
+                      <property name="maximum">
+                       <number>4</number>
+                      </property>
+                      <property name="pageStep">
+                       <number>1</number>
+                      </property>
+                      <property name="value">
+                       <number>3</number>
+                      </property>
+                      <property name="orientation">
+                       <enum>Qt::Horizontal</enum>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
                   </widget>
                  </item>
                 </layout>
@@ -697,6 +737,66 @@
           </item>
          </layout>
         </widget>
+        <widget class="QWidget" name="pgSetupManager">
+         <layout class="QVBoxLayout" name="verticalLayout_8">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="label_3">
+            <property name="font">
+             <font>
+              <pointsize>12</pointsize>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="toolTip">
+             <string>Export, import, manage your brushes setups</string>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">background-color: palette(light);padding: 6;</string>
+            </property>
+            <property name="text">
+             <string>Setups management</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="WSetupManager" name="wsmSetups" native="true">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_12">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </widget>
        </widget>
       </item>
      </layout>
@@ -774,6 +874,12 @@
    <class>BBSWBrushesTv</class>
    <extends>QTreeView</extends>
    <header>bulibrushswitch.bbs.bbswbrushes</header>
+  </customwidget>
+  <customwidget>
+   <class>WSetupManager</class>
+   <extends>QWidget</extends>
+   <header>.pktk.widgets.wsetupmanager</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources>

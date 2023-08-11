@@ -74,6 +74,7 @@ class BBSSettingsValues(object):
     DEFAULT_MODIFICATIONMODE_IGNORE = 'ignoreModification'
     DEFAULT_MODIFICATIONMODE_KEEP = 'keepModification'
 
+    # same as QListView IconMode / listMode
     POPUP_BRUSHES_VIEWMODE_LIST = 0
     POPUP_BRUSHES_VIEWMODE_ICON = 1
 
@@ -135,6 +136,12 @@ class BBSSettingsKey(SettingsKey):
     CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_HSL_ASPCT =                 'config.editor.scratchpad.colorPickerBg.colorSlider.hsl.asPct'
     CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_HSV_VISIBLE =               'config.editor.scratchpad.colorPickerBg.colorSlider.hsv.visible'
     CONFIG_EDITOR_SCRATCHPAD_COLORPICKER_BG_CSLIDER_HSV_ASPCT =                 'config.editor.scratchpad.colorPickerBg.colorSlider.hsv.asPct'
+
+    CONFIG_EDITOR_SETUPMANAGER_LASTFILE =                                       'config.editor.setupManager.session.lastFile'
+    CONFIG_EDITOR_SETUPMANAGER_COLWIDTH =                                       'config.editor.setupManager.list.columnWidth.brushes'
+    CONFIG_EDITOR_SETUPMANAGER_ZOOMLEVEL =                                      'config.editor.setupManager.list.zoomLevel'
+    CONFIG_EDITOR_SETUPMANAGER_PROPERTIES_DLGBOX_ICON_VIEWMODE =                'config.editor.setupManager.properties.iconDialogBox.list.viewMode'
+    CONFIG_EDITOR_SETUPMANAGER_PROPERTIES_DLGBOX_ICON_ZOOMLEVEL =               'config.editor.setupManager.properties.iconDialogBox.list.zoomLevel'
 
     CONFIG_EDITOR_SCRATCHPAD_COLOR_BG =                                         'config.editor.scratchpad.colorBg'
 
@@ -292,7 +299,6 @@ class BBSSettings(Settings):
 
         return brushDict
 
-
     def __init__(self, pluginId=None):
         """Initialise settings"""
         if pluginId is None or pluginId == '':
@@ -349,6 +355,7 @@ class BBSSettings(Settings):
 
             SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SCRATCHPAD_COLOR_BG,                              '#ffffff',     SettingsFmt(str)),
 
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SETUPMANAGER_LASTFILE,                            '',            SettingsFmt(str)),
             SettingsRule(BBSSettingsKey.CONFIG_EDITOR_BRUSHES_ZOOMLEVEL,                                3,             SettingsFmt(int, [0, 1, 2, 3, 4])),
             SettingsRule(BBSSettingsKey.CONFIG_EDITOR_BRUSHES_COLWIDTH,                                 -1,            SettingsFmt(int)),
             SettingsRule(BBSSettingsKey.CONFIG_EDITOR_BRUSHES_SPLITTER_POSITION,                        [1000, 500],   SettingsFmt(int), SettingsFmt(int)),
@@ -358,6 +365,15 @@ class BBSSettings(Settings):
                                                                                                                        SettingsFmt(int,
                                                                                                                                    [BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_LIST,
                                                                                                                                     BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_ICON])
+                         ),
+
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SETUPMANAGER_ZOOMLEVEL,                           3,             SettingsFmt(int, [0, 1, 2, 3, 4])),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SETUPMANAGER_COLWIDTH,                            -1,            SettingsFmt(int)),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SETUPMANAGER_PROPERTIES_DLGBOX_ICON_ZOOMLEVEL,    3,             SettingsFmt(int, [0, 1, 2, 3, 4, 5, 6])),
+            SettingsRule(BBSSettingsKey.CONFIG_EDITOR_SETUPMANAGER_PROPERTIES_DLGBOX_ICON_VIEWMODE,     BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_LIST,
+                                                                                                                       SettingsFmt(int,
+                                                                                                                                   [BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_LIST,
+                                                                                                                                    BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_ICON]),
                          ),
 
             SettingsRule(BBSSettingsKey.CONFIG_EDITOR_WINDOW_POSITION_X,                                -1,            SettingsFmt(int)),
@@ -374,6 +390,7 @@ class BBSSettings(Settings):
                                                                                                                                    [BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_LIST,
                                                                                                                                     BBSSettingsValues.POPUP_BRUSHES_VIEWMODE_ICON])
                          ),
+
             SettingsRule(BBSSettingsKey.CONFIG_UI_POPUP_BRUSHES_VIEWMODE_ICON_SPLITTER_POSITION,        [400, 1000],   SettingsFmt(int), SettingsFmt(int)),
 
             SettingsRule(BBSSettingsKey.CONFIG_BRUSHES_LIST_COUNT,                                      0,             SettingsFmt(int, (0, None))),
@@ -526,6 +543,7 @@ class BBSSettings(Settings):
         """Convert text color picker layout from settings to layout"""
         # build a dummy color picker
         tmpColorPicker = WColorPicker()
+        tmpColorPicker.setConstraintSize(True)
         tmpColorPicker.setOptionCompactUi(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_COMPACT))
         tmpColorPicker.setOptionShowColorPalette(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_PALETTE_VISIBLE))
         tmpColorPicker.setOptionColorPalette(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_TEXT_COLORPICKER_PALETTE_DEFAULT))

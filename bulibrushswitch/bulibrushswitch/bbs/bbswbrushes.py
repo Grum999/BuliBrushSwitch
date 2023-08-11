@@ -177,7 +177,10 @@ class BBSBaseNode(QObject):
 
     def _setId(self, id):
         """Set unique id """
-        self.__uuid = id.strip("{}")
+        if id is None:
+            self.__uuid = QUuid.createUuid().toString().strip("{}")
+        else:
+            self.__uuid = id.strip("{}")
 
     def id(self):
         """Return unique id"""
@@ -743,7 +746,7 @@ class BBSBrush(BBSBaseNode):
         elif isinstance(color, str):
             try:
                 color = QColor(color)
-            except Exception:
+            except Exception as e:
                 return
 
         if color is None or isinstance(color, QColor) and self.__colorFg != color:
@@ -2018,7 +2021,10 @@ class BBSModel(QAbstractItemModel):
             else:
                 return self.data(index, BBSModel.ROLE_DATA)
         else:
-            return None
+            if asIndex:
+                return QModelIndex()
+            else:
+                return None
 
     def getGroupItems(self, groupId=None, asIndex=True):
         """Return items from given `groupId`
@@ -2136,12 +2142,12 @@ class BBSModel(QAbstractItemModel):
         if index.isValid():
             self.dataChanged.emit(index, index, [BBSModel.ROLE_DATA])
 
-    def importData(self, brushesAndGroups, nodes):
-        """Load model from:
-        - brushes (list of BBSBrush)
-        - groups (list of BBSGroup)
-        - nodes (list defined hierarchy)
-            [id, id, (id, [id, id, (id, [id])])]
+    def importData(self, data, mergeWithExistingData=False):
+        """Load model from given `data`, provided as a <dict>:
+            - 'brushes' (list of BBSBrush)
+            - 'groups' (list of BBSGroup)
+            - 'nodes' (list defined hierarchy)
+                [id, id, (id, [id, id, (id, [id])])]
         """
         def addNodes(idList, parent):
             toAdd = []
@@ -2161,21 +2167,65 @@ class BBSModel(QAbstractItemModel):
                     raise EInvalidValue(f"Given `id` must be a valid <str>")
             parent.appendChild(toAdd)
 
+        if not isinstance(data, dict):
+            print("importData", data)
+            raise EInvalidType("Given `data` must be a <dict>")
+        elif ('brushes' not in data or 'groups' not in data or 'nodes' not in data):
+            raise EInvalidValue("Given `data` must contains following keys: 'brushes', 'groups', 'nodes'")
+
         self.beginResetModel()
         self.__beginUpdate()
-        self.clear()
+
+        for index, brush in enumerate(data['brushes']):
+            if isinstance(data['brushes'][index], dict):
+                data['brushes'][index] = BBSBrush(data['brushes'][index])
+
+        for index, group in enumerate(data['groups']):
+            if isinstance(data['groups'][index], dict):
+                data['groups'][index] = BBSGroup(data['groups'][index])
+
+        if mergeWithExistingData:
+            # a dictionary id => BBSBaseNode
+
+            # when merging, we must ensure there's no duplicate ID for items
+            # then for imported item, generate new ID
+
+            # id map table old->new
+            mapTable = {}
+
+            # manage brushes & groups + reaffect new Id to item
+            for item in (data['brushes'] + data['groups']):
+                oldId = item.id()
+                item._setId(None)
+                mapTable[oldId] = item.id()
+
+            # manage nodes
+            # nodes are list that can includes list; easy method to manage it:
+            # - convert to json string
+            # - replace id
+            # - convert to list
+            nodesAsList = json.dumps(data['nodes'])
+
+            for oldId, newId in mapTable.items():
+                nodesAsList = nodesAsList.replace(oldId, newId)
+
+            nodes = json.loads(nodesAsList)
+        else:
+            self.clear()
+            nodes = data['nodes']
+
         # a dictionary id => BBSBaseNode
-        tmpIdIndex = {brushOrGroup.id(): brushOrGroup for brushOrGroup in brushesAndGroups}
+        tmpIdIndex = {brush.id(): brush for brush in data['brushes']} | {group.id(): group for group in data['groups']}
 
         if len(nodes) == 0:
-            # in this case (probably from a previous version of BBS, create everything at root level
+            # in this case (probably from a previous version of BBS), create everything at root level
             nodes = list(tmpIdIndex.keys())
 
         addNodes(nodes, self.__rootNode)
         self.__endUpdate()
         self.endResetModel()
 
-    def exportData(self):
+    def exportData(self, clone=False):
         """export model as dict
             {
                 'brushes': list of BBSBrush
@@ -2183,6 +2233,8 @@ class BBSModel(QAbstractItemModel):
                 'nodes':   list defined hierarchy
                                [id, id, (id, [id, id, (id, [id])])]
             }
+
+            If `clone` is True, exported object are cloned object
         """
         def export(parent, returned):
             nodes = []
@@ -2191,10 +2243,10 @@ class BBSModel(QAbstractItemModel):
                 data = child.data()
 
                 if isinstance(data, BBSBrush):
-                    returned['brushes'].append(data)
+                    returned['brushes'].append(BBSBrush(data))
                     nodes.append(data.id())
                 else:
-                    returned['groups'].append(data)
+                    returned['groups'].append(BBSGroup(data))
                     nodes.append((data.id(), export(child, returned)))
             return nodes
 
@@ -2216,7 +2268,6 @@ class BBSGroupsProxyModel(QAbstractProxyModel):
         - an additional group node "Flat view"
         - a top group "User view" for which all groups items will be available
     """
-
     UUID_FLATVIEW = "DUMMY001-0000-0000-0000-FLATVIEW0000"
     UUID_USERVIEW = "DUMMY002-0000-0000-0000-USERVIEW0000"
     UUID_ROOTNODE = "00000000-0000-0000-0000-000000000000"
@@ -3761,3 +3812,30 @@ class BBSGroupEditor(EDialog):
                 }
 
         return returned
+
+
+class BBSViewer(QWidget):
+    """A basic QWidget used to display setups through BBSWBrushesTv"""
+
+    def __init__(self, parent=None):
+        super(BBSViewer, self).__init__(parent)
+
+        self.__model = BBSModel()
+        self.__tvSetup = BBSWBrushesTv(self)
+        self.__tvSetup.setModel(self.__model)
+        self.__tvSetup.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
+        self.__tvSetup.setIconSizeIndex(2)
+
+        layout = QVBoxLayout()
+        layout.addWidget(self.__tvSetup)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        self.setLayout(layout)
+
+    def showEvent(self, event):
+        """Ensure columns size are correct when widget is displayed"""
+        self.__tvSetup.resizeColumns()
+
+    def setData(self, data):
+        """Data to preview"""
+        self.__model.importData(data)
