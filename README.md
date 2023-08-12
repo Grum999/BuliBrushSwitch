@@ -20,7 +20,7 @@ This plugin allows to define shortcuts to activate brushes, but also provides so
 
 ![Main interface](./screenshots/settings-brush.jpeg)
 
-*Toolbar button + popup brushes list*
+*Toolbar button + popup brushes (list mode)*
 
 ![Main interface](./screenshots/ui-list.jpeg)
 
@@ -32,18 +32,17 @@ Main functionality for this plugin is to let possibility for user to quickly swi
 Plugin allows:
 - To manage and organize an infinite number of brushes
 - To access to brushes from popup list and/or through defined shortcuts
-- To define properties (size, opacity, ...) per brush
-- To put comment on brushes
+- To define properties (size, opacity, ...) and ccomments per brush
 - To manage different setups
 
-Shortcuts for brushes can be managed directly from plugin or from default Krita's user interface for shorcuts; in this case, actions are named taking in account brushes name & comments.
+Shortcuts for brushes can be managed directly from plugin or from default Krita's user interface for shorcuts.
 
 > Read [short documentation](./DOC.md) for more detailed informations
 
 ## Download, Install & Execute
 
 ### Download
-+ **[ZIP ARCHIVE - v0.2.2b](https://github.com/Grum999/BuliBrushSwitch/releases/download/0.2.2b/bulibrushswitch.zip)**
++ **[ZIP ARCHIVE - v1.0.0](https://github.com/Grum999/BuliBrushSwitch/releases/download/1.0.0/bulibrushswitch.zip)**
 + **[SOURCE](https://github.com/Grum999/BuliBrushSwitch)**
 
 
@@ -65,7 +64,8 @@ Once installed, you should have a new button in toolbar, near the Krita's *Choos
 
 ### Tested platforms
 
-Plugin requires at least Krita 5.2.0-alpha (Linux appimage)
+Plugin requires at least Krita 5.2.0 (Linux appimage)
+Didn't has time to test it on other platform, should be OK. Normally. I hope 😅.
 
 ---
 
@@ -74,7 +74,7 @@ Plugin requires at least Krita 5.2.0-alpha (Linux appimage)
 
 ### What's new?
 
-_[2022-xx-xx] Version 1.0.0_ *[Show detailed release content](./releases-notes/RELEASE-1.0.0.md)*
+_[2022-08-12] Version 1.0.0_ *[Show detailed release content](./releases-notes/RELEASE-1.0.0.md)*
 - Implement - Krita Interface - *Improve toolbar button*
 - Implement - Main Interface - *Icon view*
 - Implement - Main Settings - *Redesign*
@@ -126,16 +126,19 @@ _[2021-12-01] Version 0.1.0b_ *[Show detailed release content](./releases-notes/
 
 ### Bugs
 
-Known bug on shortcut widget, all keystrokes are not recognized (at least on my Debian)
-And probably some other I didn't saw.
+There's a known bug on shortcut widget, all keystrokes are not recognized (at least on my Debian)
+> If you can't define a shortcut from plugin's interface, then do it from Krita's shortcuts interface
 
-Please consider the plugin is still in beta version!
+The plugin use Krita's API `Krita.instance().resources()`
+> On my DEV computer, with ~1000 presets, first call to this API need ~4.0s for execution; then Krita's startup will a little bit more time than usual
+> Should be faster with less presets
+> A [bug](https://bugs.kde.org/show_bug.cgi?id=473311) has been opened on Krita side for this case, not sure if it can be fixed or not...
+
+
 
 ### What’s next?
 
-Some ideas to implement:
-- Replace option "Ignore eraser mode" at brush level to let the possibility to define a specific brush to use for "eraser mode"
-- Some cosmetics improvements (brush list, toolbar button)
+Who knows? 😅
 
 
 ## License
