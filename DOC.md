@@ -40,11 +40,13 @@ Activation of a brush from *BuliBrushSwitch* will change the default Krita's beh
 
 | Case | Description |
 | --- | --- |
-| A brush is activated from plugin | Plugin take management brush<br/>- Krita's brush properties are overrided with the one defined by plugin |
+| A brush is activated from plugin | Plugin take management of brush<br/>- Krita's brush properties are overrided with the one defined by plugin |
 | A brush is deactivated from plugin | Plugin leave management of brush<br/> - Krita's brush properties are restored to previous values (the one set before plugin activate a brush)  |
 
 > **Note**
+>
 > When plugin takes management of brush, toolbar button is highlighted:
+>
 > ![The button in toolbar](./screenshots/ui-toolbar3-selected.jpeg)
 
 To **activate** a brush from plugin list, different possibilities:
@@ -161,4 +163,57 @@ Brush editor provides following properties:
 
 ## Setups manager
 
-xxx
+The *Setups manager* page provide a tool to manage miscellaneous Brushes setups.
+
+> The *Setups manager* is not the most intuitive, sorry 🫣
+>
+> But it's how I decided to manage my setups so... 😇
+
+Here's an overview of the *Setups manager*
+
+![Settings - Brushes](./screenshots/ui-settings-setups_manager.png)
+
+### Setups configuration
+
+It's possible to create a new *Setups configuration*, export it or import one.
+
+Import and export are mostly here:
+- To manage backup
+- To allow to share setups from a computer to another one
+
+An exported *Setups configuration* contains all your setups.
+
+Status bar provide information about current *Setups configuration*:
+- Current file
+- Number of setups
+
+### Setups management
+
+#### Setup content
+
+A setup is a Brushes list definition.
+
+All brushes and groups defined in plugin, their properties, how they're organized, are a single setup.
+
+Different setups can be saved in *Setups configuration*.
+
+![Settings - Setup manager - Example](./screenshots/ui-settings-setups_manager-example.png)
+
+Setup editor provides following properties:
+
+![Settings - Setup manager - Setup properties](./screenshots/ui-settings-setups_manager-setup_prop.png)
+
+When a setup is created, it's created from current Brushes list definition
+> Check *Setup preview* to control what will be saved in setup
+
+| Property | Description |
+| --- | --- |
+| *Setup* ||
+| Name | Set a name for setup definition |
+| Icon | select an icon, can be:<br>- An external image file<br>- An internal icon |
+| Setup | Visible <u>only</u> if edited setup doesn't match current Brushes list definition<br>- In this case, if you want to update it with current Brushes list definition,click on refresh button ![Settings - Setup manager - Refresh button](./screenshots/ui-settings-setups_manager-setup_prop-refresh.png) |
+| *Description* | Optional description for setup |
+
+#### Applying a setup
+
+Seleted setup can be applied to replace current Brushes list definition; just click on ***Apply setup* button  ![Settings - Setup manager - apply setup](./screenshots/ui-settings-setups_manager-setup_apply.png)
