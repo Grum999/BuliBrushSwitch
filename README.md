@@ -7,7 +7,7 @@ A plugin for [Krita](https://krita.org).
 *Buli Brush Switch* is a Python plugin made for [Krita](https://krita.org) (free professional and open-source painting program).
 
 
-This plugin is similar to *Ten Brushes* and *Three Slots*: it allows to define shortcuts to activate brushes, but also provides additional features directly available from toolbar.
+This plugin allows to define shortcuts to activate brushes, but also provides some additional features.
 
 
 ## Screenshots
@@ -20,29 +20,29 @@ This plugin is similar to *Ten Brushes* and *Three Slots*: it allows to define s
 
 ![Main interface](./screenshots/settings-brush.jpeg)
 
-*Toolbar button + popup brushes list*
+*Toolbar button + popup brushes (list mode)*
 
 ![Main interface](./screenshots/ui-list.jpeg)
 
 
 ## Functionalities
 
-Main functionality for this plugin is to let possibility for user to quickly switch to preset brush through shortcuts (like *Ten Brushes* plugin)
+Main functionality for this plugin is to let possibility for user to quickly switch to preset brush through shortcuts.
 
 Plugin allows:
-- To manage an infinite number of brushes
+- To manage and organize an infinite number of brushes
 - To access to brushes from popup list and/or through defined shortcuts
-- To define properties (size, opacity, ...) per brush
-- To put comment on brushes
+- To define properties (size, opacity, ...) and ccomments per brush
+- To manage different setups
 
-Shortcuts for brushes can be managed directly from plugin or from default Krita's user interface for shorcuts; in this case, actions are named taking in account brushes name & comments.
+Shortcuts for brushes can be managed directly from plugin or from default Krita's user interface for shorcuts.
 
-> Read short documentation section below for more detailed informations
+> Read [short documentation](./DOC.md) for more detailed informations
 
 ## Download, Install & Execute
 
 ### Download
-+ **[ZIP ARCHIVE - v0.2.2b](https://github.com/Grum999/BuliBrushSwitch/releases/download/0.2.2b/bulibrushswitch.zip)**
++ **[ZIP ARCHIVE - v1.0.0](https://github.com/Grum999/BuliBrushSwitch/releases/download/1.0.0/bulibrushswitch.zip)**
 + **[SOURCE](https://github.com/Grum999/BuliBrushSwitch)**
 
 
@@ -64,113 +64,8 @@ Once installed, you should have a new button in toolbar, near the Krita's *Choos
 
 ### Tested platforms
 
-Plugin requires at least Krita 5.2.0-alpha (Linux appimage)
-
----
-
-## (Short) Documentation
-
-### Toolbar button
-
-Button is splitted in 2 parts:
-
-| Button | Description |
-| --- | --- |
-| *Icon button* | Direct access to activate the brush  |
-| *Popup list button* | Show popup brushes list |
-
-![Toolbar button](./screenshots/ui-toolbar-button.png)
-
-### Popup brushes list
-
-The popup brushes list is displayed when:
-- Popup list button is clicked
-- Shortcut "Show popup brushes list" is defined and used (can be useful in particular in "full canvas mode")
-
-![Popup brushes list](./screenshots/ui-popup-brushes-list.png)
-
-
-### Settings
-
-Plugin allows to define from 1 to *N* brushes in a dedicated list, there's no limits to number of brushes in list.
-
-![Settings - brushes list](./screenshots/ui-settings-brushes-list.png)
-
-#### Settings: Button selection mode
-
-The option for *Button selection mode* in brush list settings window allows to define how the icon button is used.
-
-
-| Checked option | Description |
-| --- | --- |
-| *First from list* | - The icon in toolbar will always be the first brush defined in list, whatever the last brush from list that has been selected<br/>- Clicking on icon button will then always activate the first brush in list |
-| *Last selected* | - The icon in toolbar will always be the one from last selected brush in list<br/>- Clicking on icon button will then re-activate the last brush that has been selected in list |
-
-
-#### Settings: Behaviour for brushes with specific values
-
-The option for *Behaviour for brushes with specific values* in brush list settings window allows to define default behaviour when paint tool/color is modified when using a brush with specific paint tool/color.
-
-
-| Checked option | Description |
-| --- | --- |
-| *Ignore modified state* | For brushes with specific paint tool and/or color, exiting plugin’s brush will always restore initial paint tool and/or color |
-| *Keep modified state* | For brushes with specific paint tool and/or color, exiting plugin’s brush will:<br/>- If paint tool and/or color has been modified, keep last selected paint tool and/or color<br/>- If paint tool and/or color has NOT been modified, restore initial paint tool and/or color |
-
-
-#### Settings: Brushes list
-
-Brushes in list can be:
-- Added
-- Edited
-- Removed
-- Re-ordered
-
-A scratchpad allows to tests brushes directly from brushes list settings window.
-
-
-#### Settings: Brush options
-
-When created or updated,
-
-Each brush can be configured with some options:
-
-| Option | Description |
-| --- | --- |
-| *Blending mode*<br/>*Size*<br/>*Opacity*<br/>*Flow* | Allows to tune specific values for brush, different than default one |
-| *Use specific paint tool* | When checked, paint tool selected in list is activated automatically when brush is selected |
-| *Keep user modification* | When checked, modified brush properties are kept for next time:<br/>- Blending mode<br/>- Size<br/>- Opacity<br/>- Flow<br/>- Paint tool *(only if option "Use specific paint tool is checked")*<br/>- Color *(only if option "Use specific color is checked")*<br/>When unchecked, modifications made to properties are not kept in brush configuration |
-| *Ignore eraser mode*<sup>*</sup> | When checked, Krita's *eraser mode* is deactivated for brush, you have to explicitly switch to an eraser |
-| *Use specific color*<sup>*</sup> | When checked, defined color is automatically applied when brush is activated<br/>- Foreground color is mandatory<br/>- Background color is optional |
-| *Shortcut* | Shortcut to activate/deactivate a brush can be defined from here (or from Krita's usual shortcuts settings window) |
-| *Comments* | Free rich text comment can be added on a brush<br>First comment line is used to identify easily brushes in Krita's usual shortcuts settings window |
-
-> <sup>*</sup>*Options not available for eraser brushes*
-
-
-### Brush selection
-
-Selecting a brush from plugin will "change" the default Krita's behavior about brushes.
-
-| Case | Description |
-| --- | --- |
-| *A brush is selected from plugin list* | - Plugin take management of brushes (brush properties from plugin overrides Krita's brush rules)<br/>- Brush properties are reset with the one defined in plugin |
-| *A brush is unselected from plugin list* | - Plugin leave management of brush (Krita's normal behaviour for brushes is applied)<br/> - Brush & properties that were defined before plugin took management are restored to their values |
-
-> **Note:**
-> When plugin takes management of brush, toolbar button is highlighted:
-> ![The button in toolbar](./screenshots/ui-toolbar3-selected.jpeg)
-
-To **select** a brush from plugin list, different possibilities:
-- Open popup brush list, and click on desired brush to activate it
-- If a shortcut has been defined for desired brush, use shortcut to activate it
-
-To **unselect** a brush from plugin list:
-- Open popup brush list, click on *the current active brush in list*
-- If a shortcut has been defined for *the current active brush in list*, use shortcut to deactivate it
-- If a shortcut has been defined for "*Deactivate current brush*" action, use shortcut to deactivate current brush (whatever the current brush is)
-- Select any brush from Krita's brush preset selector
-
+Plugin requires at least Krita 5.2.0 (Linux appimage)
+Didn't has time to test it on other platform, should be OK. Normally. I hope 😅.
 
 ---
 
@@ -178,6 +73,24 @@ To **unselect** a brush from plugin list:
 ## Plugin's life
 
 ### What's new?
+
+_[2022-08-12] Version 1.0.0_ *[Show detailed release content](./releases-notes/RELEASE-1.0.0.md)*
+- Implement - Krita Interface - *Improve toolbar button*
+- Implement - Main Interface - *Icon view*
+- Implement - Main Settings - *Redesign*
+- Implement - Main Settings - *Brushes - Improve layout for brushes informations*
+- Implement - Main Settings - *Brushes - Organize brushes within groups*
+- Implement - Main Settings - *Brushes - Re-organize brushes & and groups with Drag'n'Drop*
+- Implement - Main Settings - *Brushes - Let user choose scratchpad background color*
+- Implement - Main Settings - *Setups manager*
+- Implement - Brush Settings - *Color button when **No color***
+- Implement - Brush Settings - *Take in account the preserve Alpha option*
+- Implement - Brush Settings - *Gradient color*
+- Implement - Brush Settings - *Ignore tool opacity*
+- Fix bug - Brush Settings - *Keep user modifications*
+- Fix bug - Brush Settings - *Ignore eraser mode option*
+- Fix bug - Main Interface - *Crash when brushes from disabled bundles are referenced*
+- Fix bug - Main Interface - *Lag/Freeze when changing brush*
 
 _[2023-05-09] Version 0.2.2b_ *[Show detailed release content](./releases-notes/RELEASE-0.2.2b.md)*
 - Fix bug *Krita 5.2.0 Compatibility*
@@ -213,16 +126,23 @@ _[2021-12-01] Version 0.1.0b_ *[Show detailed release content](./releases-notes/
 
 ### Bugs
 
-Known bug on shortcut widget, all keystrokes are not recognized (at least on my Debian)
-And probably some other I didn't saw.
+There's a known bug on shortcut widget, all keystrokes are not recognized (at least on my Debian)
+> If you can't define a shortcut from plugin's interface, then do it from Krita's shortcuts interface
 
-Please consider the plugin is still in beta version!
+The plugin use Krita's API `Krita.instance().resources()`: on my DEV computer, with ~1000 presets, first call to this API function need ~4.0s for execution
+- With plugin installed, Krita's startup will need a little bit more time than usual
+- Should be faster with less presets
+> A [bug](https://bugs.kde.org/show_bug.cgi?id=473311) has been opened on Krita side for this case, not sure if it can be fixed or not...
+
+**Question? Bugs? Feature request?**
+> Please use the dedicated [Issues](https://github.com/Grum999/BuliBrushSwitch/issues) page
+
+
+
 
 ### What’s next?
 
-Some ideas to implement:
-- Replace option "Ignore eraser mode" at brush level to let the possibility to define a specific brush to use for "eraser mode"
-- Some cosmetics improvements (brush list, toolbar button)
+Who knows? 😅
 
 
 ## License

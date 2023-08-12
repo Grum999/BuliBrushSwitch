@@ -1,26 +1,37 @@
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # PyKritaToolKit
-# Copyright (C) 2019-2021 - Grum999
-#
-# A toolkit to make pykrita plugin coding easier :-)
+# Copyright (C) 2019-2022 - Grum999
 # -----------------------------------------------------------------------------
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.
-# If not, see https://www.gnu.org/licenses/
+# https://spdx.org/licenses/GPL-3.0-or-later.html
+# -----------------------------------------------------------------------------
+# A Krita plugin framework
 # -----------------------------------------------------------------------------
 
-
-
+# -----------------------------------------------------------------------------
+# The ekrita module provides extended classes and method for Krita
+#
+# Main classes from this module
+#
+# - EKritaWindow:
+#       Provides methods to access to some Krita mainwindow widgets
+#
+# - EKritaBrushPreset:
+#       Allows 'secured' access to brushes presets
+#
+# - EKritaShortcuts:
+#       Provides methods to manage shortcuts
+#
+# - EKritaBlendingModesId & EKritaBlendingModes:
+#       Provides methods for quick access to paint tools
+#
+# - EKritaDocument:
+#       Provides additionals methods to manage documents
+#
+# - EKritaNode:
+#       Provides additionals methods to manage nodes
+#
 # -----------------------------------------------------------------------------
 
 from enum import Enum
@@ -52,11 +63,11 @@ from PyQt5.QtGui import (
 from PyQt5.QtWidgets import (
         QWidget,
         QToolButton,
-        QListView
+        QListView,
+        QDockWidget
     )
 
 from PyQt5.Qt import (QObject, QMdiArea, QAbstractScrollArea)
-
 
 # -----------------------------------------------------------------------------
 
@@ -71,7 +82,7 @@ class EKritaWindow:
         Return a tuple (horizontalScrollBar, verticalScrollBar)
         If there's no active window, return None
         """
-        window=Krita.instance().activeWindow()
+        window = Krita.instance().activeWindow()
         if window is None:
             return None
 
@@ -99,20 +110,22 @@ class EKritaBrushPreset:
     """
 
     # define some brushes preset we can consider to be used as default
-    __DEFAUL_BRUSH_NAMES=['b) Basic-5 Size',
-                          'b) Basic-1',
-                          'c) Pencil-2',
-                          'd) Ink-2 Fineliner',
-                          'd) Ink-3 Gpen'
-                        ]
+    __DEFAUL_BRUSH_NAMES = ['b) Basic-5 Size',
+                            'b) Basic-1',
+                            'c) Pencil-2',
+                            'd) Ink-2 Fineliner',
+                            'd) Ink-3 Gpen'
+                            ]
 
-    __brushes=None
-    __presetChooserWidget=None
+    __brushes = None
+    __presetChooserWidget = None
 
     @staticmethod
     def initialise():
         """Initialise brushes names"""
-        EKritaBrushPreset.__brushes=Krita.instance().resources("preset")
+        # this is pretty long!!!
+        # on my DEV computer, 1058 preset --> takes ~4seconds to return list on first execution!
+        EKritaBrushPreset.__brushes = Krita.instance().resources("preset")
 
     @staticmethod
     def getName(name=None):
@@ -127,7 +140,7 @@ class EKritaBrushPreset:
             EKritaBrushPreset.initialise()
 
         if isinstance(name, Resource):
-            name=name.name()
+            name = name.name()
 
         if name in EKritaBrushPreset.__brushes:
             # asked brush found, return it
@@ -142,24 +155,27 @@ class EKritaBrushPreset:
             # default brush not found :-/
             # return current brush from view
             if Krita.instance().activeWindow() and Krita.instance().activeWindow().activeView():
-                brushName=Krita.instance().activeWindow().activeView().currentBrushPreset().name()
+                brushName = Krita.instance().activeWindow().activeView().currentBrushPreset().name()
             else:
-                brushName=None
+                brushName = None
 
             if brushName in EKritaBrushPreset.__brushes:
                 # asked brush found, return it
                 return brushName
 
             # weird..
-            # but can happen!
+            # but can happen!
             # https://krita-artists.org/t/second-beta-for-krita-5-0-help-in-testing-krita/30262/19?u=grum999
 
-            if len(EKritaBrushPreset.__brushes)>0:
+            if len(EKritaBrushPreset.__brushes) > 0:
                 # return the first one...
                 return EKritaBrushPreset.__brushes[list(EKritaBrushPreset.__brushes.keys())[0]].name()
 
             # this case should never occurs I hope!!
-            raise EInvalidStatus('Something weird happened!\n- Given brush name "'+name+'" was not found\n- Current brush "'+brushName+'" returned bu Krita doesn\'t exist\n- Brush preset list returned by Krita is empty\n\nCan\'t do anything...')
+            raise EInvalidStatus(f'Something weird happened!\n'
+                                 f'- Given brush name "{name}" was not found\n'
+                                 f'- Current brush "{brushName}" returned but Krita doesn\'t exist\n'
+                                 f'- Brush preset list returned by Krita is empty\n\nCan\'t do anything...')
 
     @staticmethod
     def getPreset(name=None):
@@ -178,7 +194,7 @@ class EKritaBrushPreset:
     @staticmethod
     def found(name):
         """Return if brush preset (from name) exists and can be used"""
-        return EKritaBrushPreset.getName(name)==name
+        return EKritaBrushPreset.getName(name) == name
 
     @staticmethod
     def presetChooserWidget():
@@ -202,7 +218,6 @@ class EKritaBrushPreset:
         return EKritaBrushPreset.__presetChooserWidget
 
 
-
 class EKritaShortcuts:
     """Manage shortcuts"""
 
@@ -212,259 +227,198 @@ class EKritaShortcuts:
 
         Return a list of action using the sequence
         """
-        returned=[]
-        actions=Krita.instance().actions()
+        returned = []
+        actions = Krita.instance().actions()
         for action in actions:
-            shortcuts=action.shortcuts()
+            shortcuts = action.shortcuts()
             for shortcut in shortcuts:
-                if keySequence.matches(shortcut)==QKeySequence.ExactMatch:
+                if keySequence.matches(shortcut) == QKeySequence.ExactMatch:
                     returned.append(action)
                     break
         return returned
-
-
-
-class EKritaPaintToolsId:
-    """Paint tools Id"""
-    TOOL_BRUSH=          'KritaShape/KisToolBrush'
-    TOOL_LINE=           'KritaShape/KisToolLine'
-    TOOL_RECTANGLE=      'KritaShape/KisToolRectangle'
-    TOOL_ELLIPSE=        'KritaShape/KisToolEllipse'
-    TOOL_POLYGON=        'KisToolPolygon'
-    TOOL_POLYLINE=       'KisToolPolyline'
-    TOOL_PATH=           'KritaShape/KisToolPath'
-    TOOL_PENCIL=         'KisToolPencil'
-    TOOL_DYNAMIC_BRUSH=  'KritaShape/KisToolDyna'
-    TOOL_MULTI_BRUSH=    'KritaShape/KisToolMultiBrush'
-
-class EKritaPaintTools:
-    """Quick access to paint tools"""
-
-    __TOOLS={
-            EKritaPaintToolsId.TOOL_BRUSH:           i18n("Freehand Brush Tool"),
-            EKritaPaintToolsId.TOOL_LINE:            i18n("Line Tool"),
-            EKritaPaintToolsId.TOOL_RECTANGLE:       i18n("Rectangle Tool"),
-            EKritaPaintToolsId.TOOL_ELLIPSE:         i18n("Ellipse Tool"),
-            EKritaPaintToolsId.TOOL_POLYGON:         i18n("Polygon Tool: Shift-mouseclick ends the polygon."),
-            EKritaPaintToolsId.TOOL_POLYLINE:        i18n("Polyline Tool: Shift-mouseclick ends the polyline."),
-            EKritaPaintToolsId.TOOL_PATH:            i18n("Bezier Curve Tool: Shift-mouseclick ends the curve."),
-            EKritaPaintToolsId.TOOL_PENCIL:          i18n("Freehand Path Tool"),
-            EKritaPaintToolsId.TOOL_DYNAMIC_BRUSH:   i18n("Dynamic Brush Tool"),
-            EKritaPaintToolsId.TOOL_MULTI_BRUSH:     i18n("Multibrush Tool")
-        }
-
-    @staticmethod
-    def idList():
-        """Return list of tools identifiers"""
-        return list(EKritaPaintTools.__TOOLS)
-
-    @staticmethod
-    def name(id):
-        """Return (translated) name for paint tools
-
-        None value return 'None' string
-
-        Otherwise Raise an error is tools is not found
-        """
-        if id is None:
-            return i18n('None')
-        elif id in EKritaPaintTools.__TOOLS:
-            return re.sub('\s*:.*', '', EKritaPaintTools.__TOOLS[id])
-        else:
-            raise EInvalidValue("Given `id` is not valid")
-
-    @staticmethod
-    def current():
-        """return id of current paint tool, if any active
-
-        Otherwise return None
-        """
-        window=Krita.instance().activeWindow()
-        if window:
-            for id in EKritaPaintTools.__TOOLS:
-                toolButton=window.qwindow().findChild(QToolButton, id)
-                if toolButton and toolButton.isChecked():
-                    return id
-        return None
 
 
 class EKritaBlendingModesId:
     """Blending modes Id"""
     # list from:
     #   https://invent.kde.org/graphics/krita/-/blob/master/libs/pigment/KoCompositeOpRegistry.h
-    COMPOSITE_OVER=                             "normal"
-    COMPOSITE_ERASE=                            "erase"
-    COMPOSITE_IN=                               "in"
-    COMPOSITE_OUT=                              "out"
-    COMPOSITE_ALPHA_DARKEN=                     "alphadarken"
-    COMPOSITE_DESTINATION_IN=                   "destination-in"
-    COMPOSITE_DESTINATION_ATOP=                 "destination-atop"
+    COMPOSITE_OVER =                             "normal"
+    COMPOSITE_ERASE =                            "erase"
+    COMPOSITE_IN =                               "in"
+    COMPOSITE_OUT =                              "out"
+    COMPOSITE_ALPHA_DARKEN =                     "alphadarken"
+    COMPOSITE_DESTINATION_IN =                   "destination-in"
+    COMPOSITE_DESTINATION_ATOP =                 "destination-atop"
 
-    COMPOSITE_XOR=                              "xor"
-    COMPOSITE_OR=                               "or"
-    COMPOSITE_AND=                              "and"
-    COMPOSITE_NAND=                             "nand"
-    COMPOSITE_NOR=                              "nor"
-    COMPOSITE_XNOR=                             "xnor"
-    COMPOSITE_IMPLICATION=                      "implication"
-    COMPOSITE_NOT_IMPLICATION=                  "not_implication"
-    COMPOSITE_CONVERSE=                         "converse"
-    COMPOSITE_NOT_CONVERSE=                     "not_converse"
+    COMPOSITE_XOR =                              "xor"
+    COMPOSITE_OR =                               "or"
+    COMPOSITE_AND =                              "and"
+    COMPOSITE_NAND =                             "nand"
+    COMPOSITE_NOR =                              "nor"
+    COMPOSITE_XNOR =                             "xnor"
+    COMPOSITE_IMPLICATION =                      "implication"
+    COMPOSITE_NOT_IMPLICATION =                  "not_implication"
+    COMPOSITE_CONVERSE =                         "converse"
+    COMPOSITE_NOT_CONVERSE =                     "not_converse"
 
-    COMPOSITE_PLUS=                             "plus"
-    COMPOSITE_MINUS=                            "minus"
-    COMPOSITE_ADD=                              "add"
-    COMPOSITE_SUBTRACT=                         "subtract"
-    COMPOSITE_INVERSE_SUBTRACT=                 "inverse_subtract"
-    COMPOSITE_DIFF=                             "diff"
-    COMPOSITE_MULT=                             "multiply"
-    COMPOSITE_DIVIDE=                           "divide"
-    COMPOSITE_ARC_TANGENT=                      "arc_tangent"
-    COMPOSITE_GEOMETRIC_MEAN=                   "geometric_mean"
-    COMPOSITE_ADDITIVE_SUBTRACTIVE=             "additive_subtractive"
-    COMPOSITE_NEGATION=                         "negation"
+    COMPOSITE_PLUS =                             "plus"
+    COMPOSITE_MINUS =                            "minus"
+    COMPOSITE_ADD =                              "add"
+    COMPOSITE_SUBTRACT =                         "subtract"
+    COMPOSITE_INVERSE_SUBTRACT =                 "inverse_subtract"
+    COMPOSITE_DIFF =                             "diff"
+    COMPOSITE_MULT =                             "multiply"
+    COMPOSITE_DIVIDE =                           "divide"
+    COMPOSITE_ARC_TANGENT =                      "arc_tangent"
+    COMPOSITE_GEOMETRIC_MEAN =                   "geometric_mean"
+    COMPOSITE_ADDITIVE_SUBTRACTIVE =             "additive_subtractive"
+    COMPOSITE_NEGATION =                         "negation"
 
-    COMPOSITE_MOD=                              "modulo"
-    COMPOSITE_MOD_CON=                          "modulo_continuous"
-    COMPOSITE_DIVISIVE_MOD=                     "divisive_modulo"
-    COMPOSITE_DIVISIVE_MOD_CON=                 "divisive_modulo_continuous"
-    COMPOSITE_MODULO_SHIFT=                     "modulo_shift"
-    COMPOSITE_MODULO_SHIFT_CON=                 "modulo_shift_continuous"
+    COMPOSITE_MOD =                              "modulo"
+    COMPOSITE_MOD_CON =                          "modulo_continuous"
+    COMPOSITE_DIVISIVE_MOD =                     "divisive_modulo"
+    COMPOSITE_DIVISIVE_MOD_CON =                 "divisive_modulo_continuous"
+    COMPOSITE_MODULO_SHIFT =                     "modulo_shift"
+    COMPOSITE_MODULO_SHIFT_CON =                 "modulo_shift_continuous"
 
-    COMPOSITE_EQUIVALENCE=                      "equivalence"
-    COMPOSITE_ALLANON=                          "allanon"
-    COMPOSITE_PARALLEL=                         "parallel"
-    COMPOSITE_GRAIN_MERGE=                      "grain_merge"
-    COMPOSITE_GRAIN_EXTRACT=                    "grain_extract"
-    COMPOSITE_EXCLUSION=                        "exclusion"
-    COMPOSITE_HARD_MIX=                         "hard mix"
-    COMPOSITE_HARD_MIX_PHOTOSHOP=               "hard_mix_photoshop"
-    COMPOSITE_HARD_MIX_SOFTER_PHOTOSHOP=        "hard_mix_softer_photoshop"
-    COMPOSITE_OVERLAY=                          "overlay"
-    COMPOSITE_BEHIND=                           "behind"
-    COMPOSITE_GREATER=                          "greater"
-    COMPOSITE_HARD_OVERLAY=                     "hard overlay"
-    COMPOSITE_INTERPOLATION=                    "interpolation"
-    COMPOSITE_INTERPOLATIONB=                   "interpolation 2x"
-    COMPOSITE_PENUMBRAA=                        "penumbra a"
-    COMPOSITE_PENUMBRAB=                        "penumbra b"
-    COMPOSITE_PENUMBRAC=                        "penumbra c"
-    COMPOSITE_PENUMBRAD=                        "penumbra d"
+    COMPOSITE_EQUIVALENCE =                      "equivalence"
+    COMPOSITE_ALLANON =                          "allanon"
+    COMPOSITE_PARALLEL =                         "parallel"
+    COMPOSITE_GRAIN_MERGE =                      "grain_merge"
+    COMPOSITE_GRAIN_EXTRACT =                    "grain_extract"
+    COMPOSITE_EXCLUSION =                        "exclusion"
+    COMPOSITE_HARD_MIX =                         "hard mix"
+    COMPOSITE_HARD_MIX_PHOTOSHOP =               "hard_mix_photoshop"
+    COMPOSITE_HARD_MIX_SOFTER_PHOTOSHOP =        "hard_mix_softer_photoshop"
+    COMPOSITE_OVERLAY =                          "overlay"
+    COMPOSITE_BEHIND =                           "behind"
+    COMPOSITE_GREATER =                          "greater"
+    COMPOSITE_HARD_OVERLAY =                     "hard overlay"
+    COMPOSITE_INTERPOLATION =                    "interpolation"
+    COMPOSITE_INTERPOLATIONB =                   "interpolation 2x"
+    COMPOSITE_PENUMBRAA =                        "penumbra a"
+    COMPOSITE_PENUMBRAB =                        "penumbra b"
+    COMPOSITE_PENUMBRAC =                        "penumbra c"
+    COMPOSITE_PENUMBRAD =                        "penumbra d"
 
-    COMPOSITE_DARKEN=                           "darken"
-    COMPOSITE_BURN=                             "burn"          #color burn
-    COMPOSITE_LINEAR_BURN=                      "linear_burn"
-    COMPOSITE_GAMMA_DARK=                       "gamma_dark"
-    COMPOSITE_SHADE_IFS_ILLUSIONS=              "shade_ifs_illusions"
-    COMPOSITE_FOG_DARKEN_IFS_ILLUSIONS=         "fog_darken_ifs_illusions"
-    COMPOSITE_EASY_BURN=                        "easy burn"
+    COMPOSITE_DARKEN =                           "darken"
+    COMPOSITE_BURN =                             "burn"          # color burn
+    COMPOSITE_LINEAR_BURN =                      "linear_burn"
+    COMPOSITE_GAMMA_DARK =                       "gamma_dark"
+    COMPOSITE_SHADE_IFS_ILLUSIONS =              "shade_ifs_illusions"
+    COMPOSITE_FOG_DARKEN_IFS_ILLUSIONS =         "fog_darken_ifs_illusions"
+    COMPOSITE_EASY_BURN =                        "easy burn"
 
-    COMPOSITE_LIGHTEN=                          "lighten"
-    COMPOSITE_DODGE=                            "dodge"
-    COMPOSITE_LINEAR_DODGE=                     "linear_dodge"
-    COMPOSITE_SCREEN=                           "screen"
-    COMPOSITE_HARD_LIGHT=                       "hard_light"
-    COMPOSITE_SOFT_LIGHT_IFS_ILLUSIONS=         "soft_light_ifs_illusions"
-    COMPOSITE_SOFT_LIGHT_PEGTOP_DELPHI=         "soft_light_pegtop_delphi"
-    COMPOSITE_SOFT_LIGHT_PHOTOSHOP=             "soft_light"
-    COMPOSITE_SOFT_LIGHT_SVG=                   "soft_light_svg"
-    COMPOSITE_GAMMA_LIGHT=                      "gamma_light"
-    COMPOSITE_GAMMA_ILLUMINATION=               "gamma_illumination"
-    COMPOSITE_VIVID_LIGHT=                      "vivid_light"
-    COMPOSITE_FLAT_LIGHT=                       "flat_light"
-    COMPOSITE_LINEAR_LIGHT=                     "linear light"
-    COMPOSITE_PIN_LIGHT=                        "pin_light"
-    COMPOSITE_PNORM_A=                          "pnorm_a"
-    COMPOSITE_PNORM_B=                          "pnorm_b"
-    COMPOSITE_SUPER_LIGHT=                      "super_light"
-    COMPOSITE_TINT_IFS_ILLUSIONS=               "tint_ifs_illusions"
-    COMPOSITE_FOG_LIGHTEN_IFS_ILLUSIONS=        "fog_lighten_ifs_illusions"
-    COMPOSITE_EASY_DODGE=                       "easy dodge"
-    COMPOSITE_LUMINOSITY_SAI=                   "luminosity_sai"
+    COMPOSITE_LIGHTEN =                          "lighten"
+    COMPOSITE_DODGE =                            "dodge"
+    COMPOSITE_LINEAR_DODGE =                     "linear_dodge"
+    COMPOSITE_SCREEN =                           "screen"
+    COMPOSITE_HARD_LIGHT =                       "hard_light"
+    COMPOSITE_SOFT_LIGHT_IFS_ILLUSIONS =         "soft_light_ifs_illusions"
+    COMPOSITE_SOFT_LIGHT_PEGTOP_DELPHI =         "soft_light_pegtop_delphi"
+    COMPOSITE_SOFT_LIGHT_PHOTOSHOP =             "soft_light"
+    COMPOSITE_SOFT_LIGHT_SVG =                   "soft_light_svg"
+    COMPOSITE_GAMMA_LIGHT =                      "gamma_light"
+    COMPOSITE_GAMMA_ILLUMINATION =               "gamma_illumination"
+    COMPOSITE_VIVID_LIGHT =                      "vivid_light"
+    COMPOSITE_FLAT_LIGHT =                       "flat_light"
+    COMPOSITE_LINEAR_LIGHT =                     "linear light"
+    COMPOSITE_PIN_LIGHT =                        "pin_light"
+    COMPOSITE_PNORM_A =                          "pnorm_a"
+    COMPOSITE_PNORM_B =                          "pnorm_b"
+    COMPOSITE_SUPER_LIGHT =                      "super_light"
+    COMPOSITE_TINT_IFS_ILLUSIONS =               "tint_ifs_illusions"
+    COMPOSITE_FOG_LIGHTEN_IFS_ILLUSIONS =        "fog_lighten_ifs_illusions"
+    COMPOSITE_EASY_DODGE =                       "easy dodge"
+    COMPOSITE_LUMINOSITY_SAI =                   "luminosity_sai"
 
-    COMPOSITE_HUE=                              "hue"
-    COMPOSITE_COLOR=                            "color"
-    COMPOSITE_SATURATION=                       "saturation"
-    COMPOSITE_INC_SATURATION=                   "inc_saturation"
-    COMPOSITE_DEC_SATURATION=                   "dec_saturation"
-    COMPOSITE_LUMINIZE=                         "luminize"
-    COMPOSITE_INC_LUMINOSITY=                   "inc_luminosity"
-    COMPOSITE_DEC_LUMINOSITY=                   "dec_luminosity"
+    COMPOSITE_HUE =                              "hue"
+    COMPOSITE_COLOR =                            "color"
+    COMPOSITE_SATURATION =                       "saturation"
+    COMPOSITE_INC_SATURATION =                   "inc_saturation"
+    COMPOSITE_DEC_SATURATION =                   "dec_saturation"
+    COMPOSITE_LUMINIZE =                         "luminize"
+    COMPOSITE_INC_LUMINOSITY =                   "inc_luminosity"
+    COMPOSITE_DEC_LUMINOSITY =                   "dec_luminosity"
 
-    COMPOSITE_HUE_HSV=                          "hue_hsv"
-    COMPOSITE_COLOR_HSV=                        "color_hsv"
-    COMPOSITE_SATURATION_HSV=                   "saturation_hsv"
-    COMPOSITE_INC_SATURATION_HSV=               "inc_saturation_hsv"
-    COMPOSITE_DEC_SATURATION_HSV=               "dec_saturation_hsv"
-    COMPOSITE_VALUE=                            "value"
-    COMPOSITE_INC_VALUE=                        "inc_value"
-    COMPOSITE_DEC_VALUE=                        "dec_value"
+    COMPOSITE_HUE_HSV =                          "hue_hsv"
+    COMPOSITE_COLOR_HSV =                        "color_hsv"
+    COMPOSITE_SATURATION_HSV =                   "saturation_hsv"
+    COMPOSITE_INC_SATURATION_HSV =               "inc_saturation_hsv"
+    COMPOSITE_DEC_SATURATION_HSV =               "dec_saturation_hsv"
+    COMPOSITE_VALUE =                            "value"
+    COMPOSITE_INC_VALUE =                        "inc_value"
+    COMPOSITE_DEC_VALUE =                        "dec_value"
 
-    COMPOSITE_HUE_HSL=                          "hue_hsl"
-    COMPOSITE_COLOR_HSL=                        "color_hsl"
-    COMPOSITE_SATURATION_HSL=                   "saturation_hsl"
-    COMPOSITE_INC_SATURATION_HSL=               "inc_saturation_hsl"
-    COMPOSITE_DEC_SATURATION_HSL=               "dec_saturation_hsl"
-    COMPOSITE_LIGHTNESS=                        "lightness"
-    COMPOSITE_INC_LIGHTNESS=                    "inc_lightness"
-    COMPOSITE_DEC_LIGHTNESS=                    "dec_lightness"
+    COMPOSITE_HUE_HSL =                          "hue_hsl"
+    COMPOSITE_COLOR_HSL =                        "color_hsl"
+    COMPOSITE_SATURATION_HSL =                   "saturation_hsl"
+    COMPOSITE_INC_SATURATION_HSL =               "inc_saturation_hsl"
+    COMPOSITE_DEC_SATURATION_HSL =               "dec_saturation_hsl"
+    COMPOSITE_LIGHTNESS =                        "lightness"
+    COMPOSITE_INC_LIGHTNESS =                    "inc_lightness"
+    COMPOSITE_DEC_LIGHTNESS =                    "dec_lightness"
 
-    COMPOSITE_HUE_HSI=                          "hue_hsi"
-    COMPOSITE_COLOR_HSI=                        "color_hsi"
-    COMPOSITE_SATURATION_HSI=                   "saturation_hsi"
-    COMPOSITE_INC_SATURATION_HSI=               "inc_saturation_hsi"
-    COMPOSITE_DEC_SATURATION_HSI=               "dec_saturation_hsi"
-    COMPOSITE_INTENSITY=                        "intensity"
-    COMPOSITE_INC_INTENSITY=                    "inc_intensity"
-    COMPOSITE_DEC_INTENSITY=                    "dec_intensity"
+    COMPOSITE_HUE_HSI =                          "hue_hsi"
+    COMPOSITE_COLOR_HSI =                        "color_hsi"
+    COMPOSITE_SATURATION_HSI =                   "saturation_hsi"
+    COMPOSITE_INC_SATURATION_HSI =               "inc_saturation_hsi"
+    COMPOSITE_DEC_SATURATION_HSI =               "dec_saturation_hsi"
+    COMPOSITE_INTENSITY =                        "intensity"
+    COMPOSITE_INC_INTENSITY =                    "inc_intensity"
+    COMPOSITE_DEC_INTENSITY =                    "dec_intensity"
 
-    COMPOSITE_COPY=                             "copy"
-    COMPOSITE_COPY_RED=                         "copy_red"
-    COMPOSITE_COPY_GREEN=                       "copy_green"
-    COMPOSITE_COPY_BLUE=                        "copy_blue"
-    COMPOSITE_TANGENT_NORMALMAP=                "tangent_normalmap"
+    COMPOSITE_COPY =                             "copy"
+    COMPOSITE_COPY_RED =                         "copy_red"
+    COMPOSITE_COPY_GREEN =                       "copy_green"
+    COMPOSITE_COPY_BLUE =                        "copy_blue"
+    COMPOSITE_TANGENT_NORMALMAP =                "tangent_normalmap"
 
-    COMPOSITE_COLORIZE=                         "colorize"
-    COMPOSITE_BUMPMAP=                          "bumpmap"
-    COMPOSITE_COMBINE_NORMAL=                   "combine_normal"
-    COMPOSITE_CLEAR=                            "clear"
-    COMPOSITE_DISSOLVE=                         "dissolve"
-    COMPOSITE_DISPLACE=                         "displace"
-    COMPOSITE_NO=                               "nocomposition"
-    COMPOSITE_PASS_THROUGH=                     "pass through" # XXX: not implemented anywhere yet?
-    COMPOSITE_DARKER_COLOR=                     "darker color"
-    COMPOSITE_LIGHTER_COLOR=                    "lighter color"
-    #COMPOSITE_UNDEF=                            "undefined"
+    COMPOSITE_COLORIZE =                         "colorize"
+    COMPOSITE_BUMPMAP =                          "bumpmap"
+    COMPOSITE_COMBINE_NORMAL =                   "combine_normal"
+    COMPOSITE_CLEAR =                            "clear"
+    COMPOSITE_DISSOLVE =                         "dissolve"
+    COMPOSITE_DISPLACE =                         "displace"
+    COMPOSITE_NO =                               "nocomposition"
+    COMPOSITE_PASS_THROUGH =                     "pass through"  # XXX: not implemented anywhere yet?
+    COMPOSITE_DARKER_COLOR =                     "darker color"
+    COMPOSITE_LIGHTER_COLOR =                    "lighter color"
+    # COMPOSITE_UNDEF =                            "undefined"
 
-    COMPOSITE_REFLECT=                          "reflect"
-    COMPOSITE_GLOW=                             "glow"
-    COMPOSITE_FREEZE=                           "freeze"
-    COMPOSITE_HEAT=                             "heat"
-    COMPOSITE_GLEAT=                            "glow_heat"
-    COMPOSITE_HELOW=                            "heat_glow"
-    COMPOSITE_REEZE=                            "reflect_freeze"
-    COMPOSITE_FRECT=                            "freeze_reflect"
-    COMPOSITE_FHYRD=                            "heat_glow_freeze_reflect_hybrid"
+    COMPOSITE_REFLECT =                          "reflect"
+    COMPOSITE_GLOW =                             "glow"
+    COMPOSITE_FREEZE =                           "freeze"
+    COMPOSITE_HEAT =                             "heat"
+    COMPOSITE_GLEAT =                            "glow_heat"
+    COMPOSITE_HELOW =                            "heat_glow"
+    COMPOSITE_REEZE =                            "reflect_freeze"
+    COMPOSITE_FRECT =                            "freeze_reflect"
+    COMPOSITE_FHYRD =                            "heat_glow_freeze_reflect_hybrid"
 
-    CATEGORY_ARITHMETIC=                        "arithmetic"
-    CATEGORY_BINARY=                            "binary"
-    CATEGORY_DARK=                              "dark"
-    CATEGORY_LIGHT=                             "light"
-    CATEGORY_MODULO=                            "modulo"
-    CATEGORY_NEGATIVE=                          "negative"
-    CATEGORY_MIX=                               "mix"
-    CATEGORY_MISC=                              "misc"
-    CATEGORY_HSY=                               "hsy"
-    CATEGORY_HSI=                               "hsi"
-    CATEGORY_HSL=                               "hsl"
-    CATEGORY_HSV=                               "hsv"
-    CATEGORY_QUADRATIC=                         "quadratic"
+    COMPOSITE_LAMBERT_LIGHTING =                 "lambert_lighting"
+    COMPOSITE_LAMBERT_LIGHTING_GAMMA_2_2 =       "lambert_lighting_gamma2.2"
+
+    CATEGORY_ARITHMETIC =                        "arithmetic"
+    CATEGORY_BINARY =                            "binary"
+    CATEGORY_DARK =                              "dark"
+    CATEGORY_LIGHT =                             "light"
+    CATEGORY_MODULO =                            "modulo"
+    CATEGORY_NEGATIVE =                          "negative"
+    CATEGORY_MIX =                               "mix"
+    CATEGORY_MISC =                              "misc"
+    CATEGORY_HSY =                               "hsy"
+    CATEGORY_HSI =                               "hsi"
+    CATEGORY_HSL =                               "hsl"
+    CATEGORY_HSV =                               "hsv"
+    CATEGORY_QUADRATIC =                         "quadratic"
+
 
 class EKritaBlendingModes:
     """Blending modes"""
     # tables & translations from
     #   https://invent.kde.org/graphics/krita/-/blob/master/libs/pigment/KoCompositeOpRegistry.cpp
-    __CATEGORIES={
+    __CATEGORIES = {
             EKritaBlendingModesId.CATEGORY_ARITHMETIC:                          i18nc("Blending mode - category Arithmetic", "Arithmetic"),
             EKritaBlendingModesId.CATEGORY_BINARY:                              i18nc("Blending mode - category Binary", "Binary"),
             EKritaBlendingModesId.CATEGORY_DARK:                                i18nc("Blending mode - category Darken", "Darken"),
@@ -480,7 +434,7 @@ class EKritaBlendingModes:
             EKritaBlendingModesId.CATEGORY_QUADRATIC:                           i18nc("Blending mode - category Quadratic", "Quadratic")
         }
 
-    __CATEGORIES_BLENDING_MODES={
+    __CATEGORIES_BLENDING_MODES = {
             EKritaBlendingModesId.CATEGORY_ARITHMETIC: [
                     EKritaBlendingModesId.COMPOSITE_ADD,
                     EKritaBlendingModesId.COMPOSITE_SUBTRACT,
@@ -556,6 +510,8 @@ class EKritaBlendingModes:
                     EKritaBlendingModesId.COMPOSITE_BEHIND,
                     EKritaBlendingModesId.COMPOSITE_GREATER,
                     EKritaBlendingModesId.COMPOSITE_OVERLAY,
+                    EKritaBlendingModesId.COMPOSITE_LAMBERT_LIGHTING,
+                    EKritaBlendingModesId.COMPOSITE_LAMBERT_LIGHTING_GAMMA_2_2,
                     EKritaBlendingModesId.COMPOSITE_ERASE,
                     EKritaBlendingModesId.COMPOSITE_ALPHA_DARKEN,
                     EKritaBlendingModesId.COMPOSITE_HARD_MIX,
@@ -639,7 +595,7 @@ class EKritaBlendingModes:
                 ]
         }
 
-    __BLENDING_MODES={
+    __BLENDING_MODES = {
             EKritaBlendingModesId.COMPOSITE_ADD:                        i18nc("Blending mode - Addition", "Addition"),
             EKritaBlendingModesId.COMPOSITE_SUBTRACT:                   i18nc("Blending mode - Subtract", "Subtract"),
             EKritaBlendingModesId.COMPOSITE_MULT:                       i18nc("Blending mode - Multiply", "Multiply"),
@@ -708,6 +664,8 @@ class EKritaBlendingModes:
             EKritaBlendingModesId.COMPOSITE_BEHIND:                     i18nc("Blending mode - Behind", "Behind"),
             EKritaBlendingModesId.COMPOSITE_GREATER:                    i18nc("Blending mode - Greater", "Greater"),
             EKritaBlendingModesId.COMPOSITE_OVERLAY:                    i18nc("Blending mode - Overlay", "Overlay"),
+            EKritaBlendingModesId.COMPOSITE_LAMBERT_LIGHTING:           i18nc("Blending mode - Lambert Lighting (Linear)", "Lambert Lighting (Linear)"),
+            EKritaBlendingModesId.COMPOSITE_LAMBERT_LIGHTING_GAMMA_2_2: i18nc("Blending mode - Lambert Lighting (Gamma 2.2)", "Lambert Lighting (Gamma 2.2)"),
             EKritaBlendingModesId.COMPOSITE_ERASE:                      i18nc("Blending mode - Erase", "Erase"),
             EKritaBlendingModesId.COMPOSITE_ALPHA_DARKEN:               i18nc("Blending mode - Alpha Darken", "Alpha Darken"),
             EKritaBlendingModesId.COMPOSITE_HARD_MIX:                   i18nc("Blending mode - Hard Mix", "Hard Mix"),
@@ -787,7 +745,7 @@ class EKritaBlendingModes:
     @staticmethod
     def categoriesIdList():
         """Return list of available categories"""
-        return list(EKritaBlendingModes.__CATEGORIES)
+        return sorted(list(EKritaBlendingModes.__CATEGORIES))
 
     @staticmethod
     def categoryName(id):
@@ -814,19 +772,55 @@ class EKritaBlendingModes:
         """Return list of available blending mode (without link to category)"""
         return list(EKritaBlendingModes.__BLENDING_MODES)
 
-
     @staticmethod
     def blendingModeName(id):
         """Return (translated) name for blending mode"""
         if id is None:
-            return []
+            return ""
         elif id in EKritaBlendingModes.__BLENDING_MODES:
             return EKritaBlendingModes.__BLENDING_MODES[id]
         else:
             raise EInvalidValue("Given `id` is not valid")
 
 
+class EKritaResizeMethodsId:
+    """Resoze method Id"""
+    BICUBIC =        "Bicubic"
+    HERMITE =        "Hermite"
+    NEARESTNEIBHOR = "NearestNeighbor"
+    BILINEAR =       "Bilinear"
+    BELL =           "Bell"
+    BSPLINE =        "BSpline"
+    LANCZOS3 =       "Lanczos3"
+    MITCHELL =       "Mitchell"
 
+
+class EKritaResizeMethods:
+    __RESIZE_METHODS = {
+            EKritaResizeMethodsId.BICUBIC:        i18nc("Scaling method - Bicubic", "Bicubic"),
+            EKritaResizeMethodsId.HERMITE:        i18nc("Scaling method - Hermite", "Hermite"),
+            EKritaResizeMethodsId.NEARESTNEIBHOR: i18nc("Scaling method - NearestNeighbor", "Nearest Neighbor"),
+            EKritaResizeMethodsId.BILINEAR:       i18nc("Scaling method - Bilinear", "Bilinear"),
+            EKritaResizeMethodsId.BELL:           i18nc("Scaling method - Bell", "Bell"),
+            EKritaResizeMethodsId.BSPLINE:        i18nc("Scaling method - BSpline", "BSpline"),
+            EKritaResizeMethodsId.LANCZOS3:       i18nc("Scaling method - Lanczos3", "Lanczos3"),
+            EKritaResizeMethodsId.MITCHELL:       i18nc("Scaling method - Mitchell", "Mitchell")
+        }
+
+    @staticmethod
+    def resizeMethodIdList():
+        """Return list of available resize methods"""
+        return sorted(list(EKritaResizeMethods.__RESIZE_METHODS))
+
+    @staticmethod
+    def resizeMethodName(id):
+        """Return (translated) name for resize method"""
+        if id is None:
+            return ""
+        elif id in EKritaResizeMethods.__RESIZE_METHODS:
+            return EKritaResizeMethods.__RESIZE_METHODS[id]
+        else:
+            raise EInvalidValue("Given `id` is not valid")
 
 
 class EKritaDocument:
@@ -844,7 +838,7 @@ class EKritaDocument:
                     return layer
                 elif len(layer.childNodes()) > 0:
                     returned = find(layerId, layer)
-                    if not returned is None:
+                    if returned is not None:
                         return returned
             return None
 
@@ -854,7 +848,6 @@ class EKritaDocument:
             raise EInvalidType("Given `layerId` must be a valid <QUuid>")
 
         return find(layerId, document.rootNode())
-
 
     @staticmethod
     def findFirstLayerByName(searchFrom, layerName):
@@ -873,13 +866,13 @@ class EKritaDocument:
         def find(layerName, isRegex, parentLayer):
             """sub function called recursively to search layer in document tree"""
             for layer in reversed(parentLayer.childNodes()):
-                if isRegex == False and layerName == layer.name():
+                if isRegex is False and layerName == layer.name():
                     return layer
-                elif isRegex == True and (reResult := re.match(layerName, layer.name())):
+                elif isRegex is True and (reResult := re.match(layerName, layer.name())):
                     return layer
                 elif len(layer.childNodes()) > 0:
                     returned = find(layerName, isRegex, layer)
-                    if not returned is None:
+                    if returned is not None:
                         return returned
             return None
 
@@ -902,7 +895,6 @@ class EKritaDocument:
 
         return None
 
-
     @staticmethod
     def findLayersByName(searchFrom, layerName):
         """Find layer(s) by name
@@ -918,18 +910,17 @@ class EKritaDocument:
         """
         def find(layerName, isRegex, parentLayer):
             """sub function called recursively to search layer in document tree"""
-            returned=[]
+            returned = []
             for layer in reversed(parentLayer.childNodes()):
-                if isRegex == False and layerName == layer.name():
+                if isRegex is False and layerName == layer.name():
                     returned.append(layer)
-                elif isRegex == True and (reResult := re.match(layerName, layer.name())):
+                elif isRegex is True and (reResult := re.match(layerName, layer.name())):
                     returned.append(layer)
                 elif len(layer.childNodes()) > 0:
                     found = find(layerName, isRegex, layer)
-                    if not found is None:
-                        returned+=found
+                    if found is not None:
+                        returned += found
             return returned
-
 
         if not (isinstance(searchFrom, Document) or isinstance(searchFrom, Layer)):
             raise EInvalidType("Given `searchFrom` must be a Krita <Layer> or a Krita <Document> type")
@@ -950,7 +941,6 @@ class EKritaDocument:
 
         return []
 
-
     @staticmethod
     def getLayers(searchFrom, recursiveSubLayers=False):
         """Return a list of all layers
@@ -963,13 +953,13 @@ class EKritaDocument:
         """
         def find(recursiveSubLayers, parentLayer):
             """sub function called recursively to search layer in document tree"""
-            returned=[]
+            returned = []
             for layer in reversed(parentLayer.childNodes()):
                 returned.append(layer)
                 if recursiveSubLayers and len(layer.childNodes()) > 0:
                     found = find(recursiveSubLayers, layer)
-                    if not found is None:
-                        returned+=found
+                    if found is not None:
+                        returned += found
             return returned
 
         if not (isinstance(searchFrom, Document) or isinstance(searchFrom, Layer)):
@@ -983,7 +973,6 @@ class EKritaDocument:
             parentLayer = searchFrom.rootNode()
 
         return find(recursiveSubLayers, parentLayer)
-
 
     @staticmethod
     def getLayerFromPath(searchFrom, path):
@@ -1010,11 +999,10 @@ class EKritaDocument:
 
         pathNodes = re.findall(r'(?:[^/"]|"(?:\\.|[^"])*")+', path)
 
-        if not pathNodes is None:
+        if pathNodes is not None:
             pathNodes = [re.sub(r'^"|"$', '', pathNode) for pathNode in pathNodes]
 
         return find(pathNodes, 0, searchFrom.rootNode())
-
 
 
 class EKritaNode:
@@ -1025,7 +1013,6 @@ class EKritaNode:
         FALSE = 0
         TRUE = 1
         AUTO = 2
-
 
     __projectionMode = ProjectionMode.AUTO
 
@@ -1065,7 +1052,6 @@ class EKritaNode:
 
         return parentPath(layerNode)
 
-
     @staticmethod
     def toQImage(layerNode, rect=None, projectionMode=None):
         """Return `layerNode` content as a QImage (as ARGB32)
@@ -1078,15 +1064,22 @@ class EKritaNode:
         if layerNode is None:
             raise EInvalidValue("Given `layerNode` can't be None")
 
-        if type(layerNode)==QObject:
-            # NOTE: layerNode can be a QObject...
+        if type(layerNode) == QObject:
+            # NOTE: layerNode can be a QObject...
             #       that's weird, but document.nodeByUniqueID() return a QObject for a paintlayer (other Nodes seems to be Ok...)
             #       it can sound strange but in this case the returned QObject is a QObject iwht Node properties
             #       so, need to check if QObject have expected methods
-            if hasattr(layerNode, 'type') and hasattr(layerNode, 'bounds') and hasattr(layerNode, 'childNodes') and hasattr(layerNode, 'colorModel') and hasattr(layerNode, 'colorDepth') and hasattr(layerNode, 'colorProfile') and hasattr(layerNode, 'setColorSpace') and hasattr(layerNode, 'setPixelData'):
+            if (hasattr(layerNode, 'type') and
+               hasattr(layerNode, 'bounds') and
+               hasattr(layerNode, 'childNodes') and
+               hasattr(layerNode, 'colorModel') and
+               hasattr(layerNode, 'colorDepth') and
+               hasattr(layerNode, 'colorProfile') and
+               hasattr(layerNode, 'setColorSpace') and
+               hasattr(layerNode, 'setPixelData')):
                 pass
             else:
-                # consider that it's not a node
+                # consider that it's not a node
                 raise EInvalidType("Given `layerNode` must be a valid Krita <Node> ")
         elif not isinstance(layerNode, Node):
             raise EInvalidType("Given `layerNode` must be a valid Krita <Node> ")
@@ -1101,7 +1094,7 @@ class EKritaNode:
         if projectionMode is None:
             projectionMode = EKritaNode.__projectionMode
         if projectionMode == EKritaNode.ProjectionMode.AUTO:
-            childNodes=layerNode.childNodes()
+            childNodes = layerNode.childNodes()
             # childNodes can return be None!?
             if childNodes and len(childNodes) == 0:
                 projectionMode = EKritaNode.ProjectionMode.FALSE
@@ -1112,8 +1105,8 @@ class EKritaNode:
         # - masks (8bit/pixels)
         # - other color space (need to convert to 8bits/rgba...?)
         if (layerNode.type() in ('transparencymask', 'filtermask', 'transformmask', 'selectionmask') or
-            layerNode.colorModel() != 'RGBA' or
-            layerNode.colorDepth() != 'U8'):
+           layerNode.colorModel() != 'RGBA' or
+           layerNode.colorDepth() != 'U8'):
             # pixelData/projectionPixelData return a 8bits/pixel matrix
             # didn't find how to convert pixel data to QImlage then use thumbnail() function
             return layerNode.thumbnail(rect.width(), rect.height())
@@ -1122,7 +1115,6 @@ class EKritaNode:
                 return QImage(layerNode.projectionPixelData(rect.left(), rect.top(), rect.width(), rect.height()), rect.width(), rect.height(), QImage.Format_ARGB32)
             else:
                 return QImage(layerNode.pixelData(rect.left(), rect.top(), rect.width(), rect.height()), rect.width(), rect.height(), QImage.Format_ARGB32)
-
 
     @staticmethod
     def toQPixmap(layerNode, rect=None, projectionMode=None):
@@ -1138,7 +1130,6 @@ class EKritaNode:
         """
         return QPixmap.fromImage(EKritaNode.toQImage(layerNode, rect, projectionMode))
 
-
     @staticmethod
     def fromQImage(layerNode, image, position=None):
         """Paste given `image` to `position` in '`layerNode`
@@ -1147,15 +1138,20 @@ class EKritaNode:
         - None, in this case, pixmap will be pasted at position (0, 0)
         - A QPoint() object, pixmap will be pasted at defined position
         """
-        # NOTE: layerNode can be a QObject...
+        # NOTE: layerNode can be a QObject...
         #       that's weird, but document.nodeByUniqueID() return a QObject for a paintlayer (other Nodes seems to be Ok...)
         #       it can sound strange but in this case the returned QObject is a QObject iwht Node properties
         #       so, need to check if QObject have expected methods
-        if type(layerNode)==QObject():
-            if hasattr(layerNode, 'type') and hasattr(layerNode, 'colorModel') and hasattr(layerNode, 'colorDepth') and hasattr(layerNode, 'colorProfile') and hasattr(layerNode, 'setColorSpace') and hasattr(layerNode, 'setPixelData'):
+        if type(layerNode) == QObject():
+            if (hasattr(layerNode, 'type') and
+               hasattr(layerNode, 'colorModel') and
+               hasattr(layerNode, 'colorDepth') and
+               hasattr(layerNode, 'colorProfile') and
+               hasattr(layerNode, 'setColorSpace') and
+               hasattr(layerNode, 'setPixelData')):
                 pass
             else:
-                # consider that it's not a node
+                # consider that it's not a node
                 raise EInvalidType("Given `layerNode` must be a valid Krita <Node> ")
         elif not isinstance(layerNode, Node):
             raise EInvalidType("Given `layerNode` must be a valid Krita <Node> ")
@@ -1169,15 +1165,15 @@ class EKritaNode:
         if not isinstance(position, QPoint):
             raise EInvalidType("Given `position` must be a valid <QPoint> ")
 
-        layerNeedBackConversion=False
-        layerColorModel=layerNode.colorModel()
-        layerColorDepth=layerNode.colorDepth()
-        layerColorProfile=layerNode.colorProfile()
+        layerNeedBackConversion = False
+        layerColorModel = layerNode.colorModel()
+        layerColorDepth = layerNode.colorDepth()
+        layerColorProfile = layerNode.colorProfile()
 
         if layerColorModel != "RGBA" or layerColorDepth != 'U8':
             # we need to convert layer to RGBA/U8
             layerNode.setColorSpace("RGBA", "U8", "sRGB-elle-V2-srgbtrc.icc")
-            layerNeedBackConversion=True
+            layerNeedBackConversion = True
 
         ptr = image.bits()
         ptr.setsize(image.byteCount())
@@ -1186,7 +1182,6 @@ class EKritaNode:
 
         if layerNeedBackConversion:
             layerNode.setColorSpace(layerColorModel, layerColorDepth, layerColorProfile)
-
 
     @staticmethod
     def fromQPixmap(layerNode, pixmap, position=None):
@@ -1221,23 +1216,23 @@ class EKritaNode:
         Method return a list of shapes (shape inserted into layer)
         """
         if isinstance(svgContent, str):
-            svgContent=svgContent.encode()
+            svgContent = svgContent.encode()
 
         if not isinstance(svgContent, bytes):
             raise EInvalidType("Given `svgContent` must be a valid <str> or <bytes> SVG document")
 
-        if not isinstance(layerNode, Node) or layerNode.type()!='vectorlayer':
+        if not isinstance(layerNode, Node) or layerNode.type() != 'vectorlayer':
             raise EInvalidType("Given `layerNode` must be a valid <VectorLayer>")
 
         if document is None:
-            document=Krita.instance().activeDocument()
+            document = Krita.instance().activeDocument()
 
         if not isinstance(document, Document):
-            raise EInvalidType("Given `layerNode` must be a valid <Document>")
+            raise EInvalidType("Given `layerNode` must be a valid <Document > ")
 
-        shapes=[shape for shape in layerNode.shapes()]
+        shapes = [shape for shape in layerNode.shapes()]
 
-        activeNode=document.activeNode()
+        activeNode = document.activeNode()
         document.setActiveNode(layerNode)
         document.waitForDone()
 
@@ -1251,13 +1246,13 @@ class EKritaNode:
         #       Problem occurs with krita 4.4.2 & and tested Krita plus/next tested [2020-01-05]
         EKritaNode.__sleep(100)
 
-        mimeContent=QMimeData()
+        mimeContent = QMimeData()
         mimeContent.setData('image/svg', svgContent)
         mimeContent.setData('BCIGNORE', b'')
         QGuiApplication.clipboard().setMimeData(mimeContent)
         Krita.instance().action('edit_paste').trigger()
 
-        newShapes=[shape for shape in layerNode.shapes() if not shape in shapes]
+        newShapes = [shape for shape in layerNode.shapes() if shape not in shapes]
 
         return newShapes
 
@@ -1281,7 +1276,6 @@ class EKritaNode:
                 returnNext = True
 
         return None
-
 
     @staticmethod
     def below(layerNode):
