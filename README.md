@@ -134,6 +134,9 @@ The plugin use Krita's API `Krita.instance().resources()`
 > Should be faster with less presets
 > A [bug](https://bugs.kde.org/show_bug.cgi?id=473311) has been opened on Krita side for this case, not sure if it can be fixed or not...
 
+Any question, bugs, feature request should be asked to dedicated [Issues](https://github.com/Grum999/BuliBrushSwitch/issues) page.
+
+
 
 
 ### What’s next?
