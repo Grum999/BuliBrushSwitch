@@ -15,6 +15,7 @@ import re
 import os.path
 import sys
 import datetime
+from pathlib import Path
 
 from PyQt5.Qt import *
 from PyQt5.QtCore import (
@@ -2184,6 +2185,11 @@ class WSetupManager(QWidget):
                                                WDialogFile.OPTION_PREVIEW_WIDGET: wPreview,
                                                WDialogFile.OPTION_SETTINGS_WIDGET: wSettings})
         if result:
+            extensions = re.findall("(?:\*(\.[^\s\)]+))+", self.__extensionFilter)
+            if Path(result['file']).suffix not in extensions:
+                # if more than one extension, consider the first one as the expected one
+                result['file'] += extensions[0]
+
             return self.__saveSetupsFile(result['file'], result['settingsNfo'])
         return False
 
