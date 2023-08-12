@@ -787,6 +787,8 @@ class BBSSettings(Settings):
 
         Method placed in settings as managing shortcut is part of settings :)
         """
+        from .bbswbrushes import BBSBrush
+
         window = Krita.instance().activeWindow()
         if window:
             action = BBSSettings.brushAction(brush.id(), brush.name(), brush.comments(), shortcut is not None)
@@ -798,6 +800,9 @@ class BBSSettings(Settings):
                     # remove shortcut
                     action.setShortcut(QKeySequence())
 
+            # update brush in CONFIG_BRUSHES_LIST_BRUSHES
+            BBSSettings.setBrushes([BBSBrush(updBrush) if updBrush[BBSBrush.KEY_UUID] != brush.id() else brush for updBrush in BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_LIST_BRUSHES)])
+
     @staticmethod
     def setGroupShortcut(group, shortcutNext, shortcutPrevious):
         """Create and/or update action for given `item` with given `shortcut`
@@ -806,6 +811,8 @@ class BBSSettings(Settings):
 
         Method placed in settings as managing shortcut is part of settings :)
         """
+        from .bbswbrushes import BBSGroup
+
         window = Krita.instance().activeWindow()
         if window:
             actionNext = BBSSettings.groupAction(group.id(), 'N', group.name(), group.comments(), shortcutNext is not None)
@@ -825,3 +832,5 @@ class BBSSettings(Settings):
                 else:
                     # remove shortcut
                     actionPrevious.setShortcut(QKeySequence())
+
+            BBSSettings.setGroups([BBSGroup(updGroup) if updGroup[BBSGroup.KEY_UUID] != group.id() else group for updGroup in BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_LIST_GROUPS)])

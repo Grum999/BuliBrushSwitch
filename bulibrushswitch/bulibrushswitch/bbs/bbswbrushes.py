@@ -283,8 +283,6 @@ class BBSBrush(BBSBaseNode):
         self.__defaultPaintTool = None
         self.__shortcut = QKeySequence()
 
-        self.__fingerPrint = ''
-
         self.__brushNfoImg = ''
         self.__brushNfoFull = ''
         self.__brushNfoShort = ''
@@ -597,6 +595,8 @@ class BBSBrush(BBSBaseNode):
                 self.setColorGradient(value[BBSBrush.KEY_COLOR_GRADIENT])
             if BBSBrush.KEY_ERASERMODE in value:
                 self.setEraserMode(value[BBSBrush.KEY_ERASERMODE])
+            if BBSBrush.KEY_SHORTCUT in value:
+                self.setShortcut(QKeySequence(value[BBSBrush.KEY_SHORTCUT]))
 
             if BBSBrush.KEY_DEFAULTPAINTTOOL in value:
                 self.setDefaultPaintTool(value[BBSBrush.KEY_DEFAULTPAINTTOOL])
@@ -606,9 +606,6 @@ class BBSBrush(BBSBaseNode):
                 if brushPreset:
                     self.__image = brushPreset.image()
 
-            action = self.action()
-            if action and action.shortcut():
-                self.setShortcut(action.shortcut())
             isValid = True
         except Exception as e:
             print("Unable to import brush definition:", e)
@@ -625,7 +622,6 @@ class BBSBrush(BBSBaseNode):
         """Set name"""
         if value != self.__name:
             self.__name = value
-            self.__fingerPrint = ''
             self.applyUpdate('name')
 
     def size(self):
@@ -636,7 +632,6 @@ class BBSBrush(BBSBaseNode):
         """Set size"""
         if isinstance(value, (int, float)) and value > 0 and self.__size != value:
             self.__size = value
-            self.__fingerPrint = ''
             self.applyUpdate('size')
 
     def flow(self):
@@ -647,7 +642,6 @@ class BBSBrush(BBSBaseNode):
         """Set flow"""
         if isinstance(value, (int, float)) and value >= 0 and value <= 1.0 and self.__flow != value:
             self.__flow = value
-            self.__fingerPrint = ''
             self.applyUpdate('flow')
 
     def opacity(self):
@@ -658,7 +652,6 @@ class BBSBrush(BBSBaseNode):
         """Set opacity"""
         if isinstance(value, (int, float)) and value >= 0 and value <= 1.0 and self.__opacity != value:
             self.__opacity = value
-            self.__fingerPrint = ''
             self.applyUpdate('opacity')
 
     def blendingMode(self):
@@ -669,7 +662,6 @@ class BBSBrush(BBSBaseNode):
         """Set blending mode"""
         if value != self.__blendingMode:
             self.__blendingMode = value
-            self.__fingerPrint = ''
             self.applyUpdate('blendingMode')
 
     def preserveAlpha(self):
@@ -809,20 +801,6 @@ class BBSBrush(BBSBaseNode):
             self.__defaultPaintTool = defaultPaintTool
             self.applyUpdate('defaultPaintTool')
 
-    def fingerPrint(self):
-        """Return finger print for brush"""
-        if self.__fingerPrint == '':
-            hash = blake2b()
-
-            hash.update(self.__name.encode())
-            hash.update(struct.pack('!d', self.__size))
-            hash.update(struct.pack('!d', self.__flow))
-            hash.update(struct.pack('!d', self.__opacity))
-            hash.update(self.__blendingMode.encode())
-            self.__fingerPrint = hash.hexdigest()
-
-        return self.__fingerPrint
-
     def information(self, displayOption=0):
         """Return synthetised brush information (HTML)
 
@@ -932,6 +910,7 @@ class BBSBrush(BBSBaseNode):
         """Set brush shortcut
 
         Shortcut is used as an information only to simplify management
+        brush.action() manage the shortcut
         """
         if isinstance(shortcut, QKeySequence) and shortcut != self.__shortcut:
             self.__shortcut = shortcut
@@ -1063,14 +1042,10 @@ class BBSGroup(BBSBaseNode):
                 self.setExpanded(value[BBSGroup.KEY_EXPANDED])
             if BBSGroup.KEY_RESET_EXIT_GROUP in value:
                 self.setResetWhenExitGroupLoop(value[BBSGroup.KEY_RESET_EXIT_GROUP])
-
-            actionNext = self.actionNext()
-            if actionNext and actionNext.shortcut():
-                self.setShortcutNext(actionNext.shortcut())
-
-            actionPrevious = self.actionPrevious()
-            if actionPrevious and actionPrevious.shortcut():
-                self.setShortcutPrevious(actionPrevious.shortcut())
+            if BBSGroup.KEY_SHORTCUT_NEXT in value:
+                self.setShortcutNext(QKeySequence(value[BBSGroup.KEY_SHORTCUT_NEXT]))
+            if BBSGroup.KEY_SHORTCUT_PREV in value:
+                self.setShortcutPrevious(QKeySequence(value[BBSGroup.KEY_SHORTCUT_PREV]))
 
             isValid = True
         except Exception as e:
@@ -1093,7 +1068,6 @@ class BBSGroup(BBSBaseNode):
         """Set name"""
         if value != self.__name:
             self.__name = value
-            self.__fingerPrint = ''
             self.applyUpdate('name')
 
     def comments(self):
@@ -2168,7 +2142,6 @@ class BBSModel(QAbstractItemModel):
             parent.appendChild(toAdd)
 
         if not isinstance(data, dict):
-            print("importData", data)
             raise EInvalidType("Given `data` must be a <dict>")
         elif ('brushes' not in data or 'groups' not in data or 'nodes' not in data):
             raise EInvalidValue("Given `data` must contains following keys: 'brushes', 'groups', 'nodes'")

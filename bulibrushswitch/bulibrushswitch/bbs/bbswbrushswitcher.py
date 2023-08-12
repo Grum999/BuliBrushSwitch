@@ -177,7 +177,7 @@ class BBSWBrushSwitcher(QWidget):
         # current applied brush (if None, then plugin is not "active")
         self.__selectedBrush = None
 
-        # flag to determinate if brush shortcut have to be updated when shorcut
+        # flag to determinate if brush shortcut have to be updated when shortcut
         # for related action has been modified
         self.__disableUpdatingShortcutFromAction = False
 
@@ -346,7 +346,7 @@ class BBSWBrushSwitcher(QWidget):
         self.__disableUpdatingShortcutFromAction = True
 
         action = self.sender()
-        item = self.__bbsModel.getFromId(action.data(), False)
+        item = self.__bbsModel.getFromId(re.sub("-(N|P)$", "", action.data()), False)
         if isinstance(item, BBSBrush):
             # a brush is defined for action
             obj = Krita.instance().activeWindow().qwindow().findChild(QWidget, 'KisShortcutsDialog')
@@ -358,8 +358,12 @@ class BBSWBrushSwitcher(QWidget):
                 # shortcut has been molified from???
                 # force shortcut from brush
                 item.setShortcut(item.shortcut())
+
             # reapply shortcut to action
             BBSSettings.setBrushShortcut(item, item.shortcut())
+            if BBSSettings.modified():
+                # need to save settings after shortcut has been modified
+                BBSSettings.save()
         elif isinstance(item, BBSGroup):
             # a group is defined for action
             obj = Krita.instance().activeWindow().qwindow().findChild(QWidget, 'KisShortcutsDialog')
@@ -384,6 +388,9 @@ class BBSWBrushSwitcher(QWidget):
 
             # reapply shortcut to action
             BBSSettings.setGroupShortcut(item, item.shortcutNext(), item.shortcutPrevious())
+            if BBSSettings.modified():
+                # need to save settings after shortcut has been modified
+                BBSSettings.save()
 
         self.__disableUpdatingShortcutFromAction = False
 
@@ -440,6 +447,7 @@ class BBSWBrushSwitcher(QWidget):
             if brush.importData(brushNfo):
                 action = brush.action()
                 if action:
+                    # disconnect everything
                     try:
                         action.triggered.disconnect(self.__setSelectedBrushFromAction)
                     except Exception:
@@ -452,6 +460,7 @@ class BBSWBrushSwitcher(QWidget):
 
                     action.triggered.connect(self.__setSelectedBrushFromAction)
                     action.changed.connect(self.__setShortcutFromAction)
+                BBSSettings.setBrushShortcut(brush, brush.shortcut())
                 brushesList.append(brush)
 
         groupsDictList = BBSSettings.get(BBSSettingsKey.CONFIG_BRUSHES_LIST_GROUPS)
@@ -460,6 +469,7 @@ class BBSWBrushSwitcher(QWidget):
             if group.importData(groupNfo):
                 actionNext = group.actionNext()
                 if actionNext:
+                    # disconnect everything
                     try:
                         actionNext.triggered.disconnect(self.__setSelectedGroupNextFromAction)
                     except Exception:
@@ -475,6 +485,7 @@ class BBSWBrushSwitcher(QWidget):
 
                 actionPrevious = group.actionPrevious()
                 if actionPrevious:
+                    # disconnect everything
                     try:
                         actionPrevious.triggered.disconnect(self.__setSelectedGroupPreviousFromAction)
                     except Exception:
@@ -488,6 +499,7 @@ class BBSWBrushSwitcher(QWidget):
                     actionPrevious.triggered.connect(self.__setSelectedGroupPreviousFromAction)
                     actionPrevious.changed.connect(self.__setShortcutFromAction)
 
+                BBSSettings.setGroupShortcut(group, group.shortcutNext(), group.shortcutPrevious())
                 groupsList.append(group)
 
         self.__bbsModel.importData({'brushes': brushesList,

@@ -394,7 +394,7 @@ class BBSMainWindow(WEDialog):
             if re.search('-N$', itemId):
                 action = BBSSettings.groupAction(re.sub('-N$', itemId, ''), 'N')
             elif re.search('-P$', itemId):
-                action = BBSSettings.brushAction(re.sub('-P$', itemId, ''), 'P')
+                action = BBSSettings.groupAction(re.sub('-P$', itemId, ''), 'P')
             else:
                 action = BBSSettings.brushAction(itemId)
 
@@ -406,7 +406,7 @@ class BBSMainWindow(WEDialog):
             if re.search('-N$', itemId):
                 action = BBSSettings.groupAction(re.sub('-N$', itemId, ''), 'N')
             elif re.search('-P$', itemId):
-                action = BBSSettings.brushAction(re.sub('-P$', itemId, ''), 'P')
+                action = BBSSettings.groupAction(re.sub('-P$', itemId, ''), 'P')
             else:
                 action = BBSSettings.brushAction(itemId)
 
