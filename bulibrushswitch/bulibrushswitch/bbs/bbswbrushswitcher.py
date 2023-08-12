@@ -450,16 +450,17 @@ class BBSWBrushSwitcher(QWidget):
                     # disconnect everything
                     try:
                         action.triggered.disconnect(self.__setSelectedBrushFromAction)
-                    except Exception:
+                    except Exception as e:
                         pass
 
                     try:
                         action.changed.disconnect(self.__setSelectedBrushFromAction)
-                    except Exception:
+                    except Exception as e:
                         pass
 
                     action.triggered.connect(self.__setSelectedBrushFromAction)
                     action.changed.connect(self.__setShortcutFromAction)
+
                 BBSSettings.setBrushShortcut(brush, brush.shortcut())
                 brushesList.append(brush)
 
