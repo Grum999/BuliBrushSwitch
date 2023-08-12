@@ -129,12 +129,13 @@ _[2021-12-01] Version 0.1.0b_ *[Show detailed release content](./releases-notes/
 There's a known bug on shortcut widget, all keystrokes are not recognized (at least on my Debian)
 > If you can't define a shortcut from plugin's interface, then do it from Krita's shortcuts interface
 
-The plugin use Krita's API `Krita.instance().resources()`
-> On my DEV computer, with ~1000 presets, first call to this API need ~4.0s for execution; then Krita's startup will a little bit more time than usual
-> Should be faster with less presets
+The plugin use Krita's API `Krita.instance().resources()`: on my DEV computer, with ~1000 presets, first call to this API function need ~4.0s for execution
+- With plugin installed, Krita's startup will need a little bit more time than usual
+- Should be faster with less presets
 > A [bug](https://bugs.kde.org/show_bug.cgi?id=473311) has been opened on Krita side for this case, not sure if it can be fixed or not...
 
-Any question, bugs, feature request should be asked to dedicated [Issues](https://github.com/Grum999/BuliBrushSwitch/issues) page.
+**Question? Bugs? Feature request?**
+> Please use the dedicated [Issues](https://github.com/Grum999/BuliBrushSwitch/issues) page
 
 
 
