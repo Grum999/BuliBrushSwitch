@@ -25,7 +25,7 @@ Basic improvement: as groups are now available, double-click to expand/collapse 
 ![List view mode](./../screenshots/r1-0-0_mainui-list_viewmode.png)
 
 ### Icon view
-The icon view provide 2 view:
+The icon view provide 2 views:
 - Flat view: all brushes in single view
 - User view: groups tree on left, brushes from selected group on right
 
@@ -55,11 +55,12 @@ Layout and informations provided are now more readable:
 ## Brushes - Organize brushes within groups
 [Feature request #9](https://github.com/Grum999/BuliBrushSwitch/issues/9)
 
-Brushes can now be organized withins groups
+Brushes can now be organized withins groups.
+
 Group editor provides:
 - Group color
 - Shorcuts to activate previous/next brush in group
-- Editor to write a description
+- Rich text editor to write an optional description
 
 ![Group editor](./../screenshots/r1-0-0_mainsettings-groups_editor.png)
 
@@ -88,6 +89,7 @@ There's now:
 The Setups manager allows to create and organize differents *BuliBrushSwitch* configuration.
 
 Instead of having a unique big configuration with a lot of brushes, it's possible create different configuration for different use cases.
+
 Also, configurations in Setups manager can be exported/imported:
 - Useful for backup
 - Easily allows to copy setups from a computer to another one
@@ -122,8 +124,9 @@ Represent the **No color** choice for background color with hatched pattern
 
 ### Gradient color
 [Feature request #8](https://github.com/Grum999/BuliBrushSwitch/issues/8)
+
 Some brushes can use a gradient as source color.
-A new button -like for color/background- is added to let possibility to define a specific gradient with a brush.
+A new button -like for foreround/background- is added to let possibility to define a specific gradient with a brush.
 
 Button popups a list of available gradient in Krita.
 
@@ -132,12 +135,14 @@ Button popups a list of available gradient in Krita.
 
 ### Take in account the preserve Alpha option
 [Feature request #7](https://github.com/Grum999/BuliBrushSwitch/issues/7)
+
 Allows brush to force use of *preserve Alpha* option
 
 ![Preserve alpha option](./../screenshots/r1-0-0_mainsettings-preservealpha.png)
 
 ### Ignore tool opacity
 [Feature request #14](https://github.com/Grum999/BuliBrushSwitch/issues/14)
+
 Krita memorize opacity per tool (brush tool, line tool, rectangle tool, ...) rather than per brush.
 This means, when changing a tool, current defined opacity can be modified by new selected tool.
 
@@ -152,14 +157,14 @@ This option allows to ignore tool opacity and force use of defined brush opacity
 
 Option *Ignore eraser mode* was not taken in account (always checked)
 
-Now problem is fixed
+Now problem is fixed.
 
 ## Brush Settings - **Keep user modifications*
 [Bug #11](https://github.com/Grum999/BuliBrushSwitch/issues/11)
 
 Option *Keep user modifications* was not taken properly in account when brush was deactivated
 
-Now problem is fixed
+Now problem is fixed.
 
 
 ## Main Interface - *Crash when brushes from disabled bundles are referenced*
