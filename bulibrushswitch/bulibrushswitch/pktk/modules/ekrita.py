@@ -69,7 +69,6 @@ from PyQt5.QtWidgets import (
 
 from PyQt5.Qt import (QObject, QMdiArea, QAbstractScrollArea)
 
-
 # -----------------------------------------------------------------------------
 
 class EKritaWindow:
@@ -124,6 +123,8 @@ class EKritaBrushPreset:
     @staticmethod
     def initialise():
         """Initialise brushes names"""
+        # this is pretty long!!!
+        # on my DEV computer, 1058 preset --> takes ~4seconds to return list on first execution!
         EKritaBrushPreset.__brushes = Krita.instance().resources("preset")
 
     @staticmethod
