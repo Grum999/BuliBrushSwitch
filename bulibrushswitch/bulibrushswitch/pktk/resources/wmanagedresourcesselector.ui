@@ -237,17 +237,17 @@
   <customwidget>
    <class>WLineEdit</class>
    <extends>QLineEdit</extends>
-   <header>.pktk.widgets.wlineedit</header>
+   <header>pktk.widgets.wlineedit</header>
   </customwidget>
   <customwidget>
    <class>WTagInput</class>
    <extends>QWidget</extends>
-   <header>.pktk.widgets.wtaginput</header>
+   <header>pktk.widgets.wtaginput</header>
   </customwidget>
   <customwidget>
    <class>WManagedResourcesLv</class>
    <extends>QListView</extends>
-   <header>.pktk.widgets.wmanagedresourcesselector</header>
+   <header>pktk.widgets.wmanagedresourcesselector</header>
   </customwidget>
  </customwidgets>
  <resources>

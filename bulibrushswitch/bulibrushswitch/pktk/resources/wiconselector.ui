@@ -195,7 +195,7 @@
   <customwidget>
    <class>WLineEdit</class>
    <extends>QLineEdit</extends>
-   <header>.pktk.widgets.wlineedit</header>
+   <header>pktk.widgets.wlineedit</header>
   </customwidget>
  </customwidgets>
  <resources>

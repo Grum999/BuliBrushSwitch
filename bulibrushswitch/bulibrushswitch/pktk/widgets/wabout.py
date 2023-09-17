@@ -25,6 +25,11 @@ import re
 import PyQt5.uic
 
 from PyQt5.Qt import *
+from PyQt5.QtGui import (
+        QImage,
+        QPixmap,
+        QIcon
+    )
 from PyQt5.QtWidgets import (
         QDialog
     )
@@ -48,7 +53,7 @@ class WAboutWindow(WEDialog):
     Expected image size: 900x574
     """
 
-    def __init__(self, name="XXXX", version="testing", image=None, license=None, sourceCode=None, madeWith=None, parent=None):
+    def __init__(self, name="XXXX", version="testing", image=None, license=None, sourceCode=None, madeWith=None, icon=None, parent=None):
         super(WAboutWindow, self).__init__(os.path.join(os.path.dirname(__file__), '..', 'resources', 'wabout.ui'), parent)
 
         self.setWindowTitle(i18n(f'{name}::About'))
@@ -56,6 +61,11 @@ class WAboutWindow(WEDialog):
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowMinMaxButtonsHint)
         self.lblName.setText(name)
         self.lblVersion.setText(f'v{version}')
+
+        if isinstance(icon, QIcon):
+            self.lbIcon.setPixmap(icon.pixmap(QSize(64, 64)))
+        else:
+            self.lbIcon.setVisible(False)
 
         if image is not None:
             if isinstance(image, QImage):

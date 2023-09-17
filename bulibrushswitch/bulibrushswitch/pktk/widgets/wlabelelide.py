@@ -25,6 +25,13 @@ from PyQt5.Qt import *
 from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
+from PyQt5.QtGui import (
+        QPainter,
+        QColor,
+        QLinearGradient,
+        QPalette,
+        QFontMetrics
+    )
 from PyQt5.QtWidgets import (
         QWidget
     )

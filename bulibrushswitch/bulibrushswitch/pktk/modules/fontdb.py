@@ -27,12 +27,17 @@
 
 
 from PyQt5.Qt import *
+from PyQt5.QtGui import (
+        QFontDatabase
+    )
 import sys
 import re
 import os.path
 
 from .bytesrw import BytesRW
 from .utils import Debug
+
+from ..pktk import *
 
 
 class FontDatabase:
@@ -657,7 +662,7 @@ class Font:
                 if recordUid[1] == 0 and recordUid[2] == 0:
                     # encoding Roman; ignore other encoding
                     self.__propStrings[recordUid[3]] = self.__reader.readStr(fntId_nameRecords[recordUid][Font.__RECORD_LENGTH], 'utf-8', 'ignore').strip()
-            elif recordUid[0] == 3 and recordUid[2]in (0x0809, 0x0409):
+            elif recordUid[0] == 3 and recordUid[2] in (0x0809, 0x0409):
                 # Platform Id = 3 => Windows / English
                 if recordUid[1] == 1:
                     # encoding Unicode BMP

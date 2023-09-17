@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 16 16"
+   version="1.1"
+   id="svg5"
+   sodipodi:docname="format_text_trim.svg"
+   inkscape:version="1.3-beta (cedbd6c, 2023-05-28)"
+   width="32"
+   height="32"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <metadata
+     id="metadata9">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <sodipodi:namedview
+     pagecolor="#808080"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1912"
+     inkscape:window-height="1694"
+     id="namedview7"
+     showgrid="true"
+     inkscape:zoom="32"
+     inkscape:cx="13.84375"
+     inkscape:cy="16.15625"
+     inkscape:window-x="1920"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg5"
+     inkscape:snap-bbox="true"
+     inkscape:bbox-nodes="true"
+     inkscape:snap-page="true"
+     inkscape:document-rotation="0"
+     inkscape:snap-bbox-edge-midpoints="true"
+     inkscape:showpageshadow="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1">
+    <inkscape:grid
+       id="grid1"
+       units="px"
+       originx="0"
+       originy="0"
+       spacingx="0.5"
+       spacingy="0.5"
+       empcolor="#404040"
+       empopacity="0.50196078"
+       color="#404040"
+       opacity="0.501961"
+       empspacing="5"
+       dotted="false"
+       gridanglex="30"
+       gridanglez="30"
+       visible="true" />
+  </sodipodi:namedview>
+  <defs
+     id="defs3051">
+    <style
+       type="text/css"
+       id="current-color-scheme">&#10;      .ColorScheme-Text {&#10;        color:#232629;&#10;      }&#10;      </style>
+  </defs>
+  <g
+     id="g7"
+     style="opacity:0.5;fill:#000000">
+    <path
+       id="path7"
+       style="fill:#000000;fill-opacity:0.5;stroke:none;stroke-width:3"
+       d="M 1 7 L 1 8 L 2 8 L 2 7 L 1 7 z M 3 7 L 3 8 L 4 8 L 4 7 L 3 7 z M 12 7 L 12 8 L 13 8 L 13 7 L 12 7 z M 14 7 L 14 8 L 15 8 L 15 7 L 14 7 z " />
+    <path
+       id="path5"
+       style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:3"
+       d="M 5.5527344 3.5068359 L 3.4814453 11.234375 L 4.4472656 11.493164 L 6.5185547 3.765625 L 5.5527344 3.5068359 z M 11.552734 3.5068359 L 9.4814453 11.234375 L 10.447266 11.493164 L 12.518555 3.765625 L 11.552734 3.5068359 z M 6 7 L 6 8 L 10 8 L 10 7 L 6 7 z " />
+  </g>
+</svg>

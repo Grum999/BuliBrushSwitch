@@ -24,6 +24,15 @@ import html
 import re
 
 from PyQt5.Qt import *
+from PyQt5.QtGui import (
+        QBrush,
+        QColor,
+        QFont,
+        QTextCursor,
+        QTextFormat,
+        QTextDocument,
+        QPalette
+    )
 from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
@@ -33,8 +42,14 @@ from PyQt5.QtWidgets import (
 
 
 from ..modules.utils import replaceLineEditClearButton
+from ..modules.listutils import (
+        EXTRASELECTION_FILTER_REMOVE,
+        filterExtraSelections
+    )
 from ..modules.imgutils import buildIcon
 from .wseparator import WVLine
+
+from ..pktk import *
 
 
 class SearchOptions:
@@ -129,7 +144,7 @@ class WSearchInput(QWidget):
     # reserved                          0b000000000000000000000000xxxXXXXX
 
     OPTION_SHOW_BUTTON_SEARCH =         0b00000000000000000000000100000000  # display SEARCH button                     ==> taken in account without OPTION_SHOW_REPLACE option
-                                                                            #                                               only (OPTION_SHOW_REPLACE implies SEARCH button)
+    #                                                                                                                       only (OPTION_SHOW_REPLACE implies SEARCH button)
     OPTION_SHOW_BUTTON_REGEX =          0b00000000000000000000001000000000  # display REGULAR EXPRESSION option button
     OPTION_SHOW_BUTTON_CASESENSITIVE =  0b00000000000000000000010000000000  # display CASE SENSITIVE option button
     OPTION_SHOW_BUTTON_WHOLEWORD =      0b00000000000000000000100000000000  # display WHOLE WORD option button
@@ -252,9 +267,13 @@ class WSearchInput(QWidget):
         self.__foundResultsInfo.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Preferred)
         self.__foundResultsInfo.setFont(font)
 
+        palette = self.palette()
+        color = palette.color(QPalette.Active, QPalette.Text)
+        color.setAlpha(128)
         self.__optionsInfo = QLabel()
         self.__optionsInfo.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
         self.__optionsInfo.setFont(font)
+        self.__optionsInfo.setStyleSheet(f"color: {color.name(QColor.HexArgb)};")
 
         self.__wSRInfo = QWidget()
         self.__lSRInfo = QHBoxLayout()
@@ -292,6 +311,7 @@ class WSearchInput(QWidget):
 
         self.__btShowHide.setChecked(self.__options & WSearchInput.OPTION_STATE_BUTTONSHOW == WSearchInput.OPTION_STATE_BUTTONSHOW)
         self.setOptions(options)
+        self.__searchOptionChanged()
 
     def __updateInterface(self, visible=None):
         """Update user interface"""
@@ -376,7 +396,7 @@ class WSearchInput(QWidget):
             if self.__options & SearchOptions.HIGHLIGHT == SearchOptions.HIGHLIGHT:
                 optionsInfo.append(i18n('Highlight all found occurences'))
 
-            self.__optionsInfo.setText(i18n('Finding with options: <i>')+', '.join(optionsInfo)+'</i>')
+            self.__optionsInfo.setText(f"{i18n('Finding with options:')}<i>{', '.join(optionsInfo)}</i>")
 
     def __searchTextModified(self):
         """Search value has been modified, emit signal"""
@@ -502,6 +522,9 @@ class WSearchInput(QWidget):
 class SearchFromPlainTextEdit:
     """Provide high level method to search ocurences in a QPlainTextEdit"""
 
+    EXTRASELECTIONTYPE_HIGHLIGHTEDSEARCH = 0x0F00
+    EXTRASELECTIONTYPE_CURRENTSEARCH =     0x0F01
+
     COLOR_SEARCH_ALL = 0
     COLOR_SEARCH_CURRENT_BG = 'highlightSearchCurrent.bg'
     COLOR_SEARCH_CURRENT_FG = 'highlightSearchCurrent.fg'
@@ -523,55 +546,45 @@ class SearchFromPlainTextEdit:
                 SearchFromPlainTextEdit.COLOR_SEARCH_CURRENT_FG:    QColor("#ffff00")
             }
 
-    def __highlightedSelections(self):
-        """Build extra selection for highlighting"""
-        foundCurrentAdded = False
-        if self.__extraSelectionsFoundCurrent is None:
-            returned = self.__extraSelectionsFoundAll
-        else:
-            returned = []
-            for cursorFromAll in self.__extraSelectionsFoundAll:
-                if cursorFromAll.cursor == self.__extraSelectionsFoundCurrent.cursor:
-                    returned.append(self.__extraSelectionsFoundCurrent)
-                    foundCurrentAdded = True
-                else:
-                    returned.append(cursorFromAll)
-
-        if not foundCurrentAdded and self.__extraSelectionsFoundCurrent is not None:
-            returned.append(self.__extraSelectionsFoundCurrent)
-
-        return returned
+    def __getExtraSelections(self, filteredOn, stopOnFirst):
+        """Return extra selection from self.__plainTextEdit, without `filteredOn` extra selection"""
+        # get a copy of extra selection from plaintext edit on which cleanup have to be made
+        extraSelections = self.__plainTextEdit.extraSelections()
+        filterExtraSelections(extraSelections, filteredOn, EXTRASELECTION_FILTER_REMOVE, stopOnFirst=stopOnFirst)
+        return extraSelections
 
     def clearCurrent(self):
         """Clear current found selection"""
         if self.__extraSelectionsFoundCurrent:
             extraSelections = self.__plainTextEdit.extraSelections()
             for extraSelection in extraSelections:
-                if extraSelection.format.boolProperty(0x01):
+                if extraSelection.format.property(QTextFormat.UserProperty) == SearchFromPlainTextEdit.EXTRASELECTIONTYPE_CURRENTSEARCH:
                     extraSelections.remove(extraSelection)
+                    self.__plainTextEdit.setExtraSelections(extraSelections)
                     break
             self.__extraSelectionsFoundCurrent = None
 
     def searchAll(self, text, options=0):
-        """Search all occurences of `text` in console
+        """Search all occurences of `text`
 
         If `text` is None or empty string, and option SEARCH_OPTION_HIGHLIGHT is set,
         it will clear all current selected items
 
         Options is combination of SearchOptions flags:
-            HIGHLIGHT =       highlight the found occurences in console
+            HIGHLIGHT =       highlight the found occurences
             REGEX =           consider text as a regular expression
             WHOLEWORD =       search for while words only
             CASESENSITIVE =   search with case sensitive
 
         Return list of cursors
         """
+        extraSelections = self.__getExtraSelections(SearchFromPlainTextEdit.EXTRASELECTIONTYPE_HIGHLIGHTEDSEARCH, False)
         extraSelectionsFoundAll = []
 
         if (text is None or text == '') and options & SearchOptions.HIGHLIGHT == SearchOptions.HIGHLIGHT:
             # clear current selections
             self.__extraSelectionsFoundAll = []
-            self.__plainTextEdit.setExtraSelections(self.__highlightedSelections())
+            self.__plainTextEdit.setExtraSelections(extraSelections)
             return self.__extraSelectionsFoundAll
 
         findFlags = 0
@@ -588,16 +601,18 @@ class SearchFromPlainTextEdit:
 
             extraSelection.cursor = cursor
             extraSelection.format.setBackground(QBrush(self.__searchColors[SearchFromPlainTextEdit.COLOR_SEARCH_ALL]))
+            extraSelection.format.setProperty(QTextFormat.UserProperty, SearchFromPlainTextEdit.EXTRASELECTIONTYPE_HIGHLIGHTEDSEARCH)
 
             extraSelectionsFoundAll.append(extraSelection)
             cursor = self.__plainTextEdit.document().find(text, cursor, QTextDocument.FindFlags(findFlags))
 
         if options & SearchOptions.HIGHLIGHT == SearchOptions.HIGHLIGHT:
             self.__extraSelectionsFoundAll = extraSelectionsFoundAll
+            extraSelections += self.__extraSelectionsFoundAll
         else:
             self.__extraSelectionsFoundAll = []
 
-        self.__plainTextEdit.setExtraSelections(self.__highlightedSelections())
+        self.__plainTextEdit.setExtraSelections(extraSelections)
 
         return extraSelectionsFoundAll
 
@@ -616,9 +631,10 @@ class SearchFromPlainTextEdit:
 
         Return a cursor or None
         """
+        extraSelections = self.__getExtraSelections(SearchFromPlainTextEdit.EXTRASELECTIONTYPE_CURRENTSEARCH, True)
         if (text is None or text == '') and options & SearchOptions.HIGHLIGHT == SearchOptions.HIGHLIGHT:
             self.__extraSelectionsFoundCurrent = None
-            self.__plainTextEdit.setExtraSelections(self.__highlightedSelections())
+            self.__plainTextEdit.setExtraSelections(extraSelections)
             return self.__extraSelectionsFoundCurrent
 
         findFlags = 0
@@ -668,12 +684,13 @@ class SearchFromPlainTextEdit:
             self.__extraSelectionsFoundCurrent = QTextEdit.ExtraSelection()
             self.__extraSelectionsFoundCurrent.format.setBackground(QBrush(self.__searchColors[SearchFromPlainTextEdit.COLOR_SEARCH_CURRENT_BG]))
             self.__extraSelectionsFoundCurrent.format.setForeground(QBrush(self.__searchColors[SearchFromPlainTextEdit.COLOR_SEARCH_CURRENT_FG]))
-            self.__extraSelectionsFoundCurrent.format.setProperty(0x01, True)
+            self.__extraSelectionsFoundCurrent.format.setProperty(QTextFormat.UserProperty, SearchFromPlainTextEdit.EXTRASELECTIONTYPE_CURRENTSEARCH)
             self.__extraSelectionsFoundCurrent.cursor = found
+            extraSelections.append(self.__extraSelectionsFoundCurrent)
         else:
             self.__extraSelectionsFoundCurrent = None
 
-        self.__plainTextEdit.setExtraSelections(self.__highlightedSelections())
+        self.__plainTextEdit.setExtraSelections(extraSelections)
 
         if self.__extraSelectionsFoundCurrent is not None:
             cursor = QTextCursor(self.__extraSelectionsFoundCurrent.cursor)

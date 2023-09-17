@@ -80,7 +80,7 @@ def frToStrTime(nbFrames, frameRate):
     return f"{returned_mn:02d}:{returned_ss:02d}.{returned_ff:02d}"
 
 
-def secToStrTime(nbSeconds):
+def secToStrTime(nbSeconds, milliseconds=False):
     """Convert a number of seconds to duration (Days, H:M:S)"""
     returned = ''
     nbDays = floor(nbSeconds / 86400)
@@ -88,7 +88,13 @@ def secToStrTime(nbSeconds):
         nbSeconds = nbSeconds - nbDays * 86400
         returned = f'{nbDays}D, '
 
-    returned += time.strftime('%H:%M:%S', time.gmtime(nbSeconds))
+    timeStruct = time.gmtime(nbSeconds)
+    returned += time.strftime('%H:%M:%S', timeStruct)
+
+    if milliseconds:
+        nbMilliseconds = nbSeconds - (timeStruct.tm_min * 60 + timeStruct.tm_sec)
+
+        returned += f'{nbMilliseconds:.6f}'.lstrip('0')
 
     return returned
 

@@ -35,6 +35,9 @@ import sys
 from krita import InfoObject
 
 from PyQt5.Qt import *
+from PyQt5.QtGui import (
+        QColor
+    )
 from PyQt5.QtCore import (
         pyqtSignal as Signal
     )

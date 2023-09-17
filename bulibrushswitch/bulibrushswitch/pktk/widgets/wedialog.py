@@ -44,19 +44,13 @@ class WEDialog(QDialog):
     def loadUi(fileName, parent):
         """Create an WEDialog object from given XML .ui file"""
         # temporary add <plugin> path to sys.path to let 'pktk.widgets.xxx' being accessible during xmlLoad()
-        sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-        returned = loadXmlUi(fileName, parent)
-        sys.path.pop()
-        return returned
+        return loadXmlUi(fileName, parent)
 
     def __init__(self, uiFile=None, parent=None):
         super(WEDialog, self).__init__(parent)
         self.__eventCallBack = {}
         if isinstance(uiFile, str):
-            # temporary add <plugin> path to sys.path to let 'pktk.widgets.xxx' being accessible during xmlLoad()
-            sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
             loadXmlUi(uiFile, self)
-            sys.path.pop()
 
     def showEvent(self, event):
         """Event trigerred when dialog is shown

@@ -388,7 +388,7 @@ Also, first line is used to define action name in Krita's shortcut settings dial
   <customwidget>
    <class>WTextEdit</class>
    <extends>QWidget</extends>
-   <header>bulibrushswitch.pktk.widgets.wtextedit</header>
+   <header>pktk.widgets.wtextedit</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

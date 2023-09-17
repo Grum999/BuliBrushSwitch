@@ -25,6 +25,10 @@ import re
 import PyQt5.uic
 
 from PyQt5.Qt import *
+from PyQt5.QtGui import (
+        QImage,
+        QPixmap
+    )
 from PyQt5.QtWidgets import (
         QDialog
     )

@@ -24,12 +24,23 @@
 import PyQt5.uic
 
 from PyQt5.Qt import *
+from PyQt5.QtGui import (
+        QColor,
+        QRegion,
+        QFontMetrics,
+        QPen,
+        QPalette,
+        QBrush,
+        QPainter
+    )
 from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
 from PyQt5.QtWidgets import (
         QPushButton
     )
+
+from ..pktk import *
 
 
 class WStandardColorSelector(QWidget):

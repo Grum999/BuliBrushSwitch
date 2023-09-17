@@ -30,6 +30,12 @@ from PyQt5.Qt import *
 from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
+from PyQt5.QtGui import (
+        QColor,
+        QPen,
+        QBrush,
+        QPainter
+    )
 from PyQt5.QtWidgets import (
         QPushButton,
     )
@@ -37,6 +43,8 @@ from PyQt5.QtWidgets import (
 from ..modules.imgutils import checkerBoardBrush
 from ..modules.resutils import (ManagedResource, ManagedResourceTypes)
 from .wmenuitem import WMenuManagedResourcesSelector
+
+from ..pktk import *
 
 
 class WManagedResourcesButton(QToolButton):

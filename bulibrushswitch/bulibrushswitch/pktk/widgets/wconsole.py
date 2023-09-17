@@ -35,6 +35,18 @@ import re
 import html
 
 from PyQt5.Qt import *
+from PyQt5.QtGui import (
+        QColor,
+        QFont,
+        QFontMetrics,
+        QFontMetricsF,
+        QTextCharFormat,
+        QTextCursor,
+        QTextBlockUserData,
+        QPainter,
+        QPen,
+        QBrush
+    )
 from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
@@ -115,6 +127,18 @@ class WConsole(QPlainTextEdit):
         """
         return re.sub(r'(?:\$([\*\$#]))', r'\1', text)
 
+    @staticmethod
+    def unformat(text):
+        """Unformat text passed to console"""
+        # bold
+        text = re.sub(r'(?<!\$)\*\*(([^*]|\$\*)+)(?<!\$)\*\*', r'\1', text)
+        # italic
+        text = re.sub(r'(?<!\$)\*(([^*]|\$\*)+)(?<!\$)\*', r'\1', text)
+        # color
+        text = re.sub(r'(?<!\$)#(l?[rgbcmykw]|[A-F0-9]{6})(?<!\$)#(([^#]|\$#)+)(?<!\$)#', r'\2', text)
+
+        return text
+
     def __init__(self, parent=None):
         super(WConsole, self).__init__(parent)
 
@@ -159,13 +183,15 @@ class WConsole(QPlainTextEdit):
 
         # filtered
         self.__optionFilteredTypes = []
+        self.__optionFilterExtraSelection = False
 
         # search object
         self.__search = SearchFromPlainTextEdit(self)
 
         # ---- Set default font (monospace, 10pt)
         font = QFont()
-        font.setFamily("Monospace")
+        font.setStyleHint(QFont.Monospace)
+        font.setFamily('DejaVu Sans Mono, Consolas, Courier New')
         font.setFixedPitch(True)
         font.setPointSize(10)
         self.setFont(font)
@@ -231,31 +257,67 @@ class WConsole(QPlainTextEdit):
 
         [c:nn]XXX[/c] => color 'nn'
         """
-        def replaceColor(regResult):
-            colorCode = regResult.groups()[0]
-            if colorCode in self.__styleColors:
-                color = self.__styleColors[colorCode].name()
-            else:
-                try:
-                    color = QColor(f'#{colorCode}').name()
-                except Exception as e:
-                    color = None
-            if color is None:
-                return regResult.groups()[1]
-            else:
-                return f'<span style="color: {color}">{regResult.groups()[1]}</span>'
-
-        def asBold(regResult):
-            return f'<b>{WConsole.unescape(regResult.groups()[0])}</b>'
-
-        def asItalic(regResult):
-            return f'<i>{WConsole.unescape(regResult.groups()[0])}</i>'
-
         def formatText(text):
-            text = re.sub(r'(?<!\$)\*\*(([^*]|\$\*)+)(?<!\$)\*\*', r'<b>\1</b>', text)
-            text = re.sub(r'(?<!\$)\*(([^*]|\$\*)+)(?<!\$)\*', r'<i>\1</i>', text)
-            text = re.sub(r'(?<!\$)#(l?[rgbcmykw]|[A-F0-9]{6})(?<!\$)#(([^#]|\$#)+)(?<!\$)#', replaceColor, text)
-            return WConsole.unescape(text)
+            regEx = (r"(?:(?<!\$)(#(?:l?[rgbcmykw]|[A-F0-9]{6})(?<!\$)#))|"
+                     r"(?<!\$)(#)|"
+                     r"(?<!\$)(\*\*)|"
+                     r"(?<!\$)(\*)")
+            tokens = [token for token in re.split(regEx, text,  flags=re.I | re.M) if token]
+
+            hasColor = False
+            returned = []
+            bold = False
+            italic = False
+            color = False
+            for token in tokens:
+                if token == '**':
+                    if bold:
+                        returned.append("</b>")
+                        bold = False
+                    else:
+                        returned.append("<b>")
+                        bold = True
+                elif token == '*':
+                    if italic:
+                        returned.append("</i>")
+                        italic = False
+                    else:
+                        returned.append("<i>")
+                        italic = True
+                elif token == '#':
+                    if color:
+                        returned.append("</span>")
+                        color = False
+                    else:
+                        returned.append(token)
+                elif regResult := re.match("#(l?[rgbcmykw]|[A-F0-9]{6})#", token,  flags=re.I):
+                    if color:
+                        # already in a color block?
+                        returned.append(f'</span>')
+
+                    hasColor = True
+                    color = True
+                    colorCode = regResult.groups()[0]
+
+                    if colorCode in self.__styleColors:
+                        colorStyle = self.__styleColors[colorCode].name()
+                    else:
+                        try:
+                            colorStyle = QColor(f'#{colorCode}').name()
+                        except Exception as e:
+                            colorStyle = None
+
+                    if colorStyle:
+                        returned.append(f'<span style="color: {colorStyle};">')
+                    else:
+                        returned.append(f'<span>')
+                else:
+                    returned.append(html.escape(WConsole.unescape(token)))
+
+            if hasColor:
+                returned.append(f'''<span style="color: {self.__styleColors['w'].name()};"> </span>''')
+
+            return f"<span style='white-space: pre;'>{''.join(returned)}</span>"
 
         texts = text.split("\n")
         returned = []
@@ -264,31 +326,19 @@ class WConsole(QPlainTextEdit):
 
         return returned
 
-    def __getFontMarkup(self, text, formatOptions):
-        """Return an html formatted `text`, taking in account `formatOptions`"""
-        options = []
-        text = html.escape(text)
-
-        if formatOptions & WConsoleTextStyle.FONT_BOLD == WConsoleTextStyle.FONT_BOLD:
-            options += 'font-weight: bold;'
-        if formatOptions & WConsoleTextStyle.FONT_ITALIC == WConsoleTextStyle.FONT_ITALIC:
-            options += 'font-style: italic;'
-        if formatOptions & 0xFF != WConsoleTextStyle.COLOR_DEFAULT:
-            color = '#00ffff'
-            options += f'color: {color};'
-
-        if len(options) > 0:
-            fmtOptions = ''.join(options)
-            return f'<span style="{fmtOptions}">{text}</span>'
-        else:
-            return text
-
     def __isTypeFiltered(self, type):
         """Return True if given `type` is filtered"""
         return (type in self.__optionFilteredTypes)
 
     def __updateFilteredTypes(self):
         """Update current filtered types"""
+        self.setUpdatesEnabled(False)
+
+        filterSearch = False
+        if self.__optionFilterExtraSelection:
+            blockNumbers = [es.cursor.blockNumber() for es in self.extraSelections()]
+            filterSearch = len(blockNumbers) > 0
+
         block = self.document().firstBlock()
 
         while block.isValid():
@@ -298,10 +348,17 @@ class WConsole(QPlainTextEdit):
             if blockData:
                 colorLevel = block.userData().type()
 
-            block.setVisible(not self.__isTypeFiltered(colorLevel))
+            if not self.__isTypeFiltered(colorLevel):
+                # check if filtered by search only if visible to reduce time analysis
+                if filterSearch:
+                    block.setVisible(block.blockNumber() in blockNumbers)
+                else:
+                    block.setVisible(True)
+            else:
+                block.setVisible(False)
             block = block.next()
 
-        self.update()
+        self.setUpdatesEnabled(True)
 
     # region: event overload ---------------------------------------------------
 
@@ -450,6 +507,26 @@ class WConsole(QPlainTextEdit):
             self.__updateGutterAreaWidth()
             self.update()
 
+    def optionFontSize(self):
+        """Return current console font size (in point)"""
+        return self.font().pointSize()
+
+    def setOptionFontSize(self, value):
+        """Set current console font size (in point)"""
+        font = self.font()
+        font.setPointSize(value)
+        self.setFont(font)
+
+    def optionFontName(self):
+        """Return current console font name"""
+        return self.font().family()
+
+    def setOptionFontName(self, value):
+        """Set current console font name"""
+        font = self.font()
+        font.setFamily(value)
+        self.setFont(font)
+
     def optionAllowWheelSetFontSize(self):
         """Return if CTRL+WHEEL allows to change font size"""
         return self.__optionWheelSetFontSize
@@ -479,6 +556,16 @@ class WConsole(QPlainTextEdit):
     def setOptionBufferSize(self, value):
         """Set maximum buffer size for console"""
         return self.setMaximumBlockCount(value)
+
+    def optionFilteredExtraSelection(self):
+        """Return list of filtered types"""
+        return self.__optionFilterExtraSelection
+
+    def setOptionFilteredExtraSelection(self, value):
+        """Set filter on extra selection"""
+        if isinstance(value, bool):
+            self.__optionFilterExtraSelection = value
+            self.__updateFilteredTypes()
 
     def optionFilteredTypes(self):
         """Return list of filtered types"""
@@ -524,40 +611,66 @@ class WConsole(QPlainTextEdit):
 
     # ---
 
-    def appendLine(self, text, type=WConsoleType.NORMAL, data=None):
+    def appendLine(self, text, type=WConsoleType.NORMAL, data=None, raw=False):
         """Append a new line to console
 
         Given `type` is a WConsoleType value
         """
-        if isinstance(text, list):
-            text = "\n".join(text)
+        if raw:
+            if isinstance(text, str):
+                lines = [text]
+            else:
+                lines = ['\n'.join(text)]
+        else:
+            if isinstance(text, list):
+                text = "\n".join(text)
+            if text == '':
+                lines = ['']
+            else:
+                lines = self.__formatText(text)
 
-        lines = self.__formatText(text)
+        filteredType = self.__isTypeFiltered(type)
+
         for line in lines:
-            self.appendHtml(line)
+            if raw:
+                self.appendPlainText(line)
+            else:
+                self.appendHtml(line)
 
             lastBlock = self.document().lastBlock()
             if lastBlock:
                 lastBlock.setUserData(WConsoleUserData(type, data))
-                lastBlock.setVisible(not self.__isTypeFiltered(type))
+                if filteredType:
+                    lastBlock.setVisible(False)
 
-    def append(self, text):
+    def append(self, text, raw=False):
         """Append to current line"""
         if isinstance(text, list):
             text = "\n".join(text)
 
-        texts = self.__formatText(text)
-
-        for text in texts:
+        if raw:
             self.moveCursor(QTextCursor.End)
-            self.textCursor().insertHtml(text)
-            self.moveCursor(QTextCursor.End)
+            self.textCursor().insertText(text)
+        else:
+            texts = self.__formatText(text)
+            for text in texts:
+                self.moveCursor(QTextCursor.End)
+                self.textCursor().insertHtml(text)
 
     # ---
 
     def search(self):
         """Return search object"""
         return self.__search
+
+    def updateFilter(self):
+        """Update current applied filter"""
+        self.__updateFilteredTypes()
+
+    def scrollToLastRow(self):
+        """Go to last row"""
+        self.moveCursor(QTextCursor.End)
+        self.verticalScrollBar().setValue(self.verticalScrollBar().maximum())
 
 
 class WConsoleUserData(QTextBlockUserData):
@@ -612,3 +725,4 @@ class WConsoleGutterArea(QWidget):
     def disconnect(self):
         """Disconnect area from console"""
         self.__console = None
+

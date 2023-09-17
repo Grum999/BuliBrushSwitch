@@ -36,6 +36,8 @@ from PyQt5.QtWidgets import (
         QWidget
     )
 
+from ..pktk import *
+
 
 class WFlowLayout(QLayout):
     """A flow layout to manage inline widgets

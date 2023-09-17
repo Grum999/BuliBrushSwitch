@@ -11,6 +11,13 @@
 
 import os
 
+from krita import Krita
+
+
+def i18n(text, context=None, plural=None):
+    """Not yet implemented => provide an internalisation function"""
+    return Krita.instance().krita_i18n(text)
+
 
 class EInvalidType(Exception):
     """An invalid type has been provided"""

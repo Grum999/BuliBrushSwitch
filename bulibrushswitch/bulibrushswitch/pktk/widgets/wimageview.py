@@ -44,10 +44,14 @@ from PyQt5.QtGui import (
         QImage,
         QPainterPath,
         QPalette,
-        QPixmap
+        QPixmap,
+        QBrush,
+        QPainter,
+        QColor,
+        QMovie
     )
 
-from ..modules.utils import loadXmlUi
+from ..modules.utils import (loadXmlUi, Debug)
 from ..modules.imgutils import (
         checkerBoardBrush,
         buildIcon
@@ -573,7 +577,7 @@ class WImageView(QWidget):
                 self.__bgBrush = QBrush(QColor(128, 128, 128))
                 self.__actionBgNGray.setChecked(True)
             elif self.__backgroundType == WImageView.BG_TRANSPARENT:
-                self.__bgBrush = QBrush(Krita.activeWindow().qwindow().palette().color(QPalette.Mid))
+                self.__bgBrush = QBrush(Krita.instance().activeWindow().qwindow().palette().color(QPalette.Mid))
                 self.__actionBgNone.setChecked(True)
             elif self.__backgroundType == WImageView.BG_CHECKER_BOARD:
                 self.__bgBrush = checkerBoardBrush(32)
@@ -774,7 +778,7 @@ class WImageFilePreview(QWidget):
             self.hsAnimatedFrameNumber.setMaximum(self.__maxAnimatedFrame)
             self.hsAnimatedFrameNumber.setValue(1)
             self.lblAnimatedFrameNumber.setText(f"1/{self.__maxAnimatedFrame}")
-        except Exception:
+        except Exception as e:
             Debug.print('[WImageFilePreview.showAnimatedFrames] Unable to read animated GIF {0}: {1}', fileName, e)
             self.__imgReaderAnimated = None
 

@@ -38,6 +38,11 @@ from krita import (
             )
 
 from PyQt5.Qt import *
+from PyQt5.QtGui import (
+        QIcon,
+        QBrush,
+        QPalette
+    )
 from PyQt5.QtCore import (
         pyqtSignal as Signal
     )

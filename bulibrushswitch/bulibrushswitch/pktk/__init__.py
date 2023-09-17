@@ -14,6 +14,14 @@ import os.path
 
 from .pktk import (PkTk, EInvalidType, EInvalidValue, EInvalidStatus)
 
+
+# add <plugin> parent into sys.path
+#   From:            /home/xxx/.local/share/krita/pykrita/<pluginName>/pktk/__init__.py
+#   Add in sys.path: /home/xxx/.local/share/krita/pykrita
+#                                                             __init__.py
+#                                             pktk            |
+#                             <pluginName>    |               |
+#             parent plugin   |               |               |
 pluginsPath = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 if pluginsPath not in sys.path:
     # now, pktk modules for plugin <plugin> can be imported as:

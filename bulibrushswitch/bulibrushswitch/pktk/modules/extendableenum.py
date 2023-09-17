@@ -26,7 +26,7 @@ class ExtendableEnumMeta(type):
     """Metaclass for ExtendableEnum class"""
     def __new__(cls, name, bases, dict):
         # create a cache to avoid to recreate instances everytime
-        dict['__cache__']={}
+        dict['__cache__'] = {}
 
         # create a dictionnary of class members
         # - exclude magic names from member list

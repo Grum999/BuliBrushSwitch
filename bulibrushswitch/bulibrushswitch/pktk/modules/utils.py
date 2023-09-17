@@ -27,7 +27,9 @@ import xml.etree.ElementTree as ET
 import PyQt5.uic
 
 from PyQt5.Qt import *
-
+from PyQt5.QtGui import (
+        QImage
+    )
 from PyQt5.QtCore import (
         QRect
     )
@@ -181,7 +183,18 @@ def loadXmlUi(fileName, parent):
     properties with icon reference
     """
     # load UI
+
+    # temporary add <pluginName> path to sys.path to let 'pktk.widgets.xxx' being accessible during xmlLoad()
+    #   From:            /home/xxx/.local/share/krita/pykrita/<pluginName>/pktk/widgets/xxx.py
+    #   Add in sys.path: /home/xxx/.local/share/krita/pykrita/<pluginName>
+    #
+    #                                                               xxx.py
+    #                                               widgets         |
+    #                               pktk            |               |
+    #               <pluginName>    |               |               |
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
     returned = PyQt5.uic.loadUi(fileName, parent, PkTk.packageName())
+    sys.path.pop()
 
     # Parse XML file and retrieve all object for which an icon is set
     tree = ET.parse(fileName)
@@ -254,6 +267,12 @@ class JsonQObjectEncoder(json.JSONEncoder):
                     'width': objectToEncode.width(),
                     'height': objectToEncode.height()
                 }
+        elif isinstance(objectToEncode, QPoint):
+            return {
+                    'objType': "QPoint",
+                    'x': objectToEncode.x(),
+                    'y': objectToEncode.y()
+                }
         elif isinstance(objectToEncode, QEColor):
             return {
                     'objType': "QEColor",
@@ -312,6 +331,9 @@ class JsonQObjectDecoder(json.JSONDecoder):
         if ('objType' in objectToDecode and objectToDecode['objType'] == "QSize" and
            'width' in objectToDecode and 'height' in objectToDecode):
             return QSize(objectToDecode['width'], objectToDecode['height'])
+        if ('objType' in objectToDecode and objectToDecode['objType'] == "QPoint" and
+           'x' in objectToDecode and 'y' in objectToDecode):
+            return QPoint(objectToDecode['x'], objectToDecode['y'])
         elif ('objType' in objectToDecode and objectToDecode['objType'] == "QEColor" and
               'color' in objectToDecode and 'isNone' in objectToDecode):
             returned = QEColor(objectToDecode['color'])

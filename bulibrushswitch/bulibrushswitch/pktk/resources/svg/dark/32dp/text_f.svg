@@ -4,7 +4,7 @@
    version="1.1"
    id="svg5"
    sodipodi:docname="text_f.svg"
-   inkscape:version="1.1 (c4e8f9e, 2021-05-24)"
+   inkscape:version="1.3-beta (cedbd6c, 2023-05-28)"
    width="32"
    height="32"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
@@ -26,7 +26,7 @@
     </rdf:RDF>
   </metadata>
   <sodipodi:namedview
-     pagecolor="#ffffff"
+     pagecolor="#808080"
      bordercolor="#666666"
      borderopacity="1"
      objecttolerance="10"
@@ -39,8 +39,8 @@
      id="namedview7"
      showgrid="true"
      inkscape:zoom="22.627417"
-     inkscape:cx="44.52563"
-     inkscape:cy="16.418136"
+     inkscape:cx="25.897786"
+     inkscape:cy="16.440233"
      inkscape:window-x="2577"
      inkscape:window-y="409"
      inkscape:window-maximized="0"
@@ -48,7 +48,25 @@
      inkscape:snap-bbox="true"
      inkscape:bbox-nodes="true"
      inkscape:snap-page="true"
-     inkscape:pagecheckerboard="0">
+     inkscape:pagecheckerboard="0"
+     inkscape:showpageshadow="0"
+     inkscape:deskcolor="#d1d1d1">
+    <inkscape:grid
+       id="grid1"
+       units="px"
+       originx="0"
+       originy="0"
+       spacingx="0.5"
+       spacingy="0.5"
+       empcolor="#404040"
+       empopacity="0.50196078"
+       color="#404040"
+       opacity="0.50196078"
+       empspacing="5"
+       dotted="false"
+       gridanglex="30"
+       gridanglez="30"
+       visible="true" />
   </sodipodi:namedview>
   <defs
      id="defs3051">
@@ -60,11 +78,7 @@
        id="rect5113" />
     <style
        type="text/css"
-       id="current-color-scheme">
-      .ColorScheme-Text {
-        color:#232629;
-      }
-      </style>
+       id="current-color-scheme">&#10;      .ColorScheme-Text {&#10;        color:#232629;&#10;      }&#10;      </style>
   </defs>
   <g
      aria-label="f"

@@ -35,6 +35,14 @@ import hashlib
 from krita import InfoObject
 
 from PyQt5.Qt import *
+from PyQt5.QtGui import (
+        QIcon,
+        QPalette,
+        QBrush,
+        QPainter,
+        QStandardItem,
+        QStandardItemModel
+    )
 from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
@@ -917,17 +925,9 @@ class WToolbarConfiguration(QWidget):
 
         availableAction = AvailableActionNode(hashlib.sha1(action.encode()).hexdigest(), action, False)
 
-        if groupId is None:
-            if self.__availableActions.removeChild(availableAction):
-                self.__updateAvailableActionsView()
-                return True
-        else:
-            row = self.__availableActions.childRow(AvailableActionNode(groupId, '', True))
-            if row > -1:
-                parentGroup = self.__availableActions.child(row)
-                if parentGroup.removeChild(availableAction):
-                    self.__updateAvailableActionsView()
-                    return True
+        if self.__availableActions.removeChild(availableAction):
+            self.__updateAvailableActionsView()
+            return True
         return False
 
     def addAvailableActionSeparator(self):

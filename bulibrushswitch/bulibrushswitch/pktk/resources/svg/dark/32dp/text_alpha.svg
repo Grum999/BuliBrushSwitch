@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 16 16"
+   version="1.1"
+   id="svg5"
+   sodipodi:docname="text_alpha.svg"
+   inkscape:version="1.3-beta (cedbd6c, 2023-05-28)"
+   width="32"
+   height="32"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <metadata
+     id="metadata9">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <sodipodi:namedview
+     pagecolor="#808080"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="2318"
+     inkscape:window-height="1346"
+     id="namedview7"
+     showgrid="true"
+     inkscape:zoom="45.254834"
+     inkscape:cx="26.560698"
+     inkscape:cy="13.302446"
+     inkscape:window-x="2577"
+     inkscape:window-y="409"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg5"
+     inkscape:snap-bbox="true"
+     inkscape:bbox-nodes="true"
+     inkscape:snap-page="true"
+     inkscape:pagecheckerboard="0"
+     inkscape:showpageshadow="0"
+     inkscape:deskcolor="#d1d1d1">
+    <inkscape:grid
+       id="grid1"
+       units="px"
+       originx="0"
+       originy="0"
+       spacingx="0.5"
+       spacingy="0.5"
+       empcolor="#404040"
+       empopacity="0.50196078"
+       color="#404040"
+       opacity="0.50196078"
+       empspacing="5"
+       dotted="false"
+       gridanglex="30"
+       gridanglez="30"
+       visible="true" />
+  </sodipodi:namedview>
+  <defs
+     id="defs3051">
+    <rect
+       x="-20"
+       y="3"
+       width="103"
+       height="43"
+       id="rect5113" />
+    <style
+       type="text/css"
+       id="current-color-scheme">&#10;      .ColorScheme-Text {&#10;        color:#232629;&#10;      }&#10;      </style>
+  </defs>
+  <path
+     d="M 12.050259,7.3371781 11.765571,5.8425697 q -0.291157,-1.5334294 -1.442847,-1.5334294 -0.867002,0 -1.2616822,0.7117183 -0.4982028,0.8928829 -0.4982028,2.0704532 0,1.4234365 0.4852625,2.102804 0.4917326,0.6923078 1.2746225,0.6923078 0.867002,0 1.332854,-1.3781454 z m 0.666427,-1.9798709 0.640546,-1.8957586 h 1.061107 l -1.326384,3.9273908 0.258807,1.4169664 q 0.05823,0.3170381 0.284687,0.582315 0.265277,0.3105679 0.472322,0.3105679 h 0.569375 v 1.0093463 h -0.711718 q -0.608196,0 -1.15169,-0.543494 -0.265277,-0.2717473 -0.375269,-0.8411219 -0.297628,0.7181889 -0.905824,1.2810929 -0.284687,0.265277 -1.209921,0.265277 -1.5204888,0 -2.2580878,-0.9834654 -0.7570094,-1.0158161 -0.7570094,-2.7951118 0,-1.9022289 0.8217111,-2.7951118 0.9122934,-0.9964056 2.1933861,-0.9964056 2.012222,0 2.393962,2.0575128 z"
+     id="text1"
+     style="font-size:13.2509px;line-height:1.25;font-family:Rye;-inkscape-font-specification:Rye;letter-spacing:0px;word-spacing:0px;stroke-width:0.5;fill:#ffffff"
+     transform="matrix(0.9058241,0,-0.1827723,1.1039671,0,0)"
+     aria-label="α" />
+</svg>

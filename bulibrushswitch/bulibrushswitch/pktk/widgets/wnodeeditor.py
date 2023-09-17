@@ -39,6 +39,20 @@ import os.path
 import hashlib
 
 from PyQt5.Qt import *
+from PyQt5.QtGui import (
+        QColor,
+        QPalette,
+        QGuiApplication,
+        QPainterPath,
+        QPainter,
+        QBrush,
+        QPen,
+        QFontMetricsF,
+        QPolygonF,
+        QClipboard,
+        QTransform,
+        QMouseEvent
+    )
 from PyQt5.QtCore import (
         pyqtSignal as Signal
     )

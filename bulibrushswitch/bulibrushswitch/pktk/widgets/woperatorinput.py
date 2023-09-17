@@ -64,6 +64,7 @@ from ..modules.utils import replaceLineEditClearButton
 from ..modules.imgutils import buildIcon
 from .wtaginput import WTagInput
 
+from ..pktk import *
 
 STYLE_DROPDOWN_BUTTON_CALENDAR = """
 ::drop-down {

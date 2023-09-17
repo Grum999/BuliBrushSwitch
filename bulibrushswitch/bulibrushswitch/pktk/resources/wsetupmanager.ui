@@ -454,7 +454,7 @@
   <customwidget>
    <class>WSetupManagerTv</class>
    <extends>QTreeView</extends>
-   <header>.pktk.widgets.wsetupmanager</header>
+   <header>pktk.widgets.wsetupmanager</header>
   </customwidget>
  </customwidgets>
  <resources>

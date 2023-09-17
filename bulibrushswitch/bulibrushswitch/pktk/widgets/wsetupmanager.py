@@ -18,6 +18,15 @@ import datetime
 from pathlib import Path
 
 from PyQt5.Qt import *
+from PyQt5.QtGui import (
+        QPainter,
+        QPen,
+        QPalette,
+        QBrush,
+        QTextDocument,
+        QIcon,
+        QStandardItem
+    )
 from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
@@ -2185,7 +2194,7 @@ class WSetupManager(QWidget):
                                                WDialogFile.OPTION_PREVIEW_WIDGET: wPreview,
                                                WDialogFile.OPTION_SETTINGS_WIDGET: wSettings})
         if result:
-            extensions = re.findall("(?:\*(\.[^\s\)]+))+", self.__extensionFilter)
+            extensions = re.findall(r"(?:\*(\.[^\s\)]+))+", self.__extensionFilter)
             if Path(result['file']).suffix not in extensions:
                 # if more than one extension, consider the first one as the expected one
                 result['file'] += extensions[0]

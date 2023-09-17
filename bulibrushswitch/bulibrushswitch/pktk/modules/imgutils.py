@@ -19,7 +19,11 @@ from PyQt5.QtGui import (
         QBrush,
         QPainter,
         QPixmap,
-        QColor
+        QColor,
+        QPolygon,
+        QPen,
+        QIcon,
+        QImage
     )
 
 from math import ceil
@@ -283,11 +287,11 @@ def getIconList(source=[]):
         resName = resIterator.filePath()
 
         if addPkTk:
-            if name := re.search("^:/pktk/images/normal/(.+)$", resName):
+            if name := re.search(r"^:/pktk/images/normal/(.+)$", resName):
                 returned.append(f'pktk:{name.groups()[0]}')
 
         if addKrita:
-            if name := re.match("^:/(?:16_dark|dark)_(.*)\.svg$", resName):
+            if name := re.match(r"^:/(?:16_dark|dark)_(.*)\.svg$", resName):
                 returned.append(f'krita:{name.groups()[0]}')
 
         resIterator.next()

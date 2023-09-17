@@ -25,6 +25,12 @@ from math import ceil
 import PyQt5.uic
 
 from PyQt5.Qt import *
+from PyQt5.QtGui import (
+        QColor,
+        QBrush,
+        QPen,
+        QPainter
+    )
 from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
@@ -35,6 +41,8 @@ from PyQt5.QtWidgets import (
 from ..modules.imgutils import checkerBoardBrush
 from ..modules.colorutils import QEColor
 from .wmenuitem import WMenuColorPicker
+
+from ..pktk import *
 
 
 class WColorButton(QToolButton):

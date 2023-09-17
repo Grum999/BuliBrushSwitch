@@ -290,14 +290,7 @@ class WManagedResourcesSelector(QWidget):
 
         uiFileName = os.path.join(os.path.dirname(__file__), '..', 'resources', 'wmanagedresourcesselector.ui')
 
-        # temporary add <plugin> path to sys.path to let 'pktk.widgets.xxx' being accessible during xmlLoad()
-        # because of WLineEdit and WTagInput, path that must be absolute in UI file
-        sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
         loadXmlUi(uiFileName, self)
-
-        # remove temporary added path
-        sys.path.pop()
 
         self.__model = self.lvManagedResources.model()
         self.__resourceType = ManagedResourceTypes.RES_GRADIENTS

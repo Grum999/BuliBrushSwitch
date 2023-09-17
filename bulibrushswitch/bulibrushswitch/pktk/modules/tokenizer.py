@@ -34,6 +34,11 @@ import re
 import time
 
 from PyQt5.Qt import *
+from PyQt5.QtGui import (
+        QFont,
+        QColor,
+        QTextCharFormat
+    )
 from .elist import EList
 from .uitheme import UITheme
 from ..pktk import *
@@ -50,7 +55,7 @@ class TokenType(ExtendableEnum):
     DEDENT = ('Dedent', 'An indented block finished')
     WRONG_INDENT = ('WrongIndent', 'An indent is found but doesn\'t match expected indentation value')
     WRONG_DEDENT = ('WrongDedent', 'An dedent is found but doesn\'t match expected indentation value')
-    COMMENT = ('Comment', 'A comment text')
+    COMMENT = ('comment', 'A comment text')
 
     def id(self, **param):
         """Return token Id value"""
@@ -66,39 +71,62 @@ class TokenType(ExtendableEnum):
         else:
             return self.value[1]
 
+    def __format__(self, spec):
+        return f"{self.value[0]:{spec}}"
+
 
 class TokenStyle:
     """Define styles applied for tokens types"""
 
-    def __init__(self, styles=[]):
+    def __init__(self, styles=None):
         """Initialise token family"""
         self.__currentThemeId = UITheme.DARK_THEME
 
         # define default styles for tokens
         self.__tokenStyles = {}
 
-        styles = {
-                UITheme.DARK_THEME: [
-                        (TokenType.UNKNOWN, '#d85151', True, True, '#7b1b1b'),
-                        (TokenType.NEWLINE, None, False, False)
-                    ],
-                UITheme.LIGHT_THEME: [
-                        (TokenType.UNKNOWN, '#d85151', True, True, '#7b1b1b'),
-                        (TokenType.NEWLINE, None, False, False)
-                    ]
-            }
+        if styles is None or not isinstance(styles, dict):
+            styles = {
+                    UITheme.DARK_THEME: [
+                            (TokenType.UNKNOWN, '#d85151', True, True, '#7b1b1b'),
+                            (TokenType.NEWLINE, None, False, False),
+                            (TokenType.SPACE, None, False, False),
+                        ],
+                    UITheme.LIGHT_THEME: [
+                            (TokenType.UNKNOWN, '#d85151', True, True, '#7b1b1b'),
+                            (TokenType.NEWLINE, None, False, False),
+                            (TokenType.SPACE, None, False, False)
+                        ]
+                }
 
-        for style in styles:
-            for definition in styles[style]:
-                self.setStyle(style, *definition)
+        for themeId in styles:
+            for definition in styles[themeId]:
+                self.setStyle(themeId, *definition)
+
+    def reset(self):
+        """Delete ALL style, even the default one"""
+        self.__tokenStyles = {}
+
+    def styles(self):
+        """Return list of styles for current theme"""
+        if self.__currentThemeId in self.__tokenStyles:
+            return self.__tokenStyles[self.__currentThemeId]
+        return []
 
     def style(self, type):
         """Return style to apply for a token type"""
         if isinstance(type, TokenType):
             if type in self.__tokenStyles[self.__currentThemeId]:
                 return self.__tokenStyles[self.__currentThemeId][type]
+            elif type in self.__tokenStyles[UITheme.DARK_THEME]:
+                return self.__tokenStyles[UITheme.DARK_THEME][type]
+            else:
+                return self.__tokenStyles[UITheme.DARK_THEME][TokenType.SPACE]
+
         # in all other case, token style is not known...
-        return self.__tokenStyles[self.__currentThemeId][TokenType.UNKNOWN]
+        if TokenType.UNKNOWN in self.__tokenStyles[self.__currentThemeId]:
+            return self.__tokenStyles[self.__currentThemeId][TokenType.UNKNOWN]
+        return self.__tokenStyles[UITheme.DARK_THEME][TokenType.UNKNOWN]
 
     def setStyle(self, themeId, tokenType, fgColor, bold, italic, bgColor=None):
         """Define style for a token family"""
@@ -117,6 +145,10 @@ class TokenStyle:
 
         self.__tokenStyles[themeId][tokenType] = textFmt
 
+    def themes(self):
+        """Return list of available themes for token style"""
+        return list(self.__tokenStyles.keys())
+
     def theme(self):
         """Return current defined theme"""
         return self.__currentThemeId
@@ -125,7 +157,7 @@ class TokenStyle:
         """Set current theme
 
         If theme doesn't exist, current theme is not changed"""
-        if themeId in self.__currentThemeId:
+        if themeId in self.__tokenStyles:
             self.__currentThemeId = themeId
 
 
@@ -469,7 +501,17 @@ class TokenizerRule(object):
         else:
             return ""
 
-    def __init__(self, type, regex, description=None, autoCompletion=None, autoCompletionChar=None, caseInsensitive=True, ignoreIndent=False, onInitValue=None):
+    def __init__(self,
+                 type,
+                 regex,
+                 description=None,
+                 autoCompletion=None,
+                 autoCompletionChar=None,
+                 caseInsensitive=True,
+                 ignoreIndent=False,
+                 onInitValue=None,
+                 multiLineStart=None,
+                 multiLineEnd=None):
         """Initialise a tokenizer rule
 
         Given `type` determinate which type of token will be generated by rule
@@ -488,16 +530,37 @@ class TokenizerRule(object):
             Called function will get TokenType and token value and return new value
             Mainly, this can be used to pre-process tokens like:
             - pre-convert a "number" as real number   (ie: value "45.7" <str> will be converted as 45.7 <float>)
+        Given `multiLineStart` and `multiLineEnd` allows to define regular exspression to define multiline token like python long string of C comments
+            Used only for syntax highlighting (managed line by line)
+            The main regex provided should be able to manage properly the tokenization within a multiline full source code
+            If multiLineStart is provided, multiLineEnd must be provided too
         """
         self.__type = None
         self.__regEx = None
-        self.__regExSingle = None           # put in cache a QRegularExpression with '^....$' to match single values (improve speed!)
+
+        # put in cache a QRegularExpression with '^....$' to match single values (improve speed!)
+        self.__regExSingle = None
+
+        # lookahead and lookbehind are removed from __regExSingle
+        # store them if any
+        self.__regExLookAhead = None
+        self.__regExLookbehind = None
+
+        # list of errors for rule
         self.__error = []
+
         self.__description = description
         self.__autoCompletion = []
         self.__autoCompletionChar = None
         self.__caseInsensitive = caseInsensitive
         self.__ignoreIndent = ignoreIndent
+
+        # if token can be on multiple line (python long string or C comment)
+        # these are defined with regular expression designed to find start and end of
+        # multine topken
+        # --> this is mostly used for syntax highlighting
+        self.__multiLineRegExStart = None
+        self.__multiLineRegExEnd = None
 
         if callable(onInitValue):
             self.__onInitValue = onInitValue
@@ -509,10 +572,11 @@ class TokenizerRule(object):
 
         self.__setRegEx(regex)
         self.__setType(type)
+        self.__setRegExMulLineStartEnd(multiLineStart, multiLineEnd)
 
         if len(self.__error) > 0:
             NL = "\n"
-            raise EInvalidValue(f'Token rule is not valid!{NL}{NL.join(self.__error)}')
+            raise EInvalidValue(f'Token rule ({regex}) for "{type}" is not valid!{NL}{NL.join(self.__error)}')
 
         if isinstance(autoCompletion, str):
             self.__autoCompletion = [(autoCompletion, autoCompletion, '')]
@@ -549,28 +613,117 @@ class TokenizerRule(object):
         """
         if isinstance(regEx, str):
             if self.__caseInsensitive:
-                regEx = QRegularExpression(regEx, QRegularExpression.CaseInsensitiveOption)
+                regEx = QRegularExpression(regEx, QRegularExpression.CaseInsensitiveOption | QRegularExpression.UseUnicodePropertiesOption)
             else:
-                regEx = QRegularExpression(regEx)
+                regEx = QRegularExpression(regEx, QRegularExpression.UseUnicodePropertiesOption)
         elif not isinstance(regEx, QRegularExpression):
             self.__error.append("Given regular expression must be a <str> or <QRegularExpression> type")
             return
 
-        if not regEx.isValid():
+        # build single regEx, use to check token type
+        pattern = regEx.pattern()
+
+        # check if regex starts with a lookbehind
+        #    Negative lookbehind: not preceded by xxx
+        #    (?<!xxx)...
+        #
+        #    Positive lookbehind: preceded by xxx
+        #    (?<=xxx)...
+        #
+        #   Note: lookahead & lookbehind normally don't accept unfixed patterns; here we accept them :-)
+        if found := re.search(r"^\(\?<([!=])(.*?)\)", pattern):
+            # store lookbehind pattern
+            self.__regExLookbehind = QRegularExpression(f"{found.groups()[1]}$", QRegularExpression.UseUnicodePropertiesOption)
+            self.__regExLookbehind.isNegative = (found.groups()[0] == '!')
+
+            # remove lookbehind from pattern
+            pattern = re.sub(r"^(\(\?<[!=].*?\))", "", pattern)
+
+            if not self.__regExLookbehind.isValid():
+                self.__error.append("Given regular expression (lookbehind) is not a valid")
+
+        # check if regex ends with a lookahead
+        #    Negative lookahead: not followed by xxx
+        #    ...(?!xxx)
+        #
+        #    Positive lookahead: followed by xxx
+        #    ...(?=xxx)
+        #
+        #   Note: lookahead & lookbehind normally don't accept unfixed patterns; here we accept them :-)
+        if found := re.search(r"\(\?([!=])(.*?)\)$", pattern):
+            # store lookahead pattern
+            self.__regExLookAhead = QRegularExpression(f"^{found.groups()[1]}", QRegularExpression.UseUnicodePropertiesOption)
+            self.__regExLookAhead.isNegative = (found.groups()[0] == '!')
+
+            # remove lookahead from pattern
+            pattern = re.sub(r"(\(\?[!=].*?\))$", "", pattern)
+
+            if not self.__regExLookAhead.isValid():
+                self.__error.append("Given regular expression (lookahead) is not a valid")
+
+        # full regEx, use to split tokens
+        self.__regEx = QRegularExpression(pattern, regEx.patternOptions())
+
+        if not self.__regEx.isValid():
             self.__error.append("Given regular expression is not a valid")
 
-        self.__regEx = regEx
-
-        pattern = regEx.pattern()
+        # single regEx, use to determinate tokens type
         if pattern != '' and pattern[0] == '^':
             pattern += '$'
         else:
-            pattern = f'^{regEx.pattern()}$'
+            pattern = f'^{pattern}$'
 
         if self.__caseInsensitive:
-            self.__regExSingle = QRegularExpression(pattern, QRegularExpression.CaseInsensitiveOption)
+            self.__regExSingle = QRegularExpression(pattern, QRegularExpression.CaseInsensitiveOption | QRegularExpression.UseUnicodePropertiesOption)
         else:
-            self.__regExSingle = QRegularExpression(pattern)
+            self.__regExSingle = QRegularExpression(pattern, QRegularExpression.UseUnicodePropertiesOption)
+
+    def __setRegExMulLineStartEnd(self, regExStart, regExEnd):
+        """Set current regular expression for syntax highlighting of multine block
+
+        Given `regExStart` and `regExEnd` can be:
+            - A QRegularExpression
+            - A string
+            - None
+
+        Both `regExStart` and `regExEnd` must be:
+            - None
+            or
+            - A valid regular expression
+
+        If invalid, doesn't raise error: just define rule as 'in error' with a message
+        """
+        if regExStart is not None:
+            if isinstance(regExStart, str):
+                if self.__caseInsensitive:
+                    regExStart = QRegularExpression(regExStart, QRegularExpression.CaseInsensitiveOption | QRegularExpression.UseUnicodePropertiesOption)
+                else:
+                    regExStart = QRegularExpression(regExStart, QRegularExpression.UseUnicodePropertiesOption)
+            elif not isinstance(regExStart, QRegularExpression):
+                self.__error.append("Given regular expression `multiLineStart` must be a <str> or <QRegularExpression> type")
+                return
+
+            if not regExStart.isValid():
+                self.__error.append("Given regular expression `multiLineStart` is not a valid")
+
+        if regExEnd is not None:
+            if isinstance(regExEnd, str):
+                if self.__caseInsensitive:
+                    regExEnd = QRegularExpression(regExEnd, QRegularExpression.CaseInsensitiveOption | QRegularExpression.UseUnicodePropertiesOption)
+                else:
+                    regExEnd = QRegularExpression(regExEnd, QRegularExpression.UseUnicodePropertiesOption)
+            elif not isinstance(regExEnd, QRegularExpression):
+                self.__error.append("Given regular expression `multiLineEnd` must be a <str> or <QRegularExpression> type")
+                return
+
+            if not regExEnd.isValid():
+                self.__error.append("Given regular expression `multiLineEnd` is not a valid")
+
+        if regExStart is None and regExEnd is not None or regExStart is not None and regExEnd is None:
+            self.__error.append("None or both regular expression `multiLineStart` and `multiLineEnd` must be provided")
+
+        self.__multiLineRegExStart = regExStart
+        self.__multiLineRegExEnd = regExEnd
 
     def __setType(self, value):
         """Set current type for rule"""
@@ -584,6 +737,20 @@ class TokenizerRule(object):
         if single:
             return self.__regExSingle
         return self.__regEx
+
+    def regExLookAhead(self):
+        """Return regular expression lookahead (as str) if any, otherwise return None"""
+        return self.__regExLookAhead
+
+    def regExLookBehind(self):
+        """Return regular expression lookbehind (as str) if any, otherwise return None"""
+        return self.__regExLookbehind
+
+    def multiLineRegEx(self):
+        """Return a tuple (multiLineStart, multiLineEnd) if defined, otherwise return None"""
+        if self.__multiLineRegExStart is None:
+            return None
+        return (self.__multiLineRegExStart, self.__multiLineRegExEnd)
 
     def type(self):
         """Return current type for rule"""
@@ -673,6 +840,9 @@ class Tokenizer(object):
     note: the tokenizer doesn't verify the validity of tokenized text (this is
           made in a second time by a parser)
     """
+    RULES_ALL = None
+    RULES_MULTILINE = 'multiline'
+
     ADD_RULE_LAST = 0
     ADD_RULE_TYPE_BEFORE_FIRST = 1
     ADD_RULE_TYPE_AFTER_FIRST = 2
@@ -696,6 +866,10 @@ class Tokenizer(object):
 
         # a global regEx with all rules
         self.__regEx = None
+
+        # list of rules with multiline management
+        # None if not initialised, otherwise a list
+        self.__multilineRules = None
 
         # a flag to determinate if regular expression&cache need to be updated
         self.__needUpdate = True
@@ -824,6 +998,10 @@ class Tokenizer(object):
                     self.__rules.insert(self.__searchAddIndex(mode, rules.type()), rules)
 
                 self.__needUpdate = True
+
+                if rules.multiLineRegEx():
+                    # contains a multiline rule; need to rebuild list
+                    self.__multilineRules = None
             else:
                 self.__invalidRules.append((rules, "The rule type is set to NONE: the NONE type is reserved"))
         else:
@@ -849,13 +1027,24 @@ class Tokenizer(object):
                     self.__rules.pop(index)
 
                 self.__needUpdate = True
+
+                if rules.multiLineRegEx():
+                    # contains a multiline rule; need to rebuild list
+                    self.__multilineRules = None
             else:
                 self.__invalidRules.append((rules, "The rule type is set to NONE: the NONE type is reserved"))
         else:
             raise Exception("Given `rule` must be a <TokenizerRule>")
 
-    def rules(self):
-        """return list of given (and valid) rules"""
+    def rules(self, filter=None):
+        """return list of given (and valid) rules
+
+        If given `filter` equals Tokenizer.RULES_MULTILINE, return multilines rules only
+        """
+        if filter == Tokenizer.RULES_MULTILINE:
+            if self.__multilineRules is None:
+                self.__multilineRules = [rule for rule in self.__rules if rule.multiLineRegEx()]
+            return self.__multilineRules
         return self.__rules
 
     def setRules(self, rules):
@@ -883,7 +1072,7 @@ class Tokenizer(object):
         if self.__needUpdate:
             self.clearCache(True)
             self.__needUpdate = False
-            self.__regEx = QRegularExpression('|'.join([ruleInsensitive(rule) for rule in self.__rules]), QRegularExpression.MultilineOption)
+            self.__regEx = QRegularExpression('|'.join([ruleInsensitive(rule) for rule in self.__rules]), QRegularExpression.MultilineOption | QRegularExpression.UseUnicodePropertiesOption)
 
         return self.__regEx
 
@@ -973,17 +1162,51 @@ class Tokenizer(object):
             match = matchIterator.next()
 
             for textIndex in range(len(match.capturedTexts())):
-                value = match.captured(textIndex)
+                tokenText = match.captured(textIndex)
+
+                if tokenText == '':
+                    # empty string!?
+                    # no need to check rules for a token
+                    continue
 
                 position = 0
                 for rule in self.__rules:
-                    if rule.caseInsensitive():
-                        options = QRegularExpression.CaseInsensitiveOption
-                    else:
-                        options = QRegularExpression.NoPatternOption
+                    # We've got a token, we need to determinate token type
+                    # ==> loop on rules, check one by one if token match rule
+                    #     if yes, then token type is known
 
-                    if rule.regEx(True).match(value).hasMatch():
-                        tokenText = match.captured(textIndex)
+                    if rule.caseInsensitive():
+                        options = QRegularExpression.CaseInsensitiveOption | QRegularExpression.UseUnicodePropertiesOption
+                    else:
+                        options = QRegularExpression.NoPatternOption | QRegularExpression.UseUnicodePropertiesOption
+
+                    if rule.regEx(True).match(tokenText).hasMatch():
+                        if regex := rule.regExLookBehind():
+                            # need to check if not preceded by
+                            checkText = text[0:match.capturedStart(textIndex)]
+                            matchedP = regex.match(checkText)
+                            if matchedP.hasMatch():
+                                if regex.isNegative:
+                                    # there's a match and we have a negative look behind, search next rule
+                                    continue
+                            else:
+                                if not regex.isNegative:
+                                    # there's no match and we have a positive behind, search next rule
+                                    continue
+
+                        if regex := rule.regExLookAhead():
+                            # need to check if not followed by
+                            checkText = text[match.capturedStart(textIndex)+match.capturedLength(textIndex):]
+                            matchedF = regex.match(checkText)
+                            if matchedF.hasMatch():
+                                if regex.isNegative:
+                                    # there's a match and we have a negative look behind, search next rule
+                                    continue
+                            else:
+                                if not regex.isNegative:
+                                    # there's no match and we have a positive behind, search next rule
+                                    continue
+
                         token = Token(tokenText, rule,
                                       match.capturedStart(textIndex),
                                       match.capturedEnd(textIndex),
@@ -1055,7 +1278,8 @@ class Tokenizer(object):
                         returned.append(token)
                         previousToken = token
 
-                        # do not need to continue to check for another token type
+                        # token type is found:
+                        # => do not need to continue to check for an another token type
                         break
 
         # add

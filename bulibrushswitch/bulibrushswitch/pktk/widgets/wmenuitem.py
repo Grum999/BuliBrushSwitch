@@ -39,6 +39,10 @@ from PyQt5.Qt import *
 from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
+from PyQt5.QtGui import (
+        QPixmap,
+        QActionEvent
+    )
 from PyQt5.QtWidgets import (
         QAction,
         QApplication,
@@ -52,6 +56,7 @@ from PyQt5.QtWidgets import (
     )
 
 from krita import PresetChooser
+
 from .wcolorselector import WColorPicker
 from .wmanagedresourcesselector import WManagedResourcesSelector
 

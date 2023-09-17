@@ -26,6 +26,12 @@
 # -----------------------------------------------------------------------------
 
 from PyQt5.Qt import *
+from PyQt5.QtGui import (
+        QStandardItem,
+        QStandardItemModel,
+        QPainter,
+        QGuiApplication
+    )
 from PyQt5.QtCore import (
         pyqtSignal as Signal
     )

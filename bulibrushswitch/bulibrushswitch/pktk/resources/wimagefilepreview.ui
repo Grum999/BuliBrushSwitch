@@ -290,7 +290,7 @@ QSlider::handle:horizontal {
   <customwidget>
    <class>WImageView</class>
    <extends>QWidget</extends>
-   <header>bulicommander.pktk.widgets.wimageview</header>
+   <header>pktk.widgets.wimageview</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

@@ -19,8 +19,16 @@
 #
 # -----------------------------------------------------------------------------
 
+from krita import Krita
+
 import PyQt5.uic
 from PyQt5.Qt import *
+from PyQt5.QtGui import (
+        QIcon,
+        QFontMetrics,
+        QPalette,
+        QMouseEvent
+    )
 from PyQt5.QtCore import (
         pyqtSignal as Signal
     )

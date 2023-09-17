@@ -45,9 +45,30 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import (
         QSyntaxHighlighter,
         QTextCharFormat,
-        QColor
+        QColor,
+        QFont,
+        QPalette,
+        QTextCursor,
+        QCursor,
+        QTextFormat,
+        QTextBlockUserData,
+        QPainter,
+        QFontMetrics,
+        QFontMetricsF,
+        QBrush,
+        QPen,
+        QKeySequence
+    )
+from ..modules.listutils import (
+        EXTRASELECTION_FILTER_REMOVE,
+        sortExtraSelections,
+        filterExtraSelections
     )
 from ..modules.languagedef import LanguageDef
+from ..modules.uitheme import (
+        UITheme,
+        BaseTheme
+    )
 from ..modules.tokenizer import (
         TokenStyle,
         TokenType,
@@ -60,13 +81,94 @@ from .wsearchinput import SearchFromPlainTextEdit
 from ..pktk import *
 
 
+class WCodeEditorTheme(BaseTheme):
+    """Define style for code editor
+
+    Note: it only define global colors
+          color syntax for a language are defined at LanguageDef level
+    """
+
+    GUTTER_BACKGROUND = 'gutter.bg'
+    GUTTER_FOREGROUND = 'gutter.fg'
+    FOREGROUND = 'fg'
+    BACKGROUND = 'bg'
+    HIGHLIGHTED_LINE = 'highlightedLine'
+    RIGHT_LIMIT = 'rightLimit'
+    SPACES = 'spaces'
+
+    def __init__(self, id, name, colors, base, comments):
+        super(WCodeEditorTheme, self).__init__(id, name, colors, base, comments)
+
+
+class WCodeEditorHighlightLineRule:
+    """A base class that can be used to define rules too highlight lines"""
+
+    def __init__(self):
+        pass
+
+    def ruleId(self):
+        """Return rule id"""
+        return 0x0000
+
+    def highlight(self, block, text, tokens, lineNumber, isCurrentLine):
+        """Return highlight properties, or None
+
+        When called, are provided:
+        - text `block` (QTextBlock)
+        - `text` (str)
+        - `tokens` is a Tokens object or None (if no token)
+        - `lineNumber` (int)
+        - is the current line (bool)
+
+        Method returns:
+        - None if line don't have to be highlighted
+        - A tuple if line have to be highlighted
+            0: int      Rule Id; also define priority (0xFF is current line color select; lower values are rendered before, higher value are rendered after)
+            1: QColor   Define color for highlighting
+            2: Boolean  Define if gutter have to be highlighted too
+        """
+        raise EInvalidStatus("Abstract method must be overriden by class")
+
+
+class WCodeEditorBlockUserData(QTextBlockUserData):
+    """Manage specific data linked to blocks"""
+
+    def __init__(self):
+        super(WCodeEditorBlockUserData, self).__init__()
+        self.__extraSelections = []
+
+    def __del__(self):
+        self.__extraSelections = []
+
+    def extraSelections(self):
+        """Return extraselection linked to block"""
+        return self.__extraSelections
+
+    def setExtraSelections(self, extraSelections):
+        """Set extraselection for block"""
+        self.__extraSelections = extraSelections
+
+
 class WCodeEditor(QPlainTextEdit):
     """Extended editor with syntax highlighting, autocompletion, line number..."""
+
+    __LINENUMBER_PADDING = 3
+
+    __EXTRASELECTIONTYPE_CURRENTLINE =          0x00FF
+    __EXTRASELECTIONTYPE_HIGHLIGHTEDSEARCH =    SearchFromPlainTextEdit.EXTRASELECTIONTYPE_HIGHLIGHTEDSEARCH
+    __EXTRASELECTIONTYPE_CURRENTSEARCH =        SearchFromPlainTextEdit.EXTRASELECTIONTYPE_CURRENTSEARCH
+
+    __EXTRASELECTIONPROP_TYPE =                 QTextFormat.UserProperty
+    __EXTRASELECTIONPROP_SHOWGUTTER =           QTextFormat.UserProperty + 0x0100
+    __EXTRASELECTIONPROP_LINENUMBER =           QTextFormat.UserProperty + 0x0101
 
     cursorCoordinatesChanged = Signal(QPoint, QPoint, QPoint, int)  # cursor position, selection start position, selection end position, selection length
     overwriteModeChanged = Signal(bool)     # INS / OVR mode changed
     readOnlyModeChanged = Signal(bool)      # read-only mode changed
     autoCompletionChanged = Signal(str)     # auto completion item has changed
+    fontSizeChanged = Signal(int)           # Font size changed by user with ctrl+wheel (provided in point)
+
+    styleChanged = Signal(str)              # style has been modified (style Id provided by signal)
 
     KEY_INDENT = 'indent'
     KEY_DEDENT = 'dedent'
@@ -74,9 +176,34 @@ class WCodeEditor(QPlainTextEdit):
     KEY_AUTOINDENT = 'autoIndent'
     KEY_COMPLETION = 'completion'
     KEY_INSERTOVERWRITE_MODE = 'insertOverwriteMode'
+    KEY_DELETE_LINE = 'deleteLine'
+    KEY_IGNORE = 'ignore'
 
-    CTRL_KEY_TRUE = True
-    CTRL_KEY_FALSE = False
+    # define base themes for color editor
+    DEFAULT_DARK = WCodeEditorTheme(UITheme.DARK_THEME,
+                                    'BuliDark',
+                                    {WCodeEditorTheme.GUTTER_BACKGROUND: QColor('#282c34'),
+                                     WCodeEditorTheme.GUTTER_FOREGROUND: QColor('#5d6679'),
+                                     WCodeEditorTheme.BACKGROUND: QColor('#1b1e20'),
+                                     WCodeEditorTheme.FOREGROUND: QColor('#cfcfcf'),
+                                     WCodeEditorTheme.HIGHLIGHTED_LINE: QColor('#2d323c'),
+                                     WCodeEditorTheme.RIGHT_LIMIT: QColor('#885d6679'),
+                                     WCodeEditorTheme.SPACES: QColor('#885d6679')
+                                     },
+                                    UITheme.DARK_THEME,
+                                    [i18n('A default dark theme')])
+    DEFAULT_LIGHT = WCodeEditorTheme(UITheme.LIGHT_THEME,
+                                     'BuliLight',
+                                     {WCodeEditorTheme.GUTTER_BACKGROUND: QColor('#D9D7D6'),
+                                      WCodeEditorTheme.GUTTER_FOREGROUND: QColor('#9B9A99'),
+                                      WCodeEditorTheme.FOREGROUND: QColor('#333333'),
+                                      WCodeEditorTheme.BACKGROUND: QColor('#FCFCFC'),
+                                      WCodeEditorTheme.HIGHLIGHTED_LINE: QColor('#EDEDED'),
+                                      WCodeEditorTheme.RIGHT_LIMIT: QColor('#889B9A99'),
+                                      WCodeEditorTheme.SPACES: QColor('#889B9A99')
+                                      },
+                                     UITheme.LIGHT_THEME,
+                                     [i18n('A default light theme')])
 
     def __init__(self, parent=None, languageDef=None):
         super(WCodeEditor, self).__init__(parent)
@@ -103,7 +230,15 @@ class WCodeEditor(QPlainTextEdit):
         self.setContextMenuPolicy(Qt.CustomContextMenu)
 
         # ---- options ----
-        # > TODO: need to define setters/getters
+
+        # enclosing characters
+        # key=opening character, value=closing character
+        self.__enclosingCharacters = {}
+        self.__autoClose = False
+
+        # available styles
+        self.__themes = {}
+        self.__currentTheme = None
 
         # allows text with multiple lines
         self.__optionMultiLine = True
@@ -113,11 +248,9 @@ class WCodeEditor(QPlainTextEdit):
         # Gutter colors
         # maybe font size/type/style can be modified
         self.__optionGutterText = QTextCharFormat()
-        self.__optionGutterText.setForeground(QColor('#4c5363'))
-        self.__optionGutterText.setBackground(QColor('#282c34'))
 
         # editor current's selected line
-        self.__optionColorHighlightedLine = QColor('#2d323c')
+        self.__optionColorHighlightedLine = QColor()
 
         # show line number
         self.__optionShowLineNumber = True
@@ -129,11 +262,11 @@ class WCodeEditor(QPlainTextEdit):
         # right limit properties
         self.__optionRightLimitVisible = True
         self.__optionRightLimitPosition = 80
-        self.__optionRightLimitColor = QColor('#88555555')
+        self.__optionRightLimitColor = QColor()
 
         # spaces properties
         self.__optionShowSpaces = True
-        self.__optionSpacesColor = QColor("#88666666")
+        self.__optionSpacesColor = QColor()
 
         # autocompletion is automatic (True) or manual (False)
         self.__optionAutoCompletion = True
@@ -147,26 +280,27 @@ class WCodeEditor(QPlainTextEdit):
         # allows key bindings
         self.__optionWheelSetFontSize = True
 
+        # rules to highlight some lines
+        self.__highlightedLinesRules = []
+
         self.__shortCuts = {
-            Qt.Key_Tab: {
-                    WCodeEditor.CTRL_KEY_FALSE: WCodeEditor.KEY_INDENT
-                },
-            Qt.Key_Backtab: {
-                    # SHIFT+TAB = BACKTAB
-                    WCodeEditor.CTRL_KEY_FALSE: WCodeEditor.KEY_DEDENT
-                },
-            Qt.Key_Slash: {
-                    WCodeEditor.CTRL_KEY_TRUE: WCodeEditor.KEY_TOGGLE_COMMENT
-                },
-            Qt.Key_Return: {
-                    WCodeEditor.CTRL_KEY_FALSE: WCodeEditor.KEY_AUTOINDENT
-                },
-            Qt.Key_Space: {
-                    WCodeEditor.CTRL_KEY_TRUE: WCodeEditor.KEY_COMPLETION
-                },
-            Qt.Key_Insert: {
-                    WCodeEditor.CTRL_KEY_FALSE: WCodeEditor.KEY_INSERTOVERWRITE_MODE
-                }
+            QKeySequence(Qt.Key_Tab): WCodeEditor.KEY_INDENT,
+            # SHIFT+TAB = BACKTAB
+            QKeySequence(Qt.Key_Backtab): WCodeEditor.KEY_DEDENT,
+            QKeySequence(Qt.Key_Slash + Qt.CTRL): WCodeEditor.KEY_TOGGLE_COMMENT,
+            QKeySequence(Qt.Key_Return): WCodeEditor.KEY_AUTOINDENT,
+            QKeySequence(Qt.Key_Space + Qt.CTRL): WCodeEditor.KEY_COMPLETION,
+            QKeySequence(Qt.Key_Insert): WCodeEditor.KEY_INSERTOVERWRITE_MODE,
+            QKeySequence(Qt.Key_Delete + Qt.SHIFT): WCodeEditor.KEY_DELETE_LINE,
+            # disable some default shortcuts
+            # -- Ctrl+Insert: Copy the selected text to the clipboard.
+            QKeySequence(Qt.Key_Insert + Qt.CTRL): WCodeEditor.KEY_IGNORE,
+            # -- Shift+INsert: Pastes the clipboard text into text edit.
+            QKeySequence(Qt.Key_Insert + Qt.SHIFT): WCodeEditor.KEY_IGNORE,
+            # -- Shift+Enter / Shift+Return: Insert vertical tab?
+            QKeySequence('Shift+Num+Enter'): WCodeEditor.KEY_IGNORE,
+            QKeySequence(Qt.Key_Return + Qt.SHIFT): WCodeEditor.KEY_IGNORE,
+            QKeySequence(Qt.Key_Enter + Qt.SHIFT): WCodeEditor.KEY_IGNORE
         }
 
         # ---- Set default font (monospace, 10pt)
@@ -176,9 +310,8 @@ class WCodeEditor(QPlainTextEdit):
         font.setPointSize(10)
         self.setFont(font)
 
-        palette = self.palette()
-        palette.setColor(QPalette.Active, QPalette.Base, QColor('#282c34'))
-        palette.setColor(QPalette.Inactive, QPalette.Base, QColor('#282c34'))
+        self.__fHeight = self.fontMetrics().height()
+        self.__fWidth = self.fontMetrics().horizontalAdvance("W")
 
         # ---- instanciate line number area
         self.__lineNumberArea = WCELineNumberArea(self)
@@ -218,6 +351,12 @@ class WCodeEditor(QPlainTextEdit):
 
         # ---- search object
         self.__search = SearchFromPlainTextEdit(self)
+
+        # define default dark and light themes
+        self.addTheme(WCodeEditor.DEFAULT_DARK)
+        self.addTheme(WCodeEditor.DEFAULT_LIGHT)
+        # apply the default one, according to UI (dark, light)
+        self.setCurrentTheme(UITheme.theme())
 
         # default values
         self.__updateLineNumberAreaWidth()
@@ -382,13 +521,15 @@ class WCodeEditor(QPlainTextEdit):
         # manage
         extraSelections = self.extraSelections()
 
+        position = 0
         # remove current selection from extra selection list
         # => can't clear selection as maybe, there's other extra selection
-        for selection in extraSelections:
-            if selection.format.boolProperty(QTextFormat.FullWidthSelection):
+        for index, selection in enumerate(extraSelections):
+            if selection.format.property(WCodeEditor.__EXTRASELECTIONPROP_TYPE) == WCodeEditor.__EXTRASELECTIONTYPE_CURRENTLINE:
                 # found, remove it and exit, no need to continue to search there's normaly only
                 # one extra selection like this one
                 extraSelections.remove(selection)
+                position = index
                 break
 
         if self.__optionMultiLine and not self.isReadOnly():
@@ -396,11 +537,11 @@ class WCodeEditor(QPlainTextEdit):
 
             selection.format.setBackground(self.__optionColorHighlightedLine)
             selection.format.setProperty(QTextFormat.FullWidthSelection, True)
+            selection.format.setProperty(WCodeEditor.__EXTRASELECTIONPROP_TYPE, WCodeEditor.__EXTRASELECTIONTYPE_CURRENTLINE)
             selection.cursor = self.textCursor()
 
-            # insert at beginning, must be the first extra selection rendered
-            # especially if there's extra selection from "search"
-            extraSelections.insert(0, selection)
+            # insert extra selection to initial position in list
+            extraSelections.insert(position, selection)
 
         self.setExtraSelections(extraSelections)
         self.__updateCurrentPositionAndToken(False)
@@ -454,6 +595,7 @@ class WCodeEditor(QPlainTextEdit):
         """Paint gutter content"""
         # initialise painter on WCELineNumberArea
         painter = QPainter(self.__lineNumberArea)
+        painter.setFont(self.font())
 
         # set background
         painter.fillRect(event.rect(), self.__optionGutterText.background())
@@ -463,7 +605,17 @@ class WCodeEditor(QPlainTextEdit):
         block = self.firstVisibleBlock()
         blockNumber = block.blockNumber()
         top = self.blockBoundingGeometry(block).translated(self.contentOffset()).top()
-        bottom = top + self.blockBoundingRect(block).height()
+        blockH = self.blockBoundingRect(block).height()
+        bottom = top + blockH
+
+        if self.lineWrapMode():
+            fHeight2 = self.__fHeight//2
+        else:
+            fHeight2 = -1
+
+        color = self.__optionGutterText.foreground().color()
+
+        lineNumberAreaWidth = self.__lineNumberArea.width() - WCodeEditor.__LINENUMBER_PADDING * 2
 
         # Loop through all visible lines and paint the line numbers in the extra area for each line.
         # Note: in a plain text edit each line will consist of one QTextBlock
@@ -472,23 +624,43 @@ class WCodeEditor(QPlainTextEdit):
             # Check if the block is visible in addition to check if it is in the areas viewport
             #   a block can, for example, be hidden by a window placed over the text edit
             if block.isVisible() and bottom >= event.rect().top():
+                if userData := block.userData():
+                    for extraSelection in userData.extraSelections():
+                        painter.fillRect(QRectF(0, top, lineNumberAreaWidth, self.__fHeight), extraSelection.format.background())
+
                 number = f"{blockNumber + 1}"
-                painter.setPen(self.__optionGutterText.foreground().color())
-                painter.drawText(QRectF(0, top, self.__lineNumberArea.width(), self.fontMetrics().height()), Qt.AlignRight, number)
+                painter.setPen(color)
+                painter.drawText(QRectF(WCodeEditor.__LINENUMBER_PADDING, top, lineNumberAreaWidth, self.__fHeight), Qt.AlignRight, number)
+
+                continueYStart = int(top + self.__fHeight)
+                if fHeight2 > 0 and int(bottom - fHeight2) > continueYStart:
+                    pX = WCodeEditor.__LINENUMBER_PADDING + lineNumberAreaWidth - self.__fWidth//2
+                    pen = QPen(color)
+                    pen.setWidth(3)
+                    painter.setPen(pen)
+                    painter.drawLine(pX, continueYStart, pX, int(bottom - fHeight2))
 
             block = block.next()
             top = bottom
-            bottom = top + self.blockBoundingRect(block).height()
+            blockH = self.blockBoundingRect(block).height()
+            bottom = top + blockH
             blockNumber += 1
 
     def wheelEvent(self, event):
         """CTRL + wheel os used to zoom in/out font size"""
         if self.__optionWheelSetFontSize and event.modifiers() == Qt.ControlModifier:
             delta = event.angleDelta().y()
+            self.setUpdatesEnabled(False)
             if delta < 0:
                 self.zoomOut()
             elif delta > 0:
                 self.zoomIn()
+            self.__fHeight = self.fontMetrics().height()
+            self.__fWidth = self.fontMetrics().horizontalAdvance("W")
+            self.setUpdatesEnabled(True)
+            self.fontSizeChanged.emit(self.optionFontSize())
+        elif self.__optionWheelSetFontSize is False and event.modifiers() == Qt.ControlModifier:
+            pass
         else:
             super(WCodeEditor, self).wheelEvent(event)
 
@@ -508,11 +680,23 @@ class WCodeEditor(QPlainTextEdit):
         if not self.__optionMultiLine and event.key() in (
                                                     Qt.Key_Enter,
                                                     Qt.Key_Return):
+            # ENTER/RETURN key ignored if not in multiline mode
             event.ignore()
             return
 
         # retrieve action from current shortcut
         action = self.shortCut(event.key(), event.modifiers())
+
+        if len(self.__enclosingCharacters) and event.text() in self.__enclosingCharacters:
+            # enclosing character to manage!
+            if self.textCursor().hasSelection():
+                self.doEnclose(event.text())
+                event.ignore()
+                return
+            elif self.__autoClose:
+                self.doAutoClose(event.text())
+                event.ignore()
+                return
 
         if action is None:
             super(WCodeEditor, self).keyPressEvent(event)
@@ -532,7 +716,7 @@ class WCodeEditor(QPlainTextEdit):
                                                                    Qt.Key_Meta,
                                                                    Qt.Key_Alt):
                 action = WCodeEditor.KEY_COMPLETION
-        elif event.key() == Qt.Key_Return:
+        elif action == WCodeEditor.KEY_AUTOINDENT:
             super(WCodeEditor, self).keyPressEvent(event)
 
         self.doAction(action)
@@ -547,7 +731,6 @@ class WCodeEditor(QPlainTextEdit):
         # initialise some metrics
         rect = event.rect()
         font = self.currentCharFormat().font()
-        charWidth = QFontMetricsF(font).averageCharWidth()
         leftOffset = self.contentOffset().x() + self.document().documentMargin()
 
         # initialise painter to editor's viewport
@@ -555,7 +738,7 @@ class WCodeEditor(QPlainTextEdit):
 
         if self.__optionRightLimitVisible:
             # draw right limit
-            position = round(charWidth * self.__optionRightLimitPosition + leftOffset)
+            position = round(self.__fWidth * self.__optionRightLimitPosition + leftOffset)
             painter.setPen(self.__optionRightLimitColor)
             painter.drawLine(position, rect.top(), position, rect.bottom())
 
@@ -587,13 +770,13 @@ class WCodeEditor(QPlainTextEdit):
                 if self.__optionShowSpaces:
                     # draw spaces
                     for i in range(nbSpacesLeft):
-                        painter.drawText(QRectF(left, top, charWidth, self.fontMetrics().height()), Qt.AlignLeft, '.')
-                        left += charWidth
+                        painter.drawText(QRectF(left, top, self.__fWidth, self.__fHeight), Qt.AlignLeft, '.')
+                        left += self.__fWidth
 
-                    left = leftOffset + charWidth * posSpacesRight
+                    left = leftOffset + self.__fWidth * posSpacesRight
                     for i in range(nbSpacesRight):
-                        painter.drawText(QRectF(left, top, charWidth, self.fontMetrics().height()), Qt.AlignLeft, '.')
-                        left += charWidth
+                        painter.drawText(QRectF(left, top, self.__fWidth, self.__fHeight), Qt.AlignLeft, '.')
+                        left += self.__fWidth
 
                 if self.__optionShowIndentLevel:
                     # draw level indent
@@ -621,10 +804,10 @@ class WCodeEditor(QPlainTextEdit):
                         else:
                             previousIndent = nbSpacesLeft
 
-                        left = leftOffset + round(charWidth*2/3, 0)
-                        nbChar = 0
+                        left = leftOffset + round(self.__fWidth*2/3, 0)
+                        nbChar = self.__optionIndentWidth
                         while nbChar < nbSpacesLeft:
-                            position = round(charWidth * nbChar) + leftOffset
+                            position = round(self.__fWidth * nbChar) + leftOffset
                             painter.drawLine(QLineF(position, top, position, top + self.blockBoundingRect(block).height() - 1))
                             nbChar += self.__optionIndentWidth
                     elif len(block.text().strip()) > 0:
@@ -681,35 +864,37 @@ class WCodeEditor(QPlainTextEdit):
                 digits += 1
 
             # width = (witdh for digit '9') * (number of digits) + 3pixels
-            return 3 + self.fontMetrics().width('9') * digits
+            return WCodeEditor.__LINENUMBER_PADDING * 2 + self.fontMetrics().width('9') * digits
         return 0
 
     def doAction(self, action=None):
         """Execute given action"""
         if action is None:
-            return
+            return False
         elif action == WCodeEditor.KEY_INDENT:
             self.doIndent()
         elif action == WCodeEditor.KEY_DEDENT:
             self.doDedent()
         elif action == WCodeEditor.KEY_TOGGLE_COMMENT:
             self.doToggleComment()
+        elif action == WCodeEditor.KEY_DELETE_LINE:
+            self.doDeleteLine()
         elif action == WCodeEditor.KEY_AUTOINDENT:
             self.doAutoIndent()
         elif action == WCodeEditor.KEY_COMPLETION:
             self.doCompletionPopup()
         elif action == WCodeEditor.KEY_INSERTOVERWRITE_MODE:
             self.doOverwriteMode()
+        return True
 
     def shortCut(self, key, modifiers):
         """Return action for given key/modifier shortCut
 
         If nothing is defined, return None
         """
-        if key in self.__shortCuts:
-            ctrlModifier = (Qt.ControlModifier & modifiers == Qt.ControlModifier)
-            if ctrlModifier in self.__shortCuts[key]:
-                return self.__shortCuts[key][ctrlModifier]
+        keySequence = QKeySequence(int(key) + int(modifiers))
+        if keySequence in self.__shortCuts:
+            return self.__shortCuts[keySequence]
         return None
 
     def setShortCut(self, key, modifiers, action):
@@ -717,28 +902,114 @@ class WCodeEditor(QPlainTextEdit):
         if action not in (None,
                           WCodeEditor.KEY_INDENT,
                           WCodeEditor.KEY_DEDENT,
-                          WCodeEditor.KEY_TOGGLE_COMMENT):
+                          WCodeEditor.KEY_TOGGLE_COMMENT,
+                          WCodeEditor.KEY_AUTOINDENT,
+                          WCodeEditor.KEY_COMPLETION,
+                          WCodeEditor.KEY_INSERTOVERWRITE_MODE,
+                          WCodeEditor.KEY_DELETE_LINE,
+                          WCodeEditor.KEY_IGNORE):
             raise EInvalidValue('Given `action` is not a valid value')
 
-        if modifiers is None:
-            modifiers = WCodeEditor.CTRL_KEY_FALSE
+        keySequence = QKeySequence(int(key) + int(modifiers))
+        self.__shortCuts[keySequence] = action
 
-        if key not in self.__shortCuts:
-            self.__shortCuts[key] = {}
-
-        self.__shortCuts[key][modifiers] = action
+    def clearShortcuts(self):
+        """Remove all shortcuts"""
+        self.__shortCuts = {}
 
     def actionShortCut(self, action):
-        """Return shortcut for given action
+        """Return shortcuts for given action
 
-        If nothing is defined or action doesn't exists, return None
-        If found, Shortcut is returned as a tuple (key, modifiers)
+        If nothing is defined or action doesn't exists, return empty list
+        If found, Shortcut is returned as a QKeySequence
         """
+        returned = []
         for key in self.__shortCuts:
-            for modifiers in self.__shortCuts[key]:
-                if self.__shortCuts[key][modifiers] == action:
-                    return (key, modifiers)
-        return None
+            if self.__shortCuts[key] == action:
+                returned = key
+        return returned
+
+    def checkIfHighlighted(self, block, text, tokens, isCurrentLine):
+        """Check if block line have to be highlighted, and update extra selection if needed"""
+        extraSelections = self.extraSelections()
+        newExtraSelection = []
+
+        userData = block.userData()
+        if userData:
+            userDataExtraSelection = userData.extraSelections()
+        else:
+            userDataExtraSelection = []
+
+        lineNumber = block.blockNumber()
+        for rule in self.__highlightedLinesRules:
+            filterExtraSelections(userDataExtraSelection, lineNumber, EXTRASELECTION_FILTER_REMOVE, WCodeEditor.__EXTRASELECTIONPROP_LINENUMBER, False, True)
+            filterExtraSelections(extraSelections, lineNumber, EXTRASELECTION_FILTER_REMOVE, WCodeEditor.__EXTRASELECTIONPROP_LINENUMBER, False, True)
+
+            if toApply := rule.highlight(block, text, tokens, lineNumber, isCurrentLine):
+                selection = QTextEdit.ExtraSelection()
+
+                selection.format.setBackground(toApply[1])
+                selection.format.setProperty(QTextFormat.FullWidthSelection, True)
+                selection.format.setProperty(WCodeEditor.__EXTRASELECTIONPROP_TYPE, toApply[0])
+                selection.format.setProperty(WCodeEditor.__EXTRASELECTIONPROP_SHOWGUTTER, toApply[2])
+                selection.format.setProperty(WCodeEditor.__EXTRASELECTIONPROP_LINENUMBER, lineNumber)
+                selection.cursor = QTextCursor(block)
+
+                extraSelections.append(selection)
+                userDataExtraSelection.append(selection)
+            elif userData:
+                userData.setHighlighted(None)
+
+        sortExtraSelections(userDataExtraSelection)
+        sortExtraSelections(extraSelections)
+        self.setExtraSelections(extraSelections)
+
+        if userData is None:
+            if len(userDataExtraSelection):
+                # need to create user data for block and set extra selections
+                userData = WCodeEditorBlockUserData()
+                userData.setExtraSelections(userDataExtraSelection)
+                block.setUserData(userData)
+        else:
+            # user data already exists, need to update it
+            userData.setExtraSelections(userDataExtraSelection)
+            block.setUserData(userData)
+
+    def highlightedLineRules(self):
+        """Return defined to highlight lines"""
+        return self.__highlightedLinesRules
+
+    def setHighlightedLineRule(self, rule):
+        """Return defined to highlight lines"""
+        if not isinstance(rule, WCodeEditorHighlightLineRule):
+            raise EInvalidType("Given `rule` must be a <WCodeEditorHighlightLineRule>")
+
+        if rule not in self.__highlightedLinesRules:
+            self.__highlightedLinesRules.append(rule)
+            if self.__highlighter:
+                self.__highlighter.rehighlight()
+
+    def delHighlightedLineRule(self, rule):
+        """Removed rule from defined rules"""
+        if rule in self.__highlightedLinesRules:
+            index = self.__highlightedLinesRules.index(rule)
+            self.__highlightedLinesRules.pop(index)
+
+            removed = []
+            extraSelections = self.extraSelections()
+            filterExtraSelections(extraSelections, rule.ruleId(), EXTRASELECTION_FILTER_REMOVE, removed=removed)
+            self.setExtraSelections(extraSelections)
+
+            for removedSelection in removed:
+                block = removedSelection.cursor.block()
+                if userData := block.userData():
+                    userDataExtraSelection = userData.extraSelections()
+                    filterExtraSelections(userDataExtraSelection, rule.ruleId(), EXTRASELECTION_FILTER_REMOVE)
+                    userData.setExtraSelections(userDataExtraSelection)
+                    block.setUserData(userData)
+
+            if self.__highlighter:
+                self.__highlighter.rehighlight()
 
     def doAutoIndent(self):
         """Indent current line to match indent of previous line
@@ -781,7 +1052,6 @@ class WCodeEditor(QPlainTextEdit):
 
     def doIndent(self):
         """Indent current line or current selection"""
-
         cursor = self.textCursor()
 
         selectionStart = cursor.selectionStart()
@@ -851,6 +1121,7 @@ class WCodeEditor(QPlainTextEdit):
         cursor.movePosition(QTextCursor.Start)
         cursor.movePosition(QTextCursor.NextBlock, n=startBlock)
 
+        cursor.beginEditBlock()
         for blockNumber in range(startBlock, endBlock+processLastBlock):
             if not self.__isEmptyBlock(blockNumber):
                 # empty lines are not indented
@@ -859,6 +1130,7 @@ class WCodeEditor(QPlainTextEdit):
                 cursor.insertText(" " * self.__calculateIndent(nbChar))
 
             cursor.movePosition(QTextCursor.NextBlock)
+        cursor.endEditBlock()
 
     def doDedent(self):
         """Dedent current line or current selection"""
@@ -883,6 +1155,7 @@ class WCodeEditor(QPlainTextEdit):
         cursor.movePosition(QTextCursor.Start)
         cursor.movePosition(QTextCursor.NextBlock, n=startBlock)
 
+        cursor.beginEditBlock()
         for blockNumber in range(startBlock, endBlock + processLastBlock):
             nbChar = self.__calculateDedent(len(cursor.block().text()) - len(cursor.block().text().lstrip()))
             if nbChar > 0:
@@ -891,9 +1164,14 @@ class WCodeEditor(QPlainTextEdit):
                 cursor.removeSelectedText()
 
             cursor.movePosition(QTextCursor.NextBlock)
+        cursor.endEditBlock()
 
     def doToggleComment(self):
-        """Toggle comment for current line or selected lines"""
+        """Toggle comment for current line or selected lines
+
+            if at least one block is not commented, then active COMMENT
+            if ALL block are commented, then active UNCOMMENT
+        """
         cursor = self.textCursor()
 
         selectionStart = cursor.selectionStart()
@@ -941,6 +1219,7 @@ class WCodeEditor(QPlainTextEdit):
         cursor.movePosition(QTextCursor.Start)
         cursor.movePosition(QTextCursor.NextBlock, n=startBlock)
 
+        cursor.beginEditBlock()
         for blockNumber in range(startBlock, endBlock + processLastBlock):
             blockText = cursor.block().text()
 
@@ -960,6 +1239,59 @@ class WCodeEditor(QPlainTextEdit):
                 cursor.removeSelectedText()
 
             cursor.movePosition(QTextCursor.NextBlock)
+        cursor.endEditBlock()
+
+    def doDuplicateLine(self):
+        """Duplicates current line or selected lines"""
+        cursor = self.textCursor()
+
+        selectionStart = cursor.selectionStart()
+        selectionEnd = cursor.selectionEnd()
+
+        # determinate block numbers
+        cursor.setPosition(selectionStart)
+        startBlock = cursor.blockNumber()
+
+        cursor.setPosition(selectionEnd)
+        endBlock = cursor.blockNumber()
+
+        cursor.movePosition(QTextCursor.Start)
+        cursor.movePosition(QTextCursor.NextBlock, QTextCursor.MoveAnchor, startBlock)
+        cursor.movePosition(QTextCursor.NextBlock, QTextCursor.KeepAnchor, endBlock - startBlock + 1)
+        p = cursor.position()
+
+        text = cursor.selectedText()
+        cursor.beginEditBlock()
+        cursor.setPosition(p, QTextCursor.MoveAnchor)
+        cursor.insertText(text)
+        cursor.endEditBlock()
+
+    def doDeleteLine(self):
+        """Delete current line or selected lines"""
+        cursor = self.textCursor()
+
+        selectionStart = cursor.selectionStart()
+        selectionEnd = cursor.selectionEnd()
+
+        # determinate block numbers
+        cursor.setPosition(selectionStart)
+        startBlock = cursor.blockNumber()
+
+        cursor.setPosition(selectionEnd)
+        endBlock = cursor.blockNumber()
+
+        deleteToNextLine = 0
+        if cursor.columnNumber() > 0 or selectionStart == selectionEnd:
+            deleteToNextLine = 1
+
+        cursor.movePosition(QTextCursor.Start)
+        cursor.movePosition(QTextCursor.NextBlock, QTextCursor.MoveAnchor, startBlock)
+        cursor.movePosition(QTextCursor.NextBlock, QTextCursor.KeepAnchor, endBlock - startBlock + deleteToNextLine)
+
+        text = cursor.selectedText()
+        cursor.beginEditBlock()
+        cursor.removeSelectedText()
+        cursor.endEditBlock()
 
     def doCompletionPopup(self):
         """Display autocompletion popup"""
@@ -1061,6 +1393,31 @@ class WCodeEditor(QPlainTextEdit):
             self.setOverwriteMode(mode)
             self.overwriteModeChanged.emit(mode)
 
+    def doEnclose(self, openCharacter):
+        """Enclose current selection with enclosing characters defined by given openCharacter
+
+        if there's no selection, do nothing
+        """
+        if openCharacter not in self.__enclosingCharacters:
+            # not an enclosing character, exit
+            return
+        closeCharacter = self.__enclosingCharacters[openCharacter]
+        self.insertText(f"{openCharacter}{LanguageDef.SEP_PRIMARY_VALUE}{closeCharacter}", False)
+
+    def doAutoClose(self, openCharacter):
+        """Autoclose characters defined by given openCharacter
+
+        Considering for a direct call to this method, autclose result are expected:
+        - Option autoclose is ignored here
+        - Selected text is replaced
+        (otherwise explicitly check for option & selection before call)
+        """
+        if openCharacter not in self.__enclosingCharacters:
+            # not an enclosing character, exit
+            return
+        closeCharacter = self.__enclosingCharacters[openCharacter]
+        self.insertText(f"{openCharacter}{LanguageDef.SEP_PRIMARY_VALUE}{closeCharacter}", True)
+
     def languageDefinition(self):
         """Return current language definition"""
         return self.__languageDef
@@ -1072,17 +1429,21 @@ class WCodeEditor(QPlainTextEdit):
 
         self.__completerModel.clear()
 
+        if isinstance(self.__highlighter, QSyntaxHighlighter):
+            self.__highlighter.setDocument(None)
+
         if languageDef is not None:
             self.__languageDef = languageDef
-            self.__highlighter = WCESyntaxHighlighter(self.document(), self.__languageDef, self)
 
             for rule in self.__languageDef.tokenizer().rules():
                 for autoCompletion in rule.autoCompletion():
                     self.__completerModel.add(autoCompletion[0], rule.type(),  self.__languageDef.style(rule), autoCompletion[1], rule.autoCompletionChar())
             self.__completerModel.sort()
+
+        if self.__languageDef:
+            self.__highlighter = WCESyntaxHighlighter(self.document(), self.__languageDef, self)
+            self.__highlighter.rehighlight()
         else:
-            if isinstance(self.__highlighter, QSyntaxHighlighter):
-                self.__highlighter.setDocument(None)
             self.__highlighter = None
 
             cursor = self.textCursor()
@@ -1143,12 +1504,7 @@ class WCodeEditor(QPlainTextEdit):
         """Set if line numbers are visible or not"""
         if isinstance(value, bool) and value != self.__optionShowLineNumber:
             self.__optionShowLineNumber = value
-            if value:
-                self.__lineNumberArea = WCELineNumberArea(self)
-            else:
-                self.__lineNumberArea.disconnect()
-                self.__lineNumberArea = None
-
+            self.__lineNumberArea.setVisible(value)
             self.__updateLineNumberAreaWidth()
             self.update()
 
@@ -1222,6 +1578,76 @@ class WCodeEditor(QPlainTextEdit):
             self.__optionSpacesColor = value
             self.update()
 
+    def optionBackgroundColor(self, colorGroup=None):
+        """Return background color
+
+        Given color group can be QPalette.Active or QPalette.Inactive
+        If None provided, return QPalette.Active
+        """
+        if colorGroup is None or colorGroup == QPalette.Active:
+            return self.palette().color(QPalette.Active, QPalette.Base)
+        else:
+            return self.palette().color(QPalette.Inactive, QPalette.Base)
+
+    def setOptionBackgroundColor(self, value, colorGroup=None):
+        """Set background color
+
+        Given color group can be QPalette.Active or QPalette.Inactive
+        If None provided, set same background color for both color group
+        """
+        if isinstance(value, QColor):
+            palette = self.viewport().palette()
+            if colorGroup is None or colorGroup == QPalette.Active:
+                palette.setColor(QPalette.Active, QPalette.Base, value)
+            if colorGroup is None or colorGroup == QPalette.Inactive:
+                palette.setColor(QPalette.Inactive, QPalette.Base, value)
+            self.viewport().setPalette(palette)
+
+    def optionForegroundColor(self, colorGroup=None):
+        """Return foreground color
+
+        Given color group can be QPalette.Active or QPalette.Inactive
+        If None provided, return QPalette.Active
+        """
+        if colorGroup is None or colorGroup == QPalette.Active:
+            return self.palette().color(QPalette.Active, QPalette.Text)
+        else:
+            return self.palette().color(QPalette.Inactive, QPalette.Text)
+
+    def setOptionForegroundColor(self, value, colorGroup=None):
+        """Set foreground color
+
+        Given color group can be QPalette.Active or QPalette.Inactive
+        If None provided, set same foreground color for both color group
+        """
+        if isinstance(value, QColor):
+            palette = self.viewport().palette()
+            if colorGroup is None or colorGroup == QPalette.Active:
+                palette.setColor(QPalette.Active, QPalette.Text, value)
+            if colorGroup is None or colorGroup == QPalette.Inactive:
+                palette.setColor(QPalette.Inactive, QPalette.Text, value)
+            self.viewport().setPalette(palette)
+
+    def optionGutterBackgroundColor(self):
+        """Return gutter background color"""
+        return self.__optionGutterText.background()
+
+    def setOptionGutterBackgroundColor(self, value):
+        """Set gutter background color"""
+        if isinstance(value, QColor):
+            self.__optionGutterText.setBackground(value)
+            self.update()
+
+    def optionGutterForegroundColor(self):
+        """Return gutter foreground color"""
+        return self.__optionGutterText.foreground()
+
+    def setOptionGutterForegroundColor(self, value):
+        """Set gutter foreground color"""
+        if isinstance(value, QColor):
+            self.__optionGutterText.setForeground(value)
+            self.update()
+
     def optionAutoCompletion(self):
         """Return if autoCompletion is manual or automatic"""
         return self.__optionAutoCompletion
@@ -1261,6 +1687,77 @@ class WCodeEditor(QPlainTextEdit):
         """Set if CTRL+WHEEL allows to change font size"""
         if isinstance(value, bool) and value != self.__optionWheelSetFontSize:
             self.__optionWheelSetFontSize = value
+
+    def optionFontSize(self):
+        """Return current font size (in point)"""
+        return self.font().pointSize()
+
+    def setOptionFontSize(self, value):
+        """Set current font size (in point)"""
+        font = self.font()
+        font.setPointSize(value)
+        self.setFont(font)
+        self.__fHeight = self.fontMetrics().height()
+        self.__fWidth = self.fontMetrics().averageCharWidth()
+
+    def optionFont(self):
+        """Return current font"""
+        return self.font()
+
+    def setOptionFont(self, font):
+        """Set current font"""
+        if isinstance(font, QFont):
+            self.setFont(font)
+            self.__fHeight = self.fontMetrics().height()
+            self.__fWidth = self.fontMetrics().averageCharWidth()
+
+    def optionEnclosingCharacters(self):
+        """Return a list of enclosing characters
+
+        Each item of list is a string, made by tuple opening character/closing character
+
+        Example:
+            ["()", "{}", "''"]
+        """
+        return ["{key}{value}" for key, value in self.__enclosingCharacters.items()]
+
+    def setOptionEnclosingCharacters(self, enclosingCharactersList=[]):
+        """Set enclosing characters
+
+        Each item of list is a string, made by tuple opening character/closing character
+
+        Example:
+            ["()", "{}", "''"]
+
+        Invalid tuples are ignored
+        """
+        if not isinstance(enclosingCharactersList, (list, tuple)):
+            raise EInvalidType("Given `enclosingCharactersList` must be a <list> or <tuple>")
+
+        self.__enclosingCharacters = {}
+        for item in enclosingCharactersList:
+            if isinstance(item, str):
+                if len(item) == 1:
+                    # only one character provided, then consider closing character is the same than opening one
+                    self.__enclosingCharacters[item] = item
+                elif len(item) > 1:
+                    # if more than 2 characters, additional characters are ignored
+                    self.__enclosingCharacters[item[0]] = item[1]
+
+    def optionAutoClose(self):
+        """Return if autoclose is active or not"""
+        return self.__autoClose
+
+    def setOptionAutoClose(self, value):
+        """Set if autoclose is active or not
+
+        Notes:
+        - auto close works only if enclosing character set is defined :-)
+        - auto close will automatically insert closing character if open character is typed if there's no selection (in this case enclosing selection is applied)
+        - if autoclose is False, enclosing selection is still active
+        """
+        if isinstance(value, bool):
+            self.__autoClose = value
 
     def setHeight(self, numberOfRows=None):
         """Set height according to given number of rows"""
@@ -1334,7 +1831,11 @@ class WCodeEditor(QPlainTextEdit):
         return cursor
 
     def insertLanguageText(self, text, replaceSelection=True):
-        """If given text use 'completion' format (ie: use of \x01 character to mark informational values and cursor position), insert it at cursor's place"""
+        """Use for language completion
+
+        If given text use 'completion' format (ie: use of \x01 (LanguageDef.SEP_PRIMARY_VALUE) character to mark informational values and cursor position),
+        insert it at cursor's place
+        """
         texts = text.replace(LanguageDef.SEP_SECONDARY_VALUE, '').split(LanguageDef.SEP_PRIMARY_VALUE)[::2]
 
         cursor = self.textCursor()
@@ -1349,6 +1850,60 @@ class WCodeEditor(QPlainTextEdit):
                 p = cursor.anchor()
                 cursor.insertText("".join(texts[1:]))
                 cursor.setPosition(p, QTextCursor.MoveAnchor)
+        self.setTextCursor(cursor)
+
+    def insertText(self, text, replaceSelection=True):
+        """Insert text at current cursor position
+
+        If provided text DOES NOT contains the character \x01 (LanguageDef.SEP_PRIMARY_VALUE) then
+            If there's a selection and `replaceSelection` is False
+            - <Text> is inserted before <selected text>
+            - New cursor position is position between inserted <text> and <selected text>
+            - Selection is cleared
+
+            If there's a selection and `replaceSelection` is True
+            - <Text> replace <selected text>
+            - New cursor position is position after inserted <text>
+            - Selection is cleared
+
+            If there's no selection
+            - <Text> is inserted at cursor position
+            - New cursor position is position after inserted <text>
+
+        If provided text contains the character \x01 (LanguageDef.SEP_PRIMARY_VALUE) then
+            <LeftPart> = text before character \x01
+            <RightPart> = text after character \x01
+
+            If there's a selection and `replaceSelection` is False
+            - <LeftPart> text is inserted before <selected text>
+            - <RightPart> text is inserted after <selected text>
+            - New cursor position is position after <RightPart>
+
+            If there's a selection and `replaceSelection` is True
+            - <LeftPart> text replace <selected text>
+            - <RightPart> text is inserted after <LeftPart>
+            - New cursor position is position before <RightPart>
+
+            If there's no selection
+            - <LeftPart> text is inserted
+            - <RightPart> text is inserted
+            - New cursor position is position before <RightPart>
+        """
+        texts = text.split(LanguageDef.SEP_PRIMARY_VALUE)
+
+        cursor = self.textCursor()
+        selectedText = cursor.selectedText()
+
+        cursor.insertText(texts[0])
+
+        if not replaceSelection and selectedText != '':
+            cursor.insertText(selectedText)
+
+        if len(texts) >= 1:
+            p = cursor.anchor()
+            cursor.insertText(texts[1])
+            cursor.setPosition(p, QTextCursor.MoveAnchor)
+
         self.setTextCursor(cursor)
 
     def replaceTokenText(self, text, token=None):
@@ -1421,11 +1976,171 @@ class WCodeEditor(QPlainTextEdit):
 
         return a QTextCursor matching the selection
         """
-        pass
+        print('Not yet implemented!')
 
     def search(self):
         """Return search object"""
         return self.__search
+
+    def theme(self, themeId=None):
+        """Return style defined by given `styleId`
+
+        If `styleId` is None, current style
+        Return None if style is not found
+        """
+        if themeId is None:
+            themeId = self.__currentTheme
+
+        if not isinstance(themeId, str):
+            raise EInvalidType("Given `themeId` must be a <str>")
+
+        if themeId in self.__themes:
+            return self.__themes[themeId]
+
+        return None
+
+    def themes(self):
+        """Return list of current styles id"""
+        return list(self.__themes.keys())
+
+    def addTheme(self, theme):
+        """Set style"""
+        if not isinstance(theme, WCodeEditorTheme):
+            raise EInvalidType("Given `styleId` must be a <WCodeEditorTheme>")
+
+        self.__themes[theme.id()] = theme
+
+    def currentTheme(self):
+        """Return Id of current applied theme
+
+        Return None if no theme is defined yet
+        """
+        return self.__currentTheme
+
+    def setCurrentTheme(self, themeId):
+        """Set current theme
+
+        If `themeId` is not found, return False
+        """
+        if not isinstance(themeId, str):
+            raise EInvalidType("Given `themeId` must be a <str>")
+
+        if themeId in self.__themes:
+            self.__currentTheme = themeId
+
+            self.setUpdatesEnabled(False)
+
+            if self.__languageDef:
+                # set language theme if language defined :-)
+                if self.__currentTheme in self.__languageDef.themes():
+                    self.__languageDef.setCurrentTheme(self.__currentTheme)
+                else:
+                    # expect language definition have 'dark' or 'light' theme defined
+                    self.__languageDef.setCurrentTheme(self.__themes[self.__currentTheme].baseTheme())
+
+            theme = self.__themes[self.__currentTheme]
+
+            self.setOptionGutterBackgroundColor(theme.color(WCodeEditorTheme.GUTTER_BACKGROUND))
+            self.setOptionGutterForegroundColor(theme.color(WCodeEditorTheme.GUTTER_FOREGROUND))
+
+            self.setOptionForegroundColor(theme.color(WCodeEditorTheme.FOREGROUND))
+            self.setOptionBackgroundColor(theme.color(WCodeEditorTheme.BACKGROUND))
+
+            self.setOptionHighlightedLineColor(theme.color(WCodeEditorTheme.HIGHLIGHTED_LINE))
+
+            self.setOptionRightLimitColor(theme.color(WCodeEditorTheme.RIGHT_LIMIT))
+            self.setOptionSpacesColor(theme.color(WCodeEditorTheme.SPACES))
+
+            if self.__highlighter:
+                self.__highlighter.rehighlight()
+
+            self.setUpdatesEnabled(True)
+
+            self.styleChanged.emit(self.__currentTheme)
+            return True
+
+        return False
+
+    def editorState(self):
+        """Return cursor state in a dictionary
+
+        {
+            selectionStart: (x, y)
+            selectionEnd: (x, y)            # or None if no selection
+            scrollbars: (x, y)
+        }
+
+        Can be restored with setEditorState()
+
+        """
+        returned = {'selectionStart': None,
+                    'selectionEnd': None,
+                    'scrollbars': (self.horizontalScrollBar().value(), self.verticalScrollBar().value())
+                    }
+        cursor = self.textCursor()
+
+        if cursor.selectionStart() != cursor.selectionEnd():
+            pStart = cursor.selectionStart()
+            pEnd = cursor.selectionEnd()
+
+            # get x,y position for selection start
+            cursor.setPosition(pStart, QTextCursor.MoveAnchor)
+            returned['selectionStart'] = (cursor.columnNumber(), cursor.blockNumber())
+
+            # get x,y position for selection end
+            cursor.setPosition(pEnd, QTextCursor.MoveAnchor)
+            returned['selectionEnd'] = (cursor.columnNumber(), cursor.blockNumber())
+        else:
+            # get x,y position for cursor
+            returned['selectionStart'] = (cursor.columnNumber(), cursor.blockNumber())
+
+        return returned
+
+    def restoreEditorState(self, state):
+        """Restore state from a dictionnary returned with editorState()
+
+        Too lazy to implement controls :-)
+        """
+
+        self.horizontalScrollBar().setValue(state['scrollbars'][0])
+        self.verticalScrollBar().setValue(state['scrollbars'][1])
+
+        cursor = self.textCursor()
+
+        anchorMode = QTextCursor.MoveAnchor
+
+        if state['selectionEnd'] is not None:
+            # there's a selection, restore it
+            cursor.movePosition(QTextCursor.Start, QTextCursor.MoveAnchor)
+            cursor.movePosition(QTextCursor.Down, QTextCursor.MoveAnchor, state['selectionStart'][1])
+
+            cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.MoveAnchor)
+            lastColNumber = cursor.columnNumber()
+
+            if state['selectionStart'][0] < lastColNumber:
+                # start column is not greater than line lenght, go to start selection column
+                cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.MoveAnchor)
+                cursor.movePosition(QTextCursor.Right, QTextCursor.MoveAnchor, state['selectionStart'][0])
+
+            # there's a selection, switch anchor mode to keep cursor position and made selection
+            anchorMode = QTextCursor.KeepAnchor
+
+            colNumber = state['selectionEnd'][0]
+            rowNumber = state['selectionEnd'][1]
+        else:
+            colNumber = state['selectionStart'][0]
+            rowNumber = state['selectionStart'][1]
+
+        cursor.movePosition(QTextCursor.Start, anchorMode)
+        cursor.movePosition(QTextCursor.Down, anchorMode, rowNumber)
+
+        cursor.movePosition(QTextCursor.EndOfLine, anchorMode)
+        lastColNumber = cursor.columnNumber()
+        if colNumber < lastColNumber:
+            cursor.movePosition(QTextCursor.StartOfLine, anchorMode)
+            cursor.movePosition(QTextCursor.Right, anchorMode, colNumber)
+
+        self.setTextCursor(cursor)
 
 
 class WCELineNumberArea(QWidget):
@@ -1645,16 +2360,95 @@ class WCESyntaxHighlighter(QSyntaxHighlighter):
         self.__cursorToken = None
         self.__editor = editor
 
+    def highlightMultiLine(self, text):
+        """Manage color syntax for multilines"""
+        # get all rules that can manage multilines
+        # (if there's none, then nothing will happen)
+        multiLineRules = self.__languageDef.tokenizer().rules(Tokenizer.RULES_MULTILINE)
+        if len(multiLineRules) > 0:
+            searchOffset = 0
+            # we have multilines rules, need to check status
+            for ruleIndex, rule in enumerate(multiLineRules, 1):
+                # method return a tuple of regular expression
+                regExStart, regExEnd = rule.multiLineRegEx()
+
+                if self.previousBlockState() == ruleIndex:
+                    # we're already in a multiline token block
+                    # then need to highlight from first character (position=0)
+                    pStart = 0
+                    pLength = 0
+                else:
+                    # Need to check for current multiline start delimiter
+                    matched = regExStart.match(text, searchOffset)
+                    pStart = matched.capturedStart()
+                    pLength = matched.capturedLength()
+
+                while pStart >= 0:
+                    # a start delimiter is found for current line
+
+                    # check for end delimiter
+                    matched = regExEnd.match(text, pStart + pLength)
+                    pEnd = matched.capturedStart()
+
+                    if pEnd > -1:
+                        # end delimiter found!
+                        formattingLength = pEnd - pStart + pLength + matched.capturedLength()
+                        self.setCurrentBlockState(0)
+                    else:
+                        # not found, multiline...
+                        self.setCurrentBlockState(ruleIndex)
+                        formattingLength = len(text) - pStart + pLength
+
+                    # Format text
+                    self.setFormat(pStart, formattingLength, self.__languageDef.style(rule))
+
+                    # update offset for next search
+                    searchOffset = pStart + formattingLength
+
+                    # Next match
+                    matched = regExStart.match(text, searchOffset)
+                    pStart = matched.capturedStart()
+
+                # Return True if we are still inside a multi-line
+                # otherwise need to continue with next multiline rule
+                if self.currentBlockState() == ruleIndex:
+                    return True
+
+        return False
+
     def highlightBlock(self, text):
-        """Highlight given text according to the type"""
-        if self.__languageDef is None:
+        """Highlight given `text` according to the type
+
+        The provided highlighted `text` is ONE line of editor
+        Then only a subset of entire source code is highlithed here
+        It's a problem for multiline text highlighting like
+        - multiline comment in C /*  ...  */
+        - multiline string in Pyhton  '''  ...  '''
+
+        The thing is the current item to parse may not know the previous/next lines define begin/end of multiline text
+        """
+        # determinate if current processed block is current line
+        notCurrentLine = (self.currentBlock().firstLineNumber() != self.__editor.textCursor().block().firstLineNumber())
+
+        if self.__languageDef is None or len(self.__languageDef.tokenizer().rules()) == 0:
+            self.setFormat(0, len(text), self.__editor.viewport().palette().text().color())
+            self.__editor.checkIfHighlighted(self.currentBlock(), text, None, not notCurrentLine)
             return
+
+        if text == '':
+            # empty string, no need to proceed it
+            self.setCurrentBlockState(self.previousBlockState())
+            self.__editor.checkIfHighlighted(self.currentBlock(), '', None, not notCurrentLine)
+            return
+
+        # consider current block at Ok
+        self.setCurrentBlockState(0)
+
         tokens = self.__languageDef.tokenizer().tokenize(text)
         self.__cursorToken = None
         self.__cursorPreviousToken = None
 
-        # determinate if current processed block is current line
-        notCurrentLine = (self.currentBlock().firstLineNumber() != self.__editor.textCursor().block().firstLineNumber())
+        self.__editor.checkIfHighlighted(self.currentBlock(), text, tokens, not notCurrentLine)
 
         cursor = self.__editor.textCursor()
         cursorPosition = cursor.selectionEnd()
@@ -1673,6 +2467,9 @@ class WCESyntaxHighlighter(QSyntaxHighlighter):
                 self.__cursorPreviousToken = self.__cursorToken
                 self.__cursorToken = token
 
+        # check if in multiline
+        self.highlightMultiLine(text)
+
     def currentCursorToken(self):
         """Return token on which cursor is"""
         return self.__cursorToken
@@ -1680,3 +2477,4 @@ class WCESyntaxHighlighter(QSyntaxHighlighter):
     def lastCursorToken(self):
         """Return last token processed before current token on which cursor is"""
         return self.__cursorLastToken
+

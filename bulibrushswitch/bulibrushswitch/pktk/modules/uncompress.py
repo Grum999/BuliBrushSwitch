@@ -37,6 +37,8 @@ import subprocess
 from .timeutils import (strToTs, tsToStr)
 from .utils import Debug
 
+from ..pktk import *
+
 # define command line according to OS
 if sys.platform == 'win32':
     import winreg

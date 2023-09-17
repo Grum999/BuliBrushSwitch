@@ -39,6 +39,16 @@ from PyQt5.QtCore import (
         pyqtSignal as Signal,
         pyqtSlot
     )
+from PyQt5.QtGui import (
+        QFont,
+        QTextCursor,
+        QKeySequence,
+        QTextBlock,
+        QPalette,
+        QColor,
+        QTextDocument,
+        QDoubleValidator
+    )
 from PyQt5.QtWidgets import (
         QApplication,
         QFrame,

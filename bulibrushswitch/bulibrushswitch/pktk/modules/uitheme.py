@@ -37,7 +37,8 @@ from PyQt5.QtCore import (
     )
 from PyQt5.QtGui import (
         QPalette,
-        QPixmapCache
+        QPixmapCache,
+        QColor
     )
 from PyQt5.QtWidgets import (
         QApplication
@@ -60,11 +61,16 @@ class UITheme(object):
 
     STYLES_SHEET = {
         'dark': {
-                'warning-label': 'background-color: rgba(255, 255, 200, 75%); color:#440000; border: 1px solid rgba(255, 255, 200, 25%); border-radius: 3px; font-weight: bold;',
-                'warning-box': 'background-color: rgba(255, 255, 200, 100%); color:#440000; border: 1px solid rgba(255, 255, 200, 100%); border-radius: 3px;'
+                'warning-label': 'background-color: rgba(255, 255, 200, 75%); color:#C33700; border: 1px solid rgba(255, 255, 200, 25%); border-radius: 3px; font-weight: bold;',
+                'warning-box': 'background-color: rgba(255, 255, 200, 100%); color:#C33700; border: 1px solid rgba(255, 255, 200, 100%); border-radius: 3px;',
+                'error-bg': 'background-color: #882222; color: #ffffff; }',
+                'warning-bg': 'background-color: #FFDD00; color: #DA490F; }'
             },
         'light': {
-
+                'warning-label': 'background-color: rgba(255, 255, 200, 75%); color:#C33700; border: 1px solid rgba(255, 255, 200, 25%); border-radius: 3px; font-weight: bold;',
+                'warning-box': 'background-color: rgba(255, 255, 200, 100%); color:#C33700; border: 1px solid rgba(255, 255, 200, 100%); border-radius: 3px;',
+                'error-bg': 'background-color: #E47B78; color: #ffffff; }',
+                'warning-bg': 'background-color: #ffffaa; color: #E77935; }'
             }
     }
 
@@ -180,3 +186,119 @@ class UITheme(object):
     def getAutoReload(self):
         """Return if autoreload is activated for theme"""
         return self.__autoReload
+
+
+class BaseTheme(object):
+    """Base to define themes (used with WCodeEditor for example)
+
+    Theme define global theme (foreground, background, gutter text, ...)
+    TokenStyle, set through LanguageDef define colors to apply for a specific thme/language
+    """
+    def __init__(self, id, name, colors=None, baseTheme=None, comments=[]):
+        if not isinstance(id, str) or id == '':
+            raise EInvalidType('Given `id` must be non empty <str>')
+        if not isinstance(name, str) or name == '':
+            raise EInvalidType('Given `name` must be non empty <str>')
+        if not (baseTheme is None or baseTheme in (UITheme.DARK_THEME, UITheme.LIGHT_THEME)):
+            raise EInvalidType('Given `baseTheme` must be None, UITheme.DARK_THEME or UITheme.LIGHT_THEME')
+        if not isinstance(comments, list):
+            raise EInvalidType('Given `comments` must be a <list> of <str>')
+        self.__id = id
+        self.__name = name
+        self.__baseTheme = baseTheme
+        self.__colors = {}
+        self.__comments = comments
+        while len(self.__comments) < 2:
+            self.__comments.append('')
+
+        if isinstance(colors, dict):
+            for key, value in colors.items():
+                if not isinstance(key, str) or not isinstance(value, (str, QColor)):
+                    raise EInvalidValue("Given colors must have a <str> key and a color <str> value")
+
+                try:
+                    self.__colors[key] = QColor(value)
+                except Exception as e:
+                    raise EInvalidValue("Given colors must have a <str> key and a color <str> value")
+        elif isinstance(colors, BaseTheme):
+            self.fromTheme(colors)
+            if self.__baseTheme is None:
+                self.__baseTheme = colors.baseTheme()
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__}('{self.__id}', '{self.__name}', {self.__baseTheme}, {self.__colors})>"
+
+    def id(self):
+        """Return theme identifier"""
+        return self.__id
+
+    def name(self):
+        """Return theme name"""
+        return self.__name
+
+    def baseTheme(self):
+        """Return UITheme 'dark' or 'light' associated with current theme"""
+        return self.__baseTheme
+
+    def comments(self):
+        """Return theme's comments"""
+        return self.__comments
+
+    def color(self, colorId):
+        if colorId in self.__colors:
+            return self.__colors[colorId]
+
+        raise EInvalidValue("Given `colorId` is not a value identifier")
+
+    def toDict(self):
+        """Export theme as dictionnary
+
+        {
+            'id': '',
+            'name': '',
+            'comments': [],
+            'colors': {
+                <key>: <value>      # value is a color as string '#aarrggbb'
+            }
+        }
+        """
+        return {
+                'id': self.__id,
+                'name': self.__name,
+                'comments': self.__comments,
+                'colors': {id: color.name(QColor.HexArgb) for id, color in self.__colors.items()}
+            }
+
+    def fromDict(self, source):
+        """Import theme from a dictionnary"""
+        if not isinstance(source, dict):
+            raise EInvalidType("Given `source` must be a <dict>")
+        elif 'id' not in source or not isinstance(source['id'], str) or source['id'] == '':
+            raise EInvalidValue("Given `source` must contain 'id' key, with a non empty <string> value")
+        elif 'name' not in source or not isinstance(source['name'], str) or source['name'] == '':
+            raise EInvalidValue("Given `source` must contain 'name' key, with a non empty <str> value")
+        elif 'comments' not in source or not isinstance(source['comments'], list):
+            raise EInvalidValue("Given `source` must contain 'comments' key as <list> of <str>")
+        elif 'colors' not in source:
+            raise EInvalidValue("Given `source` must contain 'colors' key")
+
+        self.__id = source['id']
+        self.__name = source['name']
+        self.__comments = source['comments']
+        while len(self.__comments) < 2:
+            self.__comments.append('')
+
+        self.__colors = {}
+        for key, value in source['colors'].items():
+            if not isinstance(key, str) or not isinstance(value, (QColor, str)):
+                raise EInvalidValue("Given colors must have a <str> key and a color <str> value")
+            try:
+                self.__colors[key] = QColor(value)
+            except Exception as e:
+                raise EInvalidValue("Given colors must have a <str> key and a color <str> value")
+
+    def fromTheme(self, source):
+        """Import theme from a BaseTheme"""
+        if not isinstance(source, BaseTheme):
+            raise EInvalidType("Given `source` must be a <BaseTheme>")
+        self.fromDict(source.toDict())

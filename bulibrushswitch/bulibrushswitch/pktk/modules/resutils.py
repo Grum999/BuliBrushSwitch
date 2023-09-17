@@ -43,6 +43,12 @@ import sys
 from krita import Resource
 
 from PyQt5.Qt import *
+from PyQt5.QtGui import (
+        QPixmap,
+        QIcon,
+        QImage,
+        QPainter
+    )
 from PyQt5.QtCore import (
         pyqtSignal as Signal
     )

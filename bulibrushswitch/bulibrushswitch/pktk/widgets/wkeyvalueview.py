@@ -33,6 +33,8 @@
 
 from PyQt5.Qt import *
 
+from ..pktk import *
+
 
 class GenericKeyValueNode:
     """A node for GenericKeyValueModel

@@ -23,6 +23,10 @@
 # -----------------------------------------------------------------------------
 
 from PyQt5.Qt import *
+from PyQt5.QtGui import (
+        QPalette,
+        QIcon
+    )
 from PyQt5.QtCore import (
         pyqtSignal as Signal
     )

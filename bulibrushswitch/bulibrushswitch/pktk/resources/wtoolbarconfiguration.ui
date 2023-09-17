@@ -82,6 +82,9 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+        <property name="toolTip">
+         <string>Name for toolbar</string>
+        </property>
        </widget>
       </item>
       <item row="0" column="2">
@@ -107,6 +110,9 @@
          </property>
          <item>
           <widget class="QToolButton" name="tbToolbarAdd">
+           <property name="toolTip">
+            <string>Add a new toolbar</string>
+           </property>
            <property name="text">
             <string>...</string>
            </property>
@@ -123,6 +129,9 @@
          </item>
          <item>
           <widget class="QToolButton" name="tbToolbarEdit">
+           <property name="toolTip">
+            <string>Edit current toolbar properties</string>
+           </property>
            <property name="text">
             <string>...</string>
            </property>
@@ -139,6 +148,9 @@
          </item>
          <item>
           <widget class="QToolButton" name="tbToolbarDelete">
+           <property name="toolTip">
+            <string>Remove current toolbar</string>
+           </property>
            <property name="text">
             <string>...</string>
            </property>
@@ -164,7 +176,11 @@
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="QComboBox" name="cbToolbarStyle"/>
+       <widget class="QComboBox" name="cbToolbarStyle">
+        <property name="toolTip">
+         <string>Style for current toolbar</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>
@@ -199,7 +215,7 @@
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout">
       <property name="spacing">
-       <number>-1</number>
+       <number>9</number>
       </property>
       <property name="leftMargin">
        <number>0</number>
@@ -223,7 +239,7 @@
         </property>
         <layout class="QVBoxLayout" name="verticalLayout">
          <property name="spacing">
-          <number>-1</number>
+          <number>9</number>
          </property>
          <property name="leftMargin">
           <number>0</number>
@@ -445,7 +461,7 @@
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_2">
          <property name="spacing">
-          <number>-1</number>
+          <number>9</number>
          </property>
          <property name="leftMargin">
           <number>0</number>

@@ -38,6 +38,9 @@ from PyQt5.Qt import *
 from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
+from PyQt5.QtGui import (
+        QFontMetrics
+    )
 from PyQt5.QtWidgets import (
         QApplication,
         QFrame,
@@ -57,6 +60,8 @@ from ..pktk import *
 
 class WDockWidget(QDockWidget):
     """An extension of dock widget"""
+
+    activated = Signal()
 
     def __init__(self, name, parent):
         super(WDockWidget, self).__init__(name, parent)
@@ -118,6 +123,45 @@ class WDockWidget(QDockWidget):
                 if not dockWidget.isFloating():
                     return False
         return True
+
+    def setActive(self):
+        """When docker are tabbed in a group, ensure the current docker is the active one in tabs
+
+        Return true if tabbar has been found and activatec
+        """
+        # search main QMainWindow hosting docker
+        # normally should be parentWidget() but look parent tree
+        parent = self.parentWidget()
+        while parent:
+            if isinstance(parent, QMainWindow):
+                break
+            parent = parent.parentWidget()
+
+        # Qt put amperseed in widgets titles...
+        # get version without amperseed
+        title =  re.sub("&(?!&)", "", self.windowTitle())
+
+        # there's no other solution?
+        # to find QTabTar, need to look for all tabbar in main window
+        # when found, check tabbar title; if same than docker, then maybe it's the right one
+        # (this implies docker don't have same title than any other tab bar)
+        for tabBar in parent.findChildren(QTabBar, '', Qt.FindChildrenRecursively):
+            for tabIndex in range(tabBar.count()):
+                # get version without amperseed
+                tabText = re.sub("&(?!&)", "", tabBar.tabText(tabIndex))
+                if title == tabText:
+                    tabBar.setCurrentIndex(tabIndex)
+                    self.onActivate()
+                    self.activated.emit()
+                    return True
+        return False
+
+    def onActivate(self):
+        """Called when dock widget is activated
+
+        Does nothing, must be overrided by inherited widget
+        """
+        pass
 
 
 class WDockWidgetTitleBar(QWidget):

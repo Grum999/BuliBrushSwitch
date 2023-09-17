@@ -16,6 +16,16 @@ from PyQt5.QtGui import (
         QColor,
         QImage,
         QPixmap,
+        QPainter,
+        QPen,
+        QLinearGradient,
+        QConicalGradient,
+        QPainterPath,
+        QRegion,
+        QGradient,
+        QBrush,
+        QPalette,
+        QFont
     )
 from PyQt5.QtWidgets import (
         QApplication,
@@ -24,7 +34,7 @@ from PyQt5.QtWidgets import (
         QHBoxLayout
     )
 
-from ..modules.imgutils import (checkerBoardImage, checkerBoardBrush)
+from ..modules.imgutils import (checkerBoardImage, checkerBoardBrush, buildIcon)
 from ..pktk import *
 
 # todo:
@@ -1244,6 +1254,11 @@ class WColorSlider(QWidget):
         self.__wValueSpin = QDoubleSpinBox()
         self.__wValueSpin.setAlignment(Qt.AlignRight)
 
+        font = self.__wValueSpin.font()
+        font.setStyleHint(QFont.Monospace)
+        font.setFamily('DejaVu Sans Mono, Consolas, Courier New')
+        self.__wValueSpin.setFont(font)
+
         self.__layout.addWidget(self.__wColorSlider)
         self.__layout.addWidget(self.__wValueSpin)
 
@@ -1716,36 +1731,67 @@ class WColorCssEdit(QWidget):
         super(WColorCssEdit, self).__init__(parent)
 
         self.__color = None
+        self.__colorNameFmt = QColor.HexRgb
 
         self.__leWebColorEdit = QLineEdit(self)
-        self.__leWebColorEdit.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
+        self.__leWebColorEdit.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Maximum)
         self.__leWebColorEdit.setAlignment(Qt.AlignRight)
         self.__leWebColorEdit.textEdited.connect(self.__colorCssRGBChanged)
 
+        font = self.__leWebColorEdit.font()
+        font.setStyleHint(QFont.Monospace)
+        font.setFamily('DejaVu Sans Mono, Consolas, Courier New')
+        self.__leWebColorEdit.setFont(font)
+
+        self.__tbAlpha = QToolButton()
+        self.__tbAlpha.setAutoRaise(True)
+        self.__tbAlpha.setCheckable(True)
+        self.__tbAlpha.setVisible(False)
+        self.__tbAlpha.setIcon(buildIcon('pktk:text_alpha'))
+        self.__tbAlpha.toggled.connect(self.__updateColorName)
+
         webColorLayout = QHBoxLayout(self)
-        webColorLayout.setContentsMargins(0, 0, 0, 0)
-        webColorLayout.addStretch()
+        webColorLayout.setContentsMargins(8, 0, 0, 0)
         webColorLayout.addWidget(self.__leWebColorEdit)
+        webColorLayout.addWidget(self.__tbAlpha)
 
         self.setLayout(webColorLayout)
         self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Maximum)
 
+    def __updateColorName(self):
+        if self.alphaButtonChecked():
+            self.__colorNameFmt = QColor.HexArgb
+        else:
+            self.__colorNameFmt = QColor.HexRgb
+
+        if self.__color:
+            self.__leWebColorEdit.setText(self.__color.name(self.__colorNameFmt))
+
     def __colorCssRGBChanged(self, value):
         """Value modified manually by user"""
         try:
+            if isinstance(value, str) and not re.search("^#", value):
+                value = '#' + value
+
             self.__color = QColor(value)
+            self.__updateColorName()
             self.colorUpdated.emit(self.__color)
         except Exception:
+            # not a color
             return
 
     def setColor(self, value):
         """Set given color"""
+        if isinstance(value, str) and not re.search("^#", value):
+            value = '#' + value
+
         try:
             self.__color = QColor(value)
+            self.__updateColorName()
+            self.colorChanged.emit(self.__color)
         except Exception:
+            # not a color
             return
-        self.__leWebColorEdit.setText(self.__color.name(QColor.HexRgb))
-        self.colorChanged.emit(self.__color)
 
     def color(self):
         """Return current color
@@ -1753,6 +1799,24 @@ class WColorCssEdit(QWidget):
         Note: if current defined color in editor is not valid, return None
         """
         return self.__color
+
+    def alphaButtonVisible(self):
+        """Return if button alpha is visible"""
+        return self.__tbAlpha.isVisible()
+
+    def setAlphaButtonVisible(self, value):
+        """Set if button alpha is visible"""
+        self.__tbAlpha.setVisible(value)
+        self.__updateColorName()
+
+    def alphaButtonChecked(self):
+        """Return if button alpha is checked"""
+        return self.__tbAlpha.isChecked() and self.__tbAlpha.isVisible()
+
+    def setAlphaButtonChecked(self, value):
+        """Set if button alpha is visible"""
+        self.__tbAlpha.setChecked(value)
+        self.__updateColorName()
 
 
 class WColorPalette(QWidget):
@@ -2290,6 +2354,8 @@ class WColorPicker(QWidget):
         self.__colorComplementary.colorClicked.connect(self.__colorComplementaryClicked)
 
         self.__colorCssEdit = WColorCssEdit(self)
+        self.__colorCssEdit.setAlphaButtonVisible(True)
+        self.__colorCssEdit.setAlphaButtonChecked(True)
 
         self.__colorSliderRed = WColorSlider('red')
         self.__colorSliderGreen = WColorSlider('green')
@@ -2928,6 +2994,7 @@ class WColorPicker(QWidget):
         self.__checkColorSliders()
 
         self.__colorSliderAlpha.setVisible(self.__optionShowColorAlpha)
+        self.__colorCssEdit.setAlphaButtonVisible(value)
         self.__updateSize()
 
     def setOptionShowCssRgb(self, value):
@@ -2940,6 +3007,13 @@ class WColorPicker(QWidget):
 
         self.__colorCssEdit.setVisible(self.__optionShowColorCssRGB)
         self.__updateSize()
+
+    def setOptionShowCssRgbAlphaChecked(self, value):
+        """Set option 'css color code - alpha button checked' is active or not"""
+        if not isinstance(value, bool):
+            return
+
+        self.__colorCssEdit.setAlphaButtonChecked(value)
 
     def setOptionShowColorCombination(self, value):
         """Set option 'color combination'
@@ -3238,6 +3312,8 @@ class WColorPicker(QWidget):
             returned.append('colorAlpha')
         if self.__optionShowColorCssRGB:
             returned.append('colorCssRGB')
+        if self.__colorCssEdit.alphaButtonChecked():
+            returned.append('colorCssRGBAlphaChecked')
         if self.__optionShowColorPalette:
             returned.append('colorPalette')
         if self.__optionShowColorWheel:
@@ -3307,6 +3383,7 @@ class WColorPicker(QWidget):
         self.setOptionShowColorHSL('colorHSL' in layout)
         self.setOptionShowColorAlpha('colorAlpha' in layout)
         self.setOptionShowCssRgb('colorCssRGB' in layout)
+        self.setOptionShowCssRgbAlphaChecked('colorCssRGBAlphaChecked' in layout)
         self.setOptionShowColorPalette('colorPalette' in layout)
         self.setOptionShowColorWheel('colorWheel' in layout)
         self.setOptionShowPreviewColor('colorPreview' in layout)
