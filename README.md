@@ -42,7 +42,7 @@ Shortcuts for brushes can be managed directly from plugin or from default Krita'
 ## Download, Install & Execute
 
 ### Download
-+ **[ZIP ARCHIVE - v1.0.0](https://github.com/Grum999/BuliBrushSwitch/releases/download/1.0.0/bulibrushswitch.zip)**
++ **[ZIP ARCHIVE - v1.0.1](https://github.com/Grum999/BuliBrushSwitch/releases/download/1.0.1/bulibrushswitch.zip)**
 + **[SOURCE](https://github.com/Grum999/BuliBrushSwitch)**
 
 
@@ -73,8 +73,10 @@ Didn't has time to test it on other platform, should be OK. Normally. I hope ðŸ˜
 ## Plugin's life
 
 ### What's new?
+_[2023-12-08] Version 1.0.1_ *[Show detailed release content](./releases-notes/RELEASE-1.0.1.md)*
+- Fix bug - Windows compatibility
 
-_[2022-08-12] Version 1.0.0_ *[Show detailed release content](./releases-notes/RELEASE-1.0.0.md)*
+_[2023-08-12] Version 1.0.0_ *[Show detailed release content](./releases-notes/RELEASE-1.0.0.md)*
 - Implement - Krita Interface - *Improve toolbar button*
 - Implement - Main Interface - *Icon view*
 - Implement - Main Settings - *Redesign*
