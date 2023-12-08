@@ -281,7 +281,6 @@ class DBManagedResources(QObject):
 
     def __init__(self, fileName, parent=None):
         super(DBManagedResources, self).__init__(parent)
-
         self.__dbInstanceId = f"{DBManagedResources.__DBINSTANCEID}_{QUuid.createUuid().toString()}"
         self.__dbFileName = ""
         self.__databaseInstance = None
@@ -517,7 +516,7 @@ class ManagedResourcesModel(QAbstractTableModel):
         """Initialise list"""
         super(ManagedResourcesModel, self).__init__(parent)
         self.__items = []
-        self.__dbResources = DBManagedResources(os.path.join(QStandardPaths.standardLocations(QStandardPaths.DataLocation)[0], 'resourcecache.sqlite'))
+        self.__dbResources = DBManagedResources(os.path.join(Krita.instance().getAppDataLocation(), 'resourcecache.sqlite'))
         self.__resourceType = None
         self.__displayName = True
 
@@ -674,11 +673,14 @@ class ManagedResourcesModel(QAbstractTableModel):
                             'storageTypeId': query[1].value('storageTypeId'),
                             'storageActive': (query[1].value('storageActive') == 1)
                         }))
-        else:
+        elif query[1]:
             err = query[1].lastError()
             print(err.databaseText())
             print(err.driverText())
             print(err.nativeErrorCode())
+        else:
+            print("Not connected to DB?")
+
         self.endResetModel()
 
     def displayName(self):
