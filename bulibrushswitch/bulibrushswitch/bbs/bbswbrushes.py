@@ -3336,6 +3336,10 @@ class BBSModelDelegateLv(QStyledItemDelegate):
 
 class BBSBrushesEditor(WEDialog):
     """A simple dialog box to edit brush properties"""
+
+    __ICON_SIZE = QSize(128, 128)
+    __ICON_CENTER = QPointF(64, 64)
+
     @staticmethod
     def edit(title, brush):
         """Open a dialog box to edit brush"""
@@ -3368,6 +3372,20 @@ class BBSBrushesEditor(WEDialog):
         self.__inSliderSpinBoxEvent = False
         self.__inColorUiChangeEvent = False
 
+        brushPresetNfo = EKritaBrushPreset.getPresetProperties(brush.name())['brushTip']
+        if brushPresetNfo['name'] != '':
+            self.__brushTip = brushPresetNfo['pixmap'].scaled(BBSBrushesEditor.__ICON_SIZE, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            self.__brushTipOffsetX = -self.__brushTip.width()//2
+            self.__brushTipOffsetY = -self.__brushTip.height()//2
+            self.__brushTipComputed = QPixmap(128, 128)
+        else:
+            self.__brushTip = None
+            self.__brushTipOffsetX = 0
+            self.__brushTipOffsetY = 0
+            self.__brushTipComputed = QPixmap()
+
+        self.__brushIcon = QPixmap.fromImage(brush.image()).scaled(BBSBrushesEditor.__ICON_SIZE, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+
         self.lblBrushTitle.setText(f"{i18n('Brush')} - <i>{brush.name()}</i>")
 
         self.wtComments.setHtml(self.__brush.comments())
@@ -3379,9 +3397,6 @@ class BBSBrushesEditor(WEDialog):
         self.kseShortcut.keySequenceCleared.connect(self.__shortcutModified)
         self.kseShortcut.editingFinished.connect(self.__shortcutModified)
         self.kseShortcut.keySequenceChanged.connect(self.__shortcutModified)
-
-        self.lblBrushIcon.setPixmap(QPixmap.fromImage(brush.image()).scaled(128, 128, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-
         self.cbKeepUserModifications.setChecked(brush.keepUserModifications())
 
         self.tbResetBrushValues.clicked.connect(self.__resetBrushValues)
@@ -3402,9 +3417,14 @@ class BBSBrushesEditor(WEDialog):
         self.dsbBrushOpacity.valueChanged[float].connect(lambda v: self.__brushOpacityChanged(v, True))
         self.dsbBrushOpacity.setValue(100*brush.opacity())
 
-        self.hsBrushRotation.valueChanged.connect(lambda v: self.__brushRotationChanged(v, False))
-        self.dsbBrushRotation.valueChanged[float].connect(lambda v: self.__brushRotationChanged(v, True))
-        self.dsbBrushRotation.setValue(brush.rotation())
+        if self.__brushTip:
+            self.hsBrushRotation.valueChanged.connect(lambda v: self.__brushRotationChanged(v, False))
+            self.dsbBrushRotation.valueChanged[float].connect(lambda v: self.__brushRotationChanged(v, True))
+            self.dsbBrushRotation.setValue(brush.rotation())
+        else:
+            self.lblRotation.hide()
+            self.hsBrushRotation.hide()
+            self.dsbBrushRotation.hide()
 
         self.hsBrushFlow.valueChanged.connect(lambda v: self.__brushFlowChanged(v, False))
         self.dsbBrushFlow.valueChanged[float].connect(lambda v: self.__brushFlowChanged(v, True))
@@ -3513,12 +3533,72 @@ class BBSBrushesEditor(WEDialog):
             self.btUseSpecificColorBg.setVisible(False)
             self.btUseSpecificColorGradient.setVisible(False)
 
+        if self.__brushTip:
+            self.__lblBrushIconEnterEventOrig = self.lblBrushIcon.enterEvent
+            self.__lblBrushIconLeaveEventOrig = self.lblBrushIcon.leaveEvent
+            self.lblBrushIcon.enterEvent = self.__lblBrushIconEnterEvent
+            self.lblBrushIcon.leaveEvent = self.__lblBrushIconLeaveEvent
+
+            self.__hsBrushRotationEnterEventOrig = self.hsBrushRotation.enterEvent
+            self.__hsBrushRotationLeaveEventOrig = self.hsBrushRotation.leaveEvent
+            self.hsBrushRotation.enterEvent = self.__hsBrushRotationEnterEvent
+            self.hsBrushRotation.leaveEvent = self.__hsBrushRotationLeaveEvent
+
+            self.__dsbBrushRotationEnterEventOrig = self.dsbBrushRotation.enterEvent
+            self.__dsbBrushRotationLeaveEventOrig = self.dsbBrushRotation.leaveEvent
+            self.dsbBrushRotation.enterEvent = self.__dsbBrushRotationEnterEvent
+            self.dsbBrushRotation.leaveEvent = self.__dsbBrushRotationLeaveEvent
+
+            self.__computeBrushTip()
+        self.lblBrushIcon.setPixmap(self.__brushIcon)
+
         self.pbOk.clicked.connect(self.accept)
         self.pbCancel.clicked.connect(self.reject)
 
         self.setModal(True)
         self.setWindowTitle(title)
         self.setWindowFlags(Qt.Dialog | Qt.WindowTitleHint)
+
+    def __lblBrushIconEnterEvent(self, event):
+        """Mouse enter over icon, display brush tip"""
+        self.__lblBrushIconEnterEventOrig(event)
+        self.lblBrushIcon.setPixmap(self.__brushTipComputed)
+
+    def __lblBrushIconLeaveEvent(self, event):
+        """Mouse leave icon, display brush icon"""
+        self.__lblBrushIconLeaveEventOrig(event)
+        self.lblBrushIcon.setPixmap(self.__brushIcon)
+
+    def __hsBrushRotationEnterEvent(self, event):
+        """Mouse enter over rotation slider, display brush tip"""
+        self.__hsBrushRotationEnterEventOrig(event)
+        self.lblBrushIcon.setPixmap(self.__brushTipComputed)
+
+    def __hsBrushRotationLeaveEvent(self, event):
+        """Mouse leave rotation slider, display brush icon"""
+        self.__hsBrushRotationLeaveEventOrig(event)
+        self.lblBrushIcon.setPixmap(self.__brushIcon)
+
+    def __dsbBrushRotationEnterEvent(self, event):
+        """Mouse enter over rotation spinbox, display brush tip"""
+        self.__dsbBrushRotationEnterEventOrig(event)
+        self.lblBrushIcon.setPixmap(self.__brushTipComputed)
+
+    def __dsbBrushRotationLeaveEvent(self, event):
+        """Mouse leave rotation spinbox, display brush icon"""
+        self.__dsbBrushRotationLeaveEventOrig(event)
+        self.lblBrushIcon.setPixmap(self.__brushIcon)
+
+    def __computeBrushTip(self):
+        """Generate brush tip taking in account current brush rotation"""
+        self.__brushTipComputed.fill(Qt.white)
+        painter = QPainter()
+        painter.begin(self.__brushTipComputed)
+        painter.setRenderHints(QPainter.Antialiasing | QPainter.SmoothPixmapTransform)
+        painter.translate(BBSBrushesEditor.__ICON_CENTER)
+        painter.rotate(-self.dsbBrushRotation.value())
+        painter.drawPixmap(self.__brushTipOffsetX, self.__brushTipOffsetY, self.__brushTip)
+        painter.end()
 
     def __resetBrushValues(self):
         """Reset brush properties to default values"""
@@ -3591,6 +3671,9 @@ class BBSBrushesEditor(WEDialog):
         else:
             # update spinbox
             self.dsbBrushRotation.setValue(round(value / 100, 2))
+        if self.__brushTip:
+            self.__computeBrushTip()
+            self.lblBrushIcon.setPixmap(self.__brushTipComputed)
         self.__inSliderSpinBoxEvent = False
 
     def __brushFlowChanged(self, value, fromSpinBox=True):
