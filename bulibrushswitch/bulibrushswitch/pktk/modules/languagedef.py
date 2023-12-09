@@ -134,6 +134,8 @@ class LanguageDef:
 
     def style(self, item):
         """Return style (from current theme) for given token and/or rule"""
+        if isinstance(item, TokenType):
+            return self.__tokenStyle.style(item)
         return self.__tokenStyle.style(item.type())
 
     def styles(self):

@@ -37,16 +37,21 @@ from PyQt5.QtCore import (
         pyqtSignal as Signal
     )
 from PyQt5.QtWidgets import (
-        QWidget
+        QWidget,
+        QToolButton
     )
 
 
-from ..modules.utils import replaceLineEditClearButton
+from ..modules.utils import (
+        replaceLineEditClearButton,
+        regExIsValid
+    )
 from ..modules.listutils import (
         EXTRASELECTION_FILTER_REMOVE,
         filterExtraSelections
     )
 from ..modules.imgutils import buildIcon
+from .wlabelelide import WLabelElide
 from .wseparator import WVLine
 
 from ..pktk import *
@@ -270,10 +275,11 @@ class WSearchInput(QWidget):
         palette = self.palette()
         color = palette.color(QPalette.Active, QPalette.Text)
         color.setAlpha(128)
-        self.__optionsInfo = QLabel()
-        self.__optionsInfo.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
+        self.__optionsInfo = WLabelElide(Qt.ElideLeft)
+        self.__optionsInfo.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Preferred)
         self.__optionsInfo.setFont(font)
         self.__optionsInfo.setStyleSheet(f"color: {color.name(QColor.HexArgb)};")
+        self.__optionsInfo.setMinimumWidth(1)
 
         self.__wSRInfo = QWidget()
         self.__lSRInfo = QHBoxLayout()
@@ -396,7 +402,7 @@ class WSearchInput(QWidget):
             if self.__options & SearchOptions.HIGHLIGHT == SearchOptions.HIGHLIGHT:
                 optionsInfo.append(i18n('Highlight all found occurences'))
 
-            self.__optionsInfo.setText(f"{i18n('Finding with options:')}<i>{', '.join(optionsInfo)}</i>")
+            self.__optionsInfo.setText(f"{i18n('Finding with options:')} {', '.join(optionsInfo)}")
 
     def __searchTextModified(self):
         """Search value has been modified, emit signal"""
@@ -541,7 +547,7 @@ class SearchFromPlainTextEdit:
         self.__lastFound = None
 
         self.__searchColors = {
-                SearchFromPlainTextEdit.COLOR_SEARCH_ALL:           QColor("#77ffc706"),
+                SearchFromPlainTextEdit.COLOR_SEARCH_ALL:           QColor("#409adf95"),
                 SearchFromPlainTextEdit.COLOR_SEARCH_CURRENT_BG:    QColor("#9900b86f"),
                 SearchFromPlainTextEdit.COLOR_SEARCH_CURRENT_FG:    QColor("#ffff00")
             }
@@ -581,6 +587,11 @@ class SearchFromPlainTextEdit:
         extraSelections = self.__getExtraSelections(SearchFromPlainTextEdit.EXTRASELECTIONTYPE_HIGHLIGHTEDSEARCH, False)
         extraSelectionsFoundAll = []
 
+        if options & SearchOptions.REGEX == SearchOptions.REGEX:
+            if not regExIsValid(text):
+                # force to exit search
+                text = None
+
         if (text is None or text == '') and options & SearchOptions.HIGHLIGHT == SearchOptions.HIGHLIGHT:
             # clear current selections
             self.__extraSelectionsFoundAll = []
@@ -593,10 +604,10 @@ class SearchFromPlainTextEdit:
         if options & SearchOptions.CASESENSITIVE == SearchOptions.CASESENSITIVE:
             findFlags |= QTextDocument.FindCaseSensitively
         if options & SearchOptions.REGEX == SearchOptions.REGEX:
-            text = QRegularExpression(text)
+            text = QRegularExpression(text, QRegularExpression.MultilineOption | QRegularExpression.UseUnicodePropertiesOption | QRegularExpression.DotMatchesEverythingOption)
 
         cursor = self.__plainTextEdit.document().find(text, 0, QTextDocument.FindFlags(findFlags))
-        while cursor.position() > 0:
+        while cursor.selectionStart() > -1:
             extraSelection = QTextEdit.ExtraSelection()
 
             extraSelection.cursor = cursor
@@ -604,7 +615,13 @@ class SearchFromPlainTextEdit:
             extraSelection.format.setProperty(QTextFormat.UserProperty, SearchFromPlainTextEdit.EXTRASELECTIONTYPE_HIGHLIGHTEDSEARCH)
 
             extraSelectionsFoundAll.append(extraSelection)
-            cursor = self.__plainTextEdit.document().find(text, cursor, QTextDocument.FindFlags(findFlags))
+            cursor = self.__plainTextEdit.document().find(text, cursor.selectionEnd(), QTextDocument.FindFlags(findFlags))
+            while cursor.selectionStart() > -1 and cursor.selectionStart() == cursor.selectionEnd():
+                # why!??
+                if not cursor.movePosition(QTextCursor.Right):
+                    cursor = QTextCursor()
+                    break
+                cursor = self.__plainTextEdit.document().find(text, cursor.selectionEnd(), QTextDocument.FindFlags(findFlags))
 
         if options & SearchOptions.HIGHLIGHT == SearchOptions.HIGHLIGHT:
             self.__extraSelectionsFoundAll = extraSelectionsFoundAll
@@ -646,39 +663,56 @@ class SearchFromPlainTextEdit:
             findFlags |= QTextDocument.FindBackward
 
         if options & SearchOptions.REGEX == SearchOptions.REGEX:
-            text = QRegularExpression(text)
+            text = QRegularExpression(text, QRegularExpression.MultilineOption | QRegularExpression.UseUnicodePropertiesOption | QRegularExpression.DotMatchesEverythingOption)
 
         if not isinstance(fromCursor, (int, QTextCursor)):
             if self.__extraSelectionsFoundCurrent is None:
-                cursor = self.__plainTextEdit.textCursor().position()
+                cursor = self.__plainTextEdit.textCursor()
             else:
                 cursor = self.__extraSelectionsFoundCurrent.cursor
-        else:
+        elif isinstance(fromCursor, QTextCursor):
             cursor = fromCursor
+        else:
+            cursor = QTextCursor(self.__plainTextEdit.document())
+            cursor.setPosition(fromCursor)
 
         found = self.__plainTextEdit.document().find(text, cursor, QTextDocument.FindFlags(findFlags))
         loopNumber = 0
         while loopNumber <= 1:
             # check found occurence
-            if found is None or found.position() == -1:
+            if found is None or found.selectionStart() == -1:
                 loopNumber += 1
 
                 # nothing found: may be we need to loop
                 if options & SearchOptions.BACKWARD == SearchOptions.BACKWARD:
-                    cursor = self.__plainTextEdit.document().characterCount()
+                    cursor.movePosition(QTextCursor.End)
                 else:
-                    cursor = 0
+                    cursor.movePosition(QTextCursor.Start)
 
                 found = self.__plainTextEdit.document().find(text, cursor, QTextDocument.FindFlags(findFlags))
 
-                if found is not None and found.position() == -1:
+                if found is not None and found.selectionStart() == -1:
                     found = None
 
             if found and not found.block().isVisible():
                 # something found, but not visible
                 found = self.__plainTextEdit.document().find(text, found, QTextDocument.FindFlags(findFlags))
             elif found:
-                break
+                while found.selectionStart() > -1 and found.selectionStart() == found.selectionEnd():
+                    # why!??
+                    cursor = found
+                    if options & SearchOptions.BACKWARD == SearchOptions.BACKWARD:
+                        ok = cursor.movePosition(QTextCursor.Left)
+                    else:
+                        ok = cursor.movePosition(QTextCursor.Right)
+
+                    if not ok:
+                        found = None
+                        break
+                    found = self.__plainTextEdit.document().find(text, cursor, QTextDocument.FindFlags(findFlags))
+
+                if found:
+                    break
 
         if options & SearchOptions.HIGHLIGHT == SearchOptions.HIGHLIGHT and found is not None:
             self.__extraSelectionsFoundCurrent = QTextEdit.ExtraSelection()
@@ -737,6 +771,9 @@ class SearchFromPlainTextEdit:
                     replaceWithValue = replaceWithValue.replace(f'${index+1}', replace)
 
         cursor.insertText(replaceWithValue)
+        if options & SearchOptions.BACKWARD == SearchOptions.BACKWARD:
+            self.searchNext(searchText, options)
+
         self.searchNext(searchText, options)
         return True
 
