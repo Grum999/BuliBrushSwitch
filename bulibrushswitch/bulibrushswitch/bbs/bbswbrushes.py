@@ -242,6 +242,7 @@ class BBSBrush(BBSBaseNode):
     KEY_SIZE = 'size'
     KEY_FLOW = 'flow'
     KEY_OPACITY = 'opacity'
+    KEY_ROTATION = 'rotation'
     KEY_BLENDINGMODE = 'blendingMode'
     KEY_PRESERVEALPHA = 'preserveAlpha'
     KEY_IGNORETOOLOPACITY = 'ignoreToolOpacity'
@@ -269,6 +270,7 @@ class BBSBrush(BBSBaseNode):
         self.__size = 0
         self.__flow = 0
         self.__opacity = 0
+        self.__rotation = 0
         self.__blendingMode = ''
         self.__preserveAlpha = False
         self.__comments = ''
@@ -328,6 +330,9 @@ class BBSBrush(BBSBaseNode):
 
                                    f' <tr><td class="tdNfoName">{nbsp(i18n("Flow"))}</td>         '
                                    f'<td class="tdNfoValue">{100*self.__flow:0.2f}%</td></tr>'
+
+                                   f' <tr><td class="tdNfoName">{nbsp(i18n("Rotation"))}</td>      '
+                                   f'<td class="tdNfoValue">{self.__rotation:0.2f}°</td></tr>'
                                    )
 
             self.__brushNfoShort = f' <tr><td colspan=2 class="tdNfoShortValue">{self.__size:0.2f}px - {nbsp(self.__blendingMode)}</td></tr>'
@@ -425,6 +430,7 @@ class BBSBrush(BBSBaseNode):
         self.__size = view.brushSize()
         self.__flow = view.paintingFlow()
         self.__opacity = view.paintingOpacity()
+        self.__rotation = view.brushRotation()
         self.__blendingMode = view.currentBlendingMode()
         self.__preserveAlpha = Krita.instance().action('preserve_alpha').isChecked()
         self.__image = brush.image()
@@ -491,6 +497,7 @@ class BBSBrush(BBSBaseNode):
         view.setBrushSize(self.__size)
         view.setPaintingFlow(self.__flow)
         view.setPaintingOpacity(self.__opacity)
+        view.setBrushRotation(self.__rotation)
         view.setCurrentBlendingMode(self.__blendingMode)
         Krita.instance().action('preserve_alpha').setChecked(self.__preserveAlpha)
 
@@ -537,6 +544,7 @@ class BBSBrush(BBSBaseNode):
                 BBSBrush.KEY_SIZE: self.__size,
                 BBSBrush.KEY_FLOW: self.__flow,
                 BBSBrush.KEY_OPACITY: self.__opacity,
+                BBSBrush.KEY_ROTATION: self.__rotation,
                 BBSBrush.KEY_BLENDINGMODE: self.__blendingMode,
                 BBSBrush.KEY_PRESERVEALPHA: self.__preserveAlpha,
                 BBSBrush.KEY_ERASERMODE: self.__eraserMode,
@@ -575,6 +583,8 @@ class BBSBrush(BBSBaseNode):
                 self.setFlow(value[BBSBrush.KEY_FLOW])
             if BBSBrush.KEY_OPACITY in value:
                 self.setOpacity(value[BBSBrush.KEY_OPACITY])
+            if BBSBrush.KEY_ROTATION in value:
+                self.setRotation(value[BBSBrush.KEY_ROTATION])
             if BBSBrush.KEY_BLENDINGMODE in value:
                 self.setBlendingMode(value[BBSBrush.KEY_BLENDINGMODE])
             if BBSBrush.KEY_PRESERVEALPHA in value:
@@ -653,6 +663,16 @@ class BBSBrush(BBSBaseNode):
         if isinstance(value, (int, float)) and value >= 0 and value <= 1.0 and self.__opacity != value:
             self.__opacity = value
             self.applyUpdate('opacity')
+
+    def rotation(self):
+        """Return brush rotation"""
+        return self.__rotation
+
+    def setRotation(self, value):
+        """Set rotation"""
+        if isinstance(value, (int, float)) and self.__rotation != value:
+            self.__rotation = value
+            self.applyUpdate('rotation')
 
     def blendingMode(self):
         """Return blending mode"""
@@ -3382,6 +3402,10 @@ class BBSBrushesEditor(WEDialog):
         self.dsbBrushOpacity.valueChanged[float].connect(lambda v: self.__brushOpacityChanged(v, True))
         self.dsbBrushOpacity.setValue(100*brush.opacity())
 
+        self.hsBrushRotation.valueChanged.connect(lambda v: self.__brushRotationChanged(v, False))
+        self.dsbBrushRotation.valueChanged[float].connect(lambda v: self.__brushRotationChanged(v, True))
+        self.dsbBrushRotation.setValue(brush.rotation())
+
         self.hsBrushFlow.valueChanged.connect(lambda v: self.__brushFlowChanged(v, False))
         self.dsbBrushFlow.valueChanged[float].connect(lambda v: self.__brushFlowChanged(v, True))
         self.dsbBrushFlow.setValue(100*brush.flow())
@@ -3512,6 +3536,7 @@ class BBSBrushesEditor(WEDialog):
         self.dsbBrushSize.setValue(resetBrush.size())
         self.dsbBrushFlow.setValue(100*resetBrush.flow())
         self.dsbBrushOpacity.setValue(100*resetBrush.opacity())
+        self.dsbBrushRotation.setValue(resetBrush.rotation())
         for index in range(self.cbBrushBlendingMode.count()):
             if self.cbBrushBlendingMode.itemData(index) == resetBrush.blendingMode():
                 self.cbBrushBlendingMode.setCurrentIndex(index)
@@ -3541,7 +3566,7 @@ class BBSBrushesEditor(WEDialog):
         self.__inSliderSpinBoxEvent = False
 
     def __brushOpacityChanged(self, value, fromSpinBox=True):
-        """Size has been changed, update slider/spinbox according to value and source"""
+        """Opacity has been changed, update slider/spinbox according to value and source"""
         if self.__inSliderSpinBoxEvent:
             # avoid infinite call
             return
@@ -3554,8 +3579,22 @@ class BBSBrushesEditor(WEDialog):
             self.dsbBrushOpacity.setValue(round(value / 100, 2))
         self.__inSliderSpinBoxEvent = False
 
+    def __brushRotationChanged(self, value, fromSpinBox=True):
+        """Rotation has been changed, update slider/spinbox according to value and source"""
+        if self.__inSliderSpinBoxEvent:
+            # avoid infinite call
+            return
+        self.__inSliderSpinBoxEvent = True
+        if fromSpinBox:
+            # update Slider
+            self.hsBrushRotation.setValue(round(value * 100))
+        else:
+            # update spinbox
+            self.dsbBrushRotation.setValue(round(value / 100, 2))
+        self.__inSliderSpinBoxEvent = False
+
     def __brushFlowChanged(self, value, fromSpinBox=True):
-        """Size has been changed, update slider/spinbox according to value and source"""
+        """Flow has been changed, update slider/spinbox according to value and source"""
         if self.__inSliderSpinBoxEvent:
             # avoid infinite call
             return
@@ -3637,6 +3676,7 @@ class BBSBrushesEditor(WEDialog):
         returned = {
                 BBSBrush.KEY_SIZE: self.dsbBrushSize.value(),
                 BBSBrush.KEY_OPACITY: self.dsbBrushOpacity.value()/100,
+                BBSBrush.KEY_ROTATION: self.dsbBrushRotation.value(),
                 BBSBrush.KEY_FLOW: self.dsbBrushFlow.value()/100,
                 BBSBrush.KEY_BLENDINGMODE: self.cbBrushBlendingMode.currentData(),
                 BBSBrush.KEY_PRESERVEALPHA: self.cbPreserveAlpha.isChecked(),

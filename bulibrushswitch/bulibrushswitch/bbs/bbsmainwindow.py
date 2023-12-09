@@ -422,11 +422,12 @@ class BBSMainWindow(WEDialog):
         self.__activeViewCurrentConfig['bgColor'] = self.__activeView.backgroundColor()
 
         self.__activeViewCurrentConfig['blendingMode'] = self.__activeView.currentBlendingMode()
-        # self.__activeViewCurrentConfig['gradient'] = self.__activeView.currentGradient()
+        self.__activeViewCurrentConfig['gradient'] = self.__activeView.currentGradient()
         # self.__activeViewCurrentConfig['pattern'] = self.__activeView.currentPattern()
 
         self.__activeViewCurrentConfig['paintingOpacity'] = self.__activeView.paintingOpacity()
         self.__activeViewCurrentConfig['paintingFlow'] = self.__activeView.paintingFlow()
+        self.__activeViewCurrentConfig['brushRotation'] = self.__activeView.brushRotation()
 
         # don't know why, but zoomLevel() and setZoomLevel() don't use same value
         # https://krita-artists.org/t/canvas-class-what-does-zoomlevel-returns-compared-to-setzoomlevel-manual-link-inside/15702/3?u=grum999
@@ -449,11 +450,12 @@ class BBSMainWindow(WEDialog):
 
         self.__activeView.setCurrentBlendingMode(self.__activeViewCurrentConfig['blendingMode'])
         # crash on gradient?
-        # self.__activeView.setCurrentGradient(self.__activeViewCurrentConfig['gradient'])
+        self.__activeView.setCurrentGradient(self.__activeViewCurrentConfig['gradient'])
         # self.__activeView.setCurrentPattern(self.__activeViewCurrentConfig['pattern'])
 
         self.__activeView.setPaintingOpacity(self.__activeViewCurrentConfig['paintingOpacity'])
         self.__activeView.setPaintingFlow(self.__activeViewCurrentConfig['paintingFlow'])
+        self.__activeView.setBrushRotation(self.__activeViewCurrentConfig['brushRotation'])
 
         self.__activeView.canvas().setZoomLevel(self.__activeViewCurrentConfig['zoom'])
 
@@ -485,6 +487,7 @@ class BBSMainWindow(WEDialog):
         self.__activeView.setCurrentBlendingMode(self.__activeViewCurrentConfig['blendingMode'])
         self.__activeView.setPaintingOpacity(self.__activeViewCurrentConfig['paintingOpacity'])
         self.__activeView.setPaintingFlow(self.__activeViewCurrentConfig['paintingFlow'])
+        self.__activeView.setBrushRotation(self.__activeViewCurrentConfig['brushRotation'])
         Krita.instance().action('preserve_alpha').setChecked(self.__activeViewCurrentConfig['preserveAlpha'])
         self.__actionBrushAdd()
 
@@ -509,6 +512,7 @@ class BBSMainWindow(WEDialog):
         brush.setIgnoreToolOpacity(options[BBSBrush.KEY_IGNORETOOLOPACITY])
         brush.setSize(options[BBSBrush.KEY_SIZE])
         brush.setOpacity(options[BBSBrush.KEY_OPACITY])
+        brush.setRotation(options[BBSBrush.KEY_ROTATION])
         brush.setFlow(options[BBSBrush.KEY_FLOW])
         brush.setShortcut(options[BBSBrush.KEY_SHORTCUT])
         brush.endUpdate()
