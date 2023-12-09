@@ -28,7 +28,6 @@
 #   /usr/lib/qt5/bin/rcc --binary -o ./darktheme_icons.rcc dark_icons.qrc
 # -----------------------------------------------------------------------------
 
-import krita
 import os
 import re
 
@@ -80,6 +79,8 @@ class UITheme(object):
     @staticmethod
     def load(rccPath=None, autoReload=True):
         """Initialise theme"""
+        import krita
+
         def initThemeChanged():
             # initialise theme when main window is created
             if UITheme.__kraActiveWindow is None:

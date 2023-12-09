@@ -21,7 +21,7 @@ from PyQt5.QtWidgets import (
         QWidget
     )
 
-from ..modules.utils import (loadXmlUi, replaceLineEditClearButton)
+from ..modules.utils import (regExIsValid, loadXmlUi, replaceLineEditClearButton)
 from ..modules.iconsizes import IconSizes
 from ..modules.imgutils import (buildIcon, getIconList, QUriIcon)
 from ..pktk import *
@@ -76,6 +76,9 @@ class WIconSelector(QWidget):
     # selected item changed, provide a list of string uri if there's selected item, or empty list if nothing is selected
     iconSelectionChanged = Signal(list)
 
+    # A double-click on an icon
+    doubleClicked = Signal(str)
+
     # Triggered when filter is applied (value >= 0 provide number of found items)
     # Triggered when filter is removed (value == -1)
     filterChanged = Signal(int)
@@ -129,6 +132,7 @@ class WIconSelector(QWidget):
         self.leFilterName.textEdited.connect(self.__updateFilter)
         self.tbFilterNameRegEx.toggled.connect(self.__updateFilter)
         self.lvIcons.selectionModel().selectionChanged.connect(self.__selectionChanged)
+        self.lvIcons.itemDoubleClicked.connect(self.__doubleClick)
         # because I'm too lazy to create a widget for this...
         self.__lvIconsOriginalWheelEvent = self.lvIcons.wheelEvent
         self.lvIcons.wheelEvent = self.__lvIconsWheelEvent
@@ -220,6 +224,9 @@ class WIconSelector(QWidget):
 
         self.lvIcons.setUpdatesEnabled(False)
 
+        if not regExIsValid(searchFilter):
+            return
+
         nbVisible = 0
         for index in range(self.lvIcons.count()):
             item = self.lvIcons.item(index)
@@ -278,6 +285,10 @@ class WIconSelector(QWidget):
         else:
             self.__lvIconsOriginalWheelEvent(event)
 
+    def __doubleClick(self, item):
+        """An item has been double-clicked"""
+        self.doubleClicked.emit(item.data(Qt.UserRole))
+
     def iconSizeIndex(self):
         """Return current icon size index"""
         return self.__iconSize.index()
@@ -304,6 +315,48 @@ class WIconSelector(QWidget):
             self.__actionViewModeIcon.setChecked(True)
         else:
             self.__actionViewModeList.setChecked(True)
+
+    def icon(self):
+        """Return selected item uri"""
+        index = self.lvIcons.selectionModel().currentIndex()
+        if index.isValid():
+            return index.data(Qt.UserRole)
+        return ''
+
+    def setIcon(self, iconId):
+        """Select given `iconId`; must be 'krita:xxx' or 'pktk:xxx' reference
+
+        If not found, return False
+        """
+        if not isinstance(iconId, str):
+            raise EInvalidType("Given `iconId` must be a <str>")
+
+        if iconId == '' or not re.search('^(krita|pktk):', iconId):
+            # avoid to search if we know we won't found it'
+            return False
+
+        for itemIndex in range(self.lvIcons.count()):
+            if self.lvIcons.item(itemIndex).data(Qt.UserRole) == iconId:
+                if self.cbIconsSource.isVisible():
+                    # need to switch current icon list?
+                    if re.search('^krita:', iconId):
+                        # krita icon
+                        if self.__options & WIconSelector.OPTIONS_SHOW_SOURCE_KRITA == WIconSelector.OPTIONS_SHOW_SOURCE_KRITA:
+                            # available in source list
+                            checkSource = self.cbIconsSource.currentData(Qt.UserRole)
+                            if not (checkSource == 0 or checkSource == WIconSelector.OPTIONS_SHOW_SOURCE_KRITA):
+                                self.cbIconsSource.setCurrentIndex(2)  # WIconSelector.OPTIONS_SHOW_SOURCE_KRITA
+                    else:
+                        # pktk icon
+                        if self.__options & WIconSelector.OPTIONS_SHOW_SOURCE_PKTK == WIconSelector.OPTIONS_SHOW_SOURCE_PKTK:
+                            # available in source list
+                            checkSource = self.cbIconsSource.currentData(Qt.UserRole)
+                            if not (checkSource == 0 or checkSource == WIconSelector.OPTIONS_SHOW_SOURCE_PKTK):
+                                self.cbIconsSource.setCurrentIndex(1)  # WIconSelector.OPTIONS_SHOW_SOURCE_PKTK
+
+                self.lvIcons.setCurrentRow(itemIndex)
+                return True
+        return False
 
 
 class WIconSelectorDialog(QDialog):

@@ -11,12 +11,16 @@
 
 import os
 
-from krita import Krita
+try:
+    from krita import Krita
 
-
-def i18n(text, context=None, plural=None):
-    """Not yet implemented => provide an internalisation function"""
-    return Krita.instance().krita_i18n(text)
+    def i18n(text, context=None, plural=None):
+        """Not yet implemented => provide an internalisation function"""
+        return Krita.instance().krita_i18n(text)
+except Exception:
+    def i18n(text, context=None, plural=None):
+        """Not yet implemented => provide an internalisation function"""
+        return text
 
 
 class EInvalidType(Exception):

@@ -80,6 +80,7 @@ class WMessageButtonBar(QWidget):
         super(WMessageButtonBar, self).__init__(parent)
 
         w = QWidget()
+        w.setProperty("class", "bg")
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(w)
@@ -88,6 +89,7 @@ class WMessageButtonBar(QWidget):
         self.__layout.setContentsMargins(3, 3, 3, 3)
 
         self.__label = QLabel()
+        self.__label.setProperty("class", "bg")
 
         self.__layout.addWidget(self.__label)
         self.__layout.addStretch()

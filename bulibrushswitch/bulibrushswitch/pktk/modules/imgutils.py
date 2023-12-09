@@ -160,7 +160,7 @@ def bullet(size=16, color=QColor(255, 255, 255), shape='square', scaleShape=1.0,
     offset = (size-shapeWidth)/2
 
     if shape == 'square':
-        canvas.fillRect(QRectF(offset, offset, shapeWidth, shapeWidth, color))
+        canvas.fillRect(QRectF(offset, offset, shapeWidth, shapeWidth), color)
     elif shape == 'roundSquare':
         if isinstance(radius, float):
             # given as percent, then relative

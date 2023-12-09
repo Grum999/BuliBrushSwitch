@@ -32,6 +32,7 @@
 
 from math import ceil
 import re
+import time
 
 from PyQt5.Qt import *
 from PyQt5.QtCore import (
@@ -73,7 +74,8 @@ from ..modules.tokenizer import (
         TokenStyle,
         TokenType,
         Tokenizer,
-        Token
+        Token,
+        Tokens
     )
 
 from .wsearchinput import SearchFromPlainTextEdit
@@ -110,7 +112,7 @@ class WCodeEditorHighlightLineRule:
         """Return rule id"""
         return 0x0000
 
-    def highlight(self, block, text, tokens, lineNumber, isCurrentLine):
+    def highlight(self, block, tokens, lineNumber, isCurrentLine):
         """Return highlight properties, or None
 
         When called, are provided:
@@ -136,9 +138,12 @@ class WCodeEditorBlockUserData(QTextBlockUserData):
     def __init__(self):
         super(WCodeEditorBlockUserData, self).__init__()
         self.__extraSelections = []
+        self.__tokens = None
+        self.__text = ''
 
     def __del__(self):
         self.__extraSelections = []
+        self.__tokens = None
 
     def extraSelections(self):
         """Return extraselection linked to block"""
@@ -147,6 +152,25 @@ class WCodeEditorBlockUserData(QTextBlockUserData):
     def setExtraSelections(self, extraSelections):
         """Set extraselection for block"""
         self.__extraSelections = extraSelections
+
+    def tokens(self):
+        """Return tokens for block"""
+        # before return tokens, ensure to ready to get the next one as first
+        if isinstance(self.__tokens, Tokens):
+            self.__tokens.resetIndex()
+        return self.__tokens
+
+    def setTokens(self, tokens):
+        """Set tokens for block"""
+        self.__tokens = tokens
+
+    def text(self):
+        """Return block text"""
+        return self.__text
+
+    def setText(self, text):
+        """Set block text"""
+        self.__text = text
 
 
 class WCodeEditor(QPlainTextEdit):
@@ -170,6 +194,9 @@ class WCodeEditor(QPlainTextEdit):
 
     styleChanged = Signal(str)              # style has been modified (style Id provided by signal)
 
+    textCopyToClipboard = Signal(str)
+    textCutToClipboard = Signal(str)
+
     KEY_INDENT = 'indent'
     KEY_DEDENT = 'dedent'
     KEY_TOGGLE_COMMENT = 'toggleComment'
@@ -178,6 +205,8 @@ class WCodeEditor(QPlainTextEdit):
     KEY_INSERTOVERWRITE_MODE = 'insertOverwriteMode'
     KEY_DELETE_LINE = 'deleteLine'
     KEY_IGNORE = 'ignore'
+    KEY_COPY_SELECTION = 'copy'
+    KEY_CUT_SELECTION = 'cut'
 
     # define base themes for color editor
     DEFAULT_DARK = WCodeEditorTheme(UITheme.DARK_THEME,
@@ -292,6 +321,8 @@ class WCodeEditor(QPlainTextEdit):
             QKeySequence(Qt.Key_Space + Qt.CTRL): WCodeEditor.KEY_COMPLETION,
             QKeySequence(Qt.Key_Insert): WCodeEditor.KEY_INSERTOVERWRITE_MODE,
             QKeySequence(Qt.Key_Delete + Qt.SHIFT): WCodeEditor.KEY_DELETE_LINE,
+            QKeySequence(Qt.Key_C + Qt.CTRL): WCodeEditor.KEY_COPY_SELECTION,
+            QKeySequence(Qt.Key_X + Qt.CTRL): WCodeEditor.KEY_CUT_SELECTION,
             # disable some default shortcuts
             # -- Ctrl+Insert: Copy the selected text to the clipboard.
             QKeySequence(Qt.Key_Insert + Qt.CTRL): WCodeEditor.KEY_IGNORE,
@@ -545,6 +576,16 @@ class WCodeEditor(QPlainTextEdit):
 
         self.setExtraSelections(extraSelections)
         self.__updateCurrentPositionAndToken(False)
+
+    def __rehighlightLinesRules(self):
+        """Re-apply highlight rules"""
+        cursorLine = self.textCursor().block().firstLineNumber()
+
+        block = self.document().firstBlock()
+        while block.isValid():
+            notCurrentLine = (block.blockNumber() != cursorLine)
+            self.checkIfHighlighted(block, not notCurrentLine)
+            block = block.next()
 
     def __isEmptyBlock(self, blockNumber):
         """Check is line for current block is empty or not"""
@@ -885,6 +926,10 @@ class WCodeEditor(QPlainTextEdit):
             self.doCompletionPopup()
         elif action == WCodeEditor.KEY_INSERTOVERWRITE_MODE:
             self.doOverwriteMode()
+        elif action == WCodeEditor.KEY_COPY_SELECTION:
+            self.copy()
+        elif action == WCodeEditor.KEY_CUT_SELECTION:
+            self.cut()
         return True
 
     def shortCut(self, key, modifiers):
@@ -929,51 +974,62 @@ class WCodeEditor(QPlainTextEdit):
                 returned = key
         return returned
 
-    def checkIfHighlighted(self, block, text, tokens, isCurrentLine):
+    def checkIfHighlighted(self, block, isCurrentLine):
         """Check if block line have to be highlighted, and update extra selection if needed"""
         extraSelections = self.extraSelections()
         newExtraSelection = []
+
+        blockText = block.text()
 
         userData = block.userData()
         if userData:
             userDataExtraSelection = userData.extraSelections()
         else:
             userDataExtraSelection = []
-
-        lineNumber = block.blockNumber()
-        for rule in self.__highlightedLinesRules:
-            filterExtraSelections(userDataExtraSelection, lineNumber, EXTRASELECTION_FILTER_REMOVE, WCodeEditor.__EXTRASELECTIONPROP_LINENUMBER, False, True)
-            filterExtraSelections(extraSelections, lineNumber, EXTRASELECTION_FILTER_REMOVE, WCodeEditor.__EXTRASELECTIONPROP_LINENUMBER, False, True)
-
-            if toApply := rule.highlight(block, text, tokens, lineNumber, isCurrentLine):
-                selection = QTextEdit.ExtraSelection()
-
-                selection.format.setBackground(toApply[1])
-                selection.format.setProperty(QTextFormat.FullWidthSelection, True)
-                selection.format.setProperty(WCodeEditor.__EXTRASELECTIONPROP_TYPE, toApply[0])
-                selection.format.setProperty(WCodeEditor.__EXTRASELECTIONPROP_SHOWGUTTER, toApply[2])
-                selection.format.setProperty(WCodeEditor.__EXTRASELECTIONPROP_LINENUMBER, lineNumber)
-                selection.cursor = QTextCursor(block)
-
-                extraSelections.append(selection)
-                userDataExtraSelection.append(selection)
-            elif userData:
-                userData.setHighlighted(None)
-
-        sortExtraSelections(userDataExtraSelection)
-        sortExtraSelections(extraSelections)
-        self.setExtraSelections(extraSelections)
-
-        if userData is None:
-            if len(userDataExtraSelection):
-                # need to create user data for block and set extra selections
-                userData = WCodeEditorBlockUserData()
-                userData.setExtraSelections(userDataExtraSelection)
-                block.setUserData(userData)
-        else:
-            # user data already exists, need to update it
-            userData.setExtraSelections(userDataExtraSelection)
+            userData = WCodeEditorBlockUserData()
             block.setUserData(userData)
+
+        if userData.text() == blockText:
+            # text unchanged, use tokens
+            tokens = userData.tokens()
+        elif self.__languageDef is not None:
+            # text changed, update tokens
+            tokens = self.__languageDef.tokenizer().tokenize(blockText)
+            userData.setTokens(tokens)
+            userData.setText(blockText)
+        else:
+            tokens = None
+
+        if len(self.__highlightedLinesRules):
+            updated = False
+            lineNumber = block.blockNumber()
+            for rule in self.__highlightedLinesRules:
+                filterExtraSelections(userDataExtraSelection, lineNumber, EXTRASELECTION_FILTER_REMOVE, WCodeEditor.__EXTRASELECTIONPROP_LINENUMBER, False, True)
+                filterExtraSelections(extraSelections, lineNumber, EXTRASELECTION_FILTER_REMOVE, WCodeEditor.__EXTRASELECTIONPROP_LINENUMBER, False, True)
+
+                if toApply := rule.highlight(block, tokens, lineNumber, isCurrentLine):
+                    selection = QTextEdit.ExtraSelection()
+
+                    selection.format.setBackground(toApply[1])
+                    selection.format.setProperty(QTextFormat.FullWidthSelection, True)
+                    selection.format.setProperty(WCodeEditor.__EXTRASELECTIONPROP_TYPE, toApply[0])
+                    selection.format.setProperty(WCodeEditor.__EXTRASELECTIONPROP_SHOWGUTTER, toApply[2])
+                    selection.format.setProperty(WCodeEditor.__EXTRASELECTIONPROP_LINENUMBER, lineNumber)
+                    selection.cursor = QTextCursor(block)
+
+                    extraSelections.append(selection)
+                    userDataExtraSelection.append(selection)
+                    updated = True
+
+            if updated:
+                sortExtraSelections(userDataExtraSelection)
+                sortExtraSelections(extraSelections)
+                self.setExtraSelections(extraSelections)
+
+                # user data already exists, need to update it
+                userData.setExtraSelections(userDataExtraSelection)
+        # no need - updates made on user are already taken in account
+        # block.setUserData(userData)
 
     def highlightedLineRules(self):
         """Return defined to highlight lines"""
@@ -986,8 +1042,7 @@ class WCodeEditor(QPlainTextEdit):
 
         if rule not in self.__highlightedLinesRules:
             self.__highlightedLinesRules.append(rule)
-            if self.__highlighter:
-                self.__highlighter.rehighlight()
+            self.__rehighlightLinesRules()
 
     def delHighlightedLineRule(self, rule):
         """Removed rule from defined rules"""
@@ -1008,8 +1063,7 @@ class WCodeEditor(QPlainTextEdit):
                     userData.setExtraSelections(userDataExtraSelection)
                     block.setUserData(userData)
 
-            if self.__highlighter:
-                self.__highlighter.rehighlight()
+            self.update()
 
     def doAutoIndent(self):
         """Indent current line to match indent of previous line
@@ -1442,7 +1496,11 @@ class WCodeEditor(QPlainTextEdit):
 
         if self.__languageDef:
             self.__highlighter = WCESyntaxHighlighter(self.document(), self.__languageDef, self)
+            self.__languageDef.tokenizer().setMassUpdate(True)
+            # ts=time.time()
             self.__highlighter.rehighlight()
+            # print("setLanguageDefinition--3 (re higlight)", time.time() - ts)
+            self.__languageDef.tokenizer().setMassUpdate(False)
         else:
             self.__highlighter = None
 
@@ -1899,7 +1957,7 @@ class WCodeEditor(QPlainTextEdit):
         if not replaceSelection and selectedText != '':
             cursor.insertText(selectedText)
 
-        if len(texts) >= 1:
+        if len(texts) > 1:
             p = cursor.anchor()
             cursor.insertText(texts[1])
             cursor.setPosition(p, QTextCursor.MoveAnchor)
@@ -2025,7 +2083,7 @@ class WCodeEditor(QPlainTextEdit):
         if not isinstance(themeId, str):
             raise EInvalidType("Given `themeId` must be a <str>")
 
-        if themeId in self.__themes:
+        if themeId != self.__currentTheme and themeId in self.__themes:
             self.__currentTheme = themeId
 
             self.setUpdatesEnabled(False)
@@ -2141,6 +2199,20 @@ class WCodeEditor(QPlainTextEdit):
             cursor.movePosition(QTextCursor.Right, anchorMode, colNumber)
 
         self.setTextCursor(cursor)
+
+    def copy(self):
+        """Copy text to clipboard, and emit signal textCopyToClipboard"""
+        text = self.textCursor().selectedText()
+        if text:
+            super(WCodeEditor, self).copy()
+            self.textCopyToClipboard.emit(text.replace('\u2029', '\n'))
+
+    def cut(self):
+        """Cut text to clipboard, and emit signal textCutToClipboard"""
+        text = self.textCursor().selectedText()
+        if text:
+            super(WCodeEditor, self).cut()
+            self.textCutToClipboard.emit(text.replace('\u2029', '\n'))
 
 
 class WCELineNumberArea(QWidget):
@@ -2359,6 +2431,7 @@ class WCESyntaxHighlighter(QSyntaxHighlighter):
         self.__cursorLastToken = None
         self.__cursorToken = None
         self.__editor = editor
+        self.__mlRuleType = None
 
     def highlightMultiLine(self, text):
         """Manage color syntax for multilines"""
@@ -2366,54 +2439,68 @@ class WCESyntaxHighlighter(QSyntaxHighlighter):
         # (if there's none, then nothing will happen)
         multiLineRules = self.__languageDef.tokenizer().rules(Tokenizer.RULES_MULTILINE)
         if len(multiLineRules) > 0:
+            globalIndex = 0
             searchOffset = 0
             # we have multilines rules, need to check status
             for ruleIndex, rule in enumerate(multiLineRules, 1):
+                if self.__mlRuleType is None:
+                    self.__mlRuleType = rule.type()
+
                 # method return a tuple of regular expression
-                regExStart, regExEnd = rule.multiLineRegEx()
+                for mRegExIndex, mRegEx in enumerate(rule.multiLineRegEx()):
+                    globalIndex += 1
+                    regExStart, regExEnd = mRegEx
 
-                if self.previousBlockState() == ruleIndex:
-                    # we're already in a multiline token block
-                    # then need to highlight from first character (position=0)
-                    pStart = 0
-                    pLength = 0
-                else:
-                    # Need to check for current multiline start delimiter
-                    matched = regExStart.match(text, searchOffset)
-                    pStart = matched.capturedStart()
-                    pLength = matched.capturedLength()
-
-                while pStart >= 0:
-                    # a start delimiter is found for current line
-
-                    # check for end delimiter
-                    matched = regExEnd.match(text, pStart + pLength)
-                    pEnd = matched.capturedStart()
-
-                    if pEnd > -1:
-                        # end delimiter found!
-                        formattingLength = pEnd - pStart + pLength + matched.capturedLength()
-                        self.setCurrentBlockState(0)
+                    if self.previousBlockState() == globalIndex:
+                        # we're already in a multiline token block
+                        # then need to highlight from first character (position=0)
+                        pStart = 0
+                        pLength = 0
                     else:
-                        # not found, multiline...
-                        self.setCurrentBlockState(ruleIndex)
-                        formattingLength = len(text) - pStart + pLength
+                        # Need to check for current multiline start delimiter
+                        matched = regExStart.match(text, searchOffset)
+                        pStart = matched.capturedStart()
+                        pLength = matched.capturedLength()
 
-                    # Format text
-                    self.setFormat(pStart, formattingLength, self.__languageDef.style(rule))
+                        matchedText = matched.captured()
+                        for ruleSubType in rule.subTypes():
+                            if ruleSubType[1].search(matchedText):
+                                self.__mlRuleType = ruleSubType[0]
+                                break
 
-                    # update offset for next search
-                    searchOffset = pStart + formattingLength
+                    while pStart >= 0:
+                        # a start delimiter is found for current line
 
-                    # Next match
-                    matched = regExStart.match(text, searchOffset)
-                    pStart = matched.capturedStart()
+                        # check for end delimiter
+                        matched = regExEnd.match(text, pStart + pLength)
+                        pEnd = matched.capturedStart()
 
-                # Return True if we are still inside a multi-line
-                # otherwise need to continue with next multiline rule
-                if self.currentBlockState() == ruleIndex:
-                    return True
+                        if pEnd > -1:
+                            # end delimiter found!
+                            formattingLength = pEnd - pStart + matched.capturedLength()
+                            self.setCurrentBlockState(0)
+                        else:
+                            # not found, multiline...
+                            self.setCurrentBlockState(globalIndex)
+                            formattingLength = len(text) - pStart + pLength
 
+                        # Format text
+                        self.setFormat(pStart, formattingLength, self.__languageDef.style(self.__mlRuleType))
+
+                        # update offset for next search
+                        searchOffset = pStart + formattingLength
+
+                        # Next match
+                        matched = regExStart.match(text, searchOffset)
+                        pStart = matched.capturedStart()
+                        pLength = matched.capturedLength()
+
+                    # Return True if we are still inside a multi-line
+                    # otherwise need to continue with next multiline rule
+                    if self.currentBlockState() == globalIndex:
+                        return True
+
+        self.__mlRuleType = None
         return False
 
     def highlightBlock(self, text):
@@ -2423,7 +2510,7 @@ class WCESyntaxHighlighter(QSyntaxHighlighter):
         Then only a subset of entire source code is highlithed here
         It's a problem for multiline text highlighting like
         - multiline comment in C /*  ...  */
-        - multiline string in Pyhton  '''  ...  '''
+        - multiline string in Python  '''  ...  '''
 
         The thing is the current item to parse may not know the previous/next lines define begin/end of multiline text
         """
@@ -2432,23 +2519,26 @@ class WCESyntaxHighlighter(QSyntaxHighlighter):
 
         if self.__languageDef is None or len(self.__languageDef.tokenizer().rules()) == 0:
             self.setFormat(0, len(text), self.__editor.viewport().palette().text().color())
-            self.__editor.checkIfHighlighted(self.currentBlock(), text, None, not notCurrentLine)
+            self.__editor.checkIfHighlighted(self.currentBlock(), not notCurrentLine)
             return
 
         if text == '':
             # empty string, no need to proceed it
             self.setCurrentBlockState(self.previousBlockState())
-            self.__editor.checkIfHighlighted(self.currentBlock(), '', None, not notCurrentLine)
+            self.__editor.checkIfHighlighted(self.currentBlock(), not notCurrentLine)
             return
 
         # consider current block at Ok
         self.setCurrentBlockState(0)
 
-        tokens = self.__languageDef.tokenizer().tokenize(text)
         self.__cursorToken = None
         self.__cursorPreviousToken = None
 
-        self.__editor.checkIfHighlighted(self.currentBlock(), text, tokens, not notCurrentLine)
+        self.__editor.checkIfHighlighted(self.currentBlock(), not notCurrentLine)
+        tokens = self.currentBlock().userData().tokens()
+
+        if not tokens or tokens.length() == 0:
+            return
 
         cursor = self.__editor.textCursor()
         cursorPosition = cursor.selectionEnd()
@@ -2477,4 +2567,3 @@ class WCESyntaxHighlighter(QSyntaxHighlighter):
     def lastCursorToken(self):
         """Return last token processed before current token on which cursor is"""
         return self.__cursorLastToken
-

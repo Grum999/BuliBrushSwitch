@@ -29,7 +29,9 @@ from PyQt5.QtGui import (
         QFontMetrics,
         QPen,
         QBrush,
-        QPixmap
+        QPixmap,
+        QColor,
+        QPalette
     )
 from PyQt5.QtCore import (
         pyqtSignal as Signal
@@ -60,6 +62,7 @@ class WTabBar(QTabBar):
     """
     __ROLE_RAW = Qt.UserRole + 10000
     __ROLE_MODIFIED = Qt.UserRole + 10001
+    __ROLE_COLOR = Qt.UserRole + 10002
 
     class MovingTab(QWidget):
         """A private QWidget that paints the current moving tab"""
@@ -135,7 +138,8 @@ class WTabBar(QTabBar):
 
     def __drawTab(self, painter, index, tabOption, forPixmap=False):
         """Draw tab according to current state"""
-        if self.tabModified(index):
+        tabModified = self.tabModified(index)
+        if tabModified:
             # set font bold as bold for unsaved tab
             font = painter.font()
             font.setBold(True)
@@ -144,7 +148,7 @@ class WTabBar(QTabBar):
 
         painter.drawControl(QStyle.CE_TabBarTab, tabOption)
 
-        if self.tabModified(index):
+        if tabModified:
             # draw bullet
             painter.setRenderHint(QPainter.Antialiasing)
 
@@ -173,7 +177,7 @@ class WTabBar(QTabBar):
                 pY = rect.y() + rect.height()/2
 
             painter.setPen(QPen(Qt.transparent))
-            painter.setBrush(QBrush(self.palette().highlight().color()))
+            painter.setBrush(QBrush(self.tabData(index, WTabBar.__ROLE_COLOR)))
 
             painter.drawEllipse(QPointF(pX, pY), bRadius, bRadius)
 
@@ -379,18 +383,23 @@ class WTabBar(QTabBar):
         """return tab flag modified"""
         return self.tabData(index, WTabBar.__ROLE_MODIFIED)
 
-    def setTabModified(self, index, value):
+    def setTabModified(self, index, value, color=None):
         """Set tab flag as modified"""
         if isinstance(value, bool):
             tabText = self.tabText(index)
 
             self.setTabData(index, value, WTabBar.__ROLE_MODIFIED)
 
+            if not isinstance(color, QColor):
+                color = self.palette().color(QPalette.Active, QPalette.Highlight)
+            self.setTabData(index, color, WTabBar.__ROLE_COLOR)
+
             # weird method...
             # not able to find how to force widget to recalculate and apply tabs sizes then, force it by renaming tab...
             # (call the method self.updateGeometry() doesn't change anything)
             self.setTabText(index, tabText+' - ')
             self.setTabText(index, tabText)
+            self.update()
 
     def tabData(self, index, role=Qt.UserRole):
         """Override tabData() to be able to manage more than one data value per tab"""
@@ -399,9 +408,10 @@ class WTabBar(QTabBar):
 
         if not isinstance(rawData, dict):
             rawData = {Qt.UserRole: QVariant(),
-                       WTabBar.__ROLE_MODIFIED: False
+                       WTabBar.__ROLE_MODIFIED: False,
+                       WTabBar.__ROLE_COLOR: self.palette().color(QPalette.Active, QPalette.Highlight)
                        }
-        if role in (Qt.UserRole, WTabBar.__ROLE_MODIFIED):
+        if role in (Qt.UserRole, WTabBar.__ROLE_MODIFIED, WTabBar.__ROLE_COLOR):
             return rawData[role]
         elif role == WTabBar.__ROLE_RAW:
             return rawData
@@ -414,7 +424,7 @@ class WTabBar(QTabBar):
             # valid index
             currentData = self.tabData(index, WTabBar.__ROLE_RAW)
 
-            if role in (Qt.UserRole, WTabBar.__ROLE_MODIFIED):
+            if role in (Qt.UserRole, WTabBar.__ROLE_MODIFIED, WTabBar.__ROLE_COLOR):
                 currentData[role] = value
 
             super(WTabBar, self).setTabData(index, currentData)
