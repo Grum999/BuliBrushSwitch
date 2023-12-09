@@ -35,13 +35,16 @@
 # -----------------------------------------------------------------------------
 
 from enum import Enum
+import xml.etree.ElementTree as ETree
 import re
+import base64
 
 from ..pktk import *
 from krita import (
         Document,
         Node,
-        Resource
+        Resource,
+        Preset
     )
 
 from PyQt5.QtCore import (
@@ -119,6 +122,7 @@ class EKritaBrushPreset:
                             ]
 
     __brushes = None
+    __brushTips = None
     __presetChooserWidget = None
 
     @staticmethod
@@ -127,6 +131,7 @@ class EKritaBrushPreset:
         # this is pretty long!!!
         # on my DEV computer, 1058 preset --> takes ~4seconds to return list on first execution!
         EKritaBrushPreset.__brushes = Krita.instance().resources("preset")
+        EKritaBrushPreset.__brushTips = Krita.instance().resources("brush")
 
     @staticmethod
     def getName(name=None):
@@ -191,6 +196,56 @@ class EKritaBrushPreset:
             EKritaBrushPreset.initialise()
 
         return EKritaBrushPreset.__brushes[EKritaBrushPreset.getName(name)]
+
+    @staticmethod
+    def getPresetProperties(name=None):
+        """Return preset proeprties for given name
+
+        Given `name` can be a <str> or a <Resource> (preset)
+
+        If brush preset is found, return brush preset
+        Otherwise if can't be found in presets, return the default brush preset
+        """
+        def getAttr(root, path, attribute, default):
+            returned = default
+            try:
+                if path == '':
+                    returned = root.attrib[attribute]
+                else:
+                    returned = root.find(path).attrib[attribute]
+            except Exception as e:
+                print("Can't parse XML preset?", e)
+            return returned
+
+        def getValue(root, path, default):
+            returned = default
+            try:
+                if path == '':
+                    returned = root.text
+                else:
+                    returned = root.find(path).text
+            except Exception as e:
+                print("Can't parse XML preset?", e)
+            return returned
+
+        if EKritaBrushPreset.__brushes is None:
+            EKritaBrushPreset.initialise()
+
+        preset = Preset(EKritaBrushPreset.__brushes[EKritaBrushPreset.getName(name)])
+        xmlRoot = ETree.fromstring(preset.toXML())
+
+        returned = {'brushTip': {'fileName': getAttr(xmlRoot, './resources/resource', 'filename', ''),
+                                 'name': getAttr(xmlRoot, './resources/resource', 'name', ''),
+                                 'pixmap': QPixmap()
+                                 },
+                    'embedded_resources': getAttr(xmlRoot, '', 'embedded_resources', '0') == '1'
+                    }
+
+        if returned['brushTip']['name'] != '':
+            if returned['brushTip']['name'] in EKritaBrushPreset.__brushTips:
+                returned['brushTip']['pixmap'] = QPixmap.fromImage(EKritaBrushPreset.__brushTips[returned['brushTip']['name']].image())
+
+        return returned
 
     @staticmethod
     def found(name):
