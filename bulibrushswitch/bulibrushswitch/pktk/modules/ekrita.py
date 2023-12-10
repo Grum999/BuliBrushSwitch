@@ -123,6 +123,7 @@ class EKritaBrushPreset:
 
     __brushes = None
     __brushTips = None
+    __brushPatterns = None
     __presetChooserWidget = None
 
     @staticmethod
@@ -132,6 +133,7 @@ class EKritaBrushPreset:
         # on my DEV computer, 1058 preset --> takes ~4seconds to return list on first execution!
         EKritaBrushPreset.__brushes = Krita.instance().resources("preset")
         EKritaBrushPreset.__brushTips = Krita.instance().resources("brush")
+        EKritaBrushPreset.__brushPatterns = Krita.instance().resources("pattern")
 
     @staticmethod
     def getName(name=None):
@@ -231,19 +233,35 @@ class EKritaBrushPreset:
         if EKritaBrushPreset.__brushes is None:
             EKritaBrushPreset.initialise()
 
-        preset = Preset(EKritaBrushPreset.__brushes[EKritaBrushPreset.getName(name)])
-        xmlRoot = ETree.fromstring(preset.toXML())
-
-        returned = {'brushTip': {'fileName': getAttr(xmlRoot, './resources/resource', 'filename', ''),
-                                 'name': getAttr(xmlRoot, './resources/resource', 'name', ''),
-                                 'pixmap': QPixmap()
+        returned = {'brushTip': {'fileName': '',
+                                 'name': '',
+                                 'pixmap': QPixmap(),
+                                 'type': ''
                                  },
-                    'embedded_resources': getAttr(xmlRoot, '', 'embedded_resources', '0') == '1'
+                    'embedded_resources': False
                     }
 
+        preset = Preset(EKritaBrushPreset.__brushes[EKritaBrushPreset.getName(name)])
+        xmlDefinition = preset.toXML().encode('ascii', 'xmlcharrefreplace').decode('utf-8')
+        xmlDefinition = re.sub(r'[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]', "?", xmlDefinition)
+        try:
+            xmlRoot = ETree.fromstring(xmlDefinition)
+
+            returned = {'brushTip': {'fileName': getAttr(xmlRoot, './resources/resource', 'filename', ''),
+                                     'name': getAttr(xmlRoot, './resources/resource', 'name', ''),
+                                     'pixmap': QPixmap(),
+                                     'type': getAttr(xmlRoot, './resources/resource', 'type', '')
+                                     },
+                        'embedded_resources': getAttr(xmlRoot, '', 'embedded_resources', '0') == '1'
+                        }
+        except Exception as e:
+            print("Can't parse XML preset?", e, preset.toXML())
+
         if returned['brushTip']['name'] != '':
-            if returned['brushTip']['name'] in EKritaBrushPreset.__brushTips:
+            if returned['brushTip']['type'] == 'brushes' and returned['brushTip']['name'] in EKritaBrushPreset.__brushTips:
                 returned['brushTip']['pixmap'] = QPixmap.fromImage(EKritaBrushPreset.__brushTips[returned['brushTip']['name']].image())
+            elif returned['brushTip']['type'] == 'patterns' and returned['brushTip']['name'] in EKritaBrushPreset.__brushPatterns:
+                returned['brushTip']['pixmap'] = QPixmap.fromImage(EKritaBrushPreset.__brushPatterns[returned['brushTip']['name']].image())
 
         return returned
 
