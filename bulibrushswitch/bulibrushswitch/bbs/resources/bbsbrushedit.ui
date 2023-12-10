@@ -328,7 +328,7 @@
      <item row="4" column="2">
       <widget class="QSlider" name="hsBrushRotation">
        <property name="toolTip">
-        <string>Define specific flow to use for brush</string>
+        <string>Define specific rotation to use for brush</string>
        </property>
        <property name="minimum">
         <number>-36000</number>
@@ -359,7 +359,7 @@
      <item row="4" column="4">
       <widget class="QDoubleSpinBox" name="dsbBrushRotation">
        <property name="toolTip">
-        <string>Define specific flow to use for brush</string>
+        <string>Define specific rotation to use for brush</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
