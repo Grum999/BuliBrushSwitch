@@ -42,7 +42,7 @@ Shortcuts for brushes can be managed directly from plugin or from default Krita'
 ## Download, Install & Execute
 
 ### Download
-+ **[ZIP ARCHIVE - v1.0.2](https://github.com/Grum999/BuliBrushSwitch/releases/download/1.0.2/bulibrushswitch.zip)**
++ **[ZIP ARCHIVE - v1.1.0](https://github.com/Grum999/BuliBrushSwitch/releases/download/1.1.0/bulibrushswitch.zip)**
 + **[SOURCE](https://github.com/Grum999/BuliBrushSwitch)**
 
 
@@ -64,8 +64,10 @@ Once installed, you should have a new button in toolbar, near the Krita's *Choos
 
 ### Tested platforms
 
-Plugin requires at least Krita 5.2.0 (Linux appimage)
-Didn't has time to test it on other platform, should be OK. Normally. I hope ðŸ˜….
+Plugin requires at least Krita 5.2.2
+Has been tested:
+- Linux AppImage
+- Windows 10
 
 ---
 
@@ -73,6 +75,9 @@ Didn't has time to test it on other platform, should be OK. Normally. I hope ðŸ˜
 ## Plugin's life
 
 ### What's new?
+_[2023-12-10] Version 1.1.0_ *[Show detailed release content](./releases-notes/RELEASE-1.1.0.md)*
+- Implement - Brush Settings - *Brush rotation*
+
 _[2023-12-09] Version 1.0.2_ *[Show detailed release content](./releases-notes/RELEASE-1.0.2.md)*
 - Fix bug - Regression on brush editor
 
