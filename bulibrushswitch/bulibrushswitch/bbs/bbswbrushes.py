@@ -54,7 +54,7 @@ from bulibrushswitch.pktk.modules.uitheme import UITheme
 from bulibrushswitch.pktk.modules.iconsizes import IconSizes
 from bulibrushswitch.pktk.modules.utils import replaceLineEditClearButton
 from bulibrushswitch.pktk.modules.strutils import (nbsp, stripHtml)
-from bulibrushswitch.pktk.modules.imgutils import (warningAreaBrush, qImageToPngQByteArray, bullet, buildIcon, roundedPixmap)
+from bulibrushswitch.pktk.modules.imgutils import (warningAreaBrush, qImageToPngQByteArray, bullet, buildIcon, roundedPixmap, checkerBoardImage)
 from bulibrushswitch.pktk.modules.resutils import (ManagedResourceTypes, ManagedResource, ManagedResourcesModel)
 from bulibrushswitch.pktk.modules.ekrita import (EKritaBrushPreset, EKritaShortcuts, EKritaBlendingModes)
 from bulibrushswitch.pktk.modules.ekrita_tools import (EKritaToolsCategory, EKritaTools)
@@ -3373,11 +3373,25 @@ class BBSBrushesEditor(WEDialog):
         self.__inColorUiChangeEvent = False
 
         brushPresetNfo = EKritaBrushPreset.getPresetProperties(brush.name())['brushTip']
-        if brushPresetNfo['name'] != '':
+        if brushPresetNfo['name'] != '' and brushPresetNfo['type'] == 'brushes':
             self.__brushTip = brushPresetNfo['pixmap'].scaled(BBSBrushesEditor.__ICON_SIZE, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             self.__brushTipOffsetX = -self.__brushTip.width()//2
             self.__brushTipOffsetY = -self.__brushTip.height()//2
-            self.__brushTipComputed = QPixmap(128, 128)
+            self.__brushTipComputed = QPixmap(BBSBrushesEditor.__ICON_SIZE)
+            self.__brushTipBg = checkerBoardImage(BBSBrushesEditor.__ICON_SIZE)
+
+            if not self.__brushTip.hasAlpha():
+                print('no alpha')
+                img = self.__brushTip.toImage()
+                img2 = img.convertToFormat(QImage.Format_Grayscale8)
+                img2.invertPixels()
+                img.setAlphaChannel(img2)
+                self.__brushTip = QPixmap.fromImage(img)
+                canvas = QPainter()
+                canvas.begin(self.__brushTip)
+                canvas.setCompositionMode(QPainter.CompositionMode_SourceAtop)
+                canvas.fillRect(self.__brushTip.rect(), QColor('#000000'))
+                canvas.end()
         else:
             self.__brushTip = None
             self.__brushTipOffsetX = 0
@@ -3591,9 +3605,9 @@ class BBSBrushesEditor(WEDialog):
 
     def __computeBrushTip(self):
         """Generate brush tip taking in account current brush rotation"""
-        self.__brushTipComputed.fill(Qt.white)
         painter = QPainter()
         painter.begin(self.__brushTipComputed)
+        painter.drawPixmap(0, 0, self.__brushTipBg)
         painter.setRenderHints(QPainter.Antialiasing | QPainter.SmoothPixmapTransform)
         painter.translate(BBSBrushesEditor.__ICON_CENTER)
         painter.rotate(-self.dsbBrushRotation.value())
