@@ -140,6 +140,7 @@
     <file alias="home">light/32dp/home.svg</file>
     <file alias="image">light/32dp/image.svg</file>
     <file alias="image_convert">light/32dp/image_convert.svg</file>
+    <file alias="image_crop">light/32dp/image_crop.svg</file>
     <file alias="layers">light/32dp/layers.svg</file>
     <file alias="layers_add">light/32dp/layers_add.svg</file>
     <file alias="layers_del">light/32dp/layers_del.svg</file>
@@ -395,6 +396,7 @@
     <file alias="home">light/32dp-disabled/home.svg</file>
     <file alias="image">light/32dp-disabled/image.svg</file>
     <file alias="image_convert">light/32dp-disabled/image_convert.svg</file>
+    <file alias="image_crop">light/32dp-disabled/image_crop.svg</file>
     <file alias="layers">light/32dp-disabled/layers.svg</file>
     <file alias="layers_add">light/32dp-disabled/layers_add.svg</file>
     <file alias="layers_del">light/32dp-disabled/layers_del.svg</file>

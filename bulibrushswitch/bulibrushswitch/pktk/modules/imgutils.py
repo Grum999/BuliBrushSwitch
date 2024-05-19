@@ -256,6 +256,10 @@ def buildIcon(icons, size=None):
                           (f':/pktk/images/disabled/{rfind.groups()[0]}', QIcon.Disabled)], size)
     elif isinstance(icons, str) and (rfind := re.match("krita:(.*)", icons)):
         return Krita.instance().icon(rfind.groups()[0])
+    elif isinstance(icons, str) and (rfind := re.match("qicon:b64=(.*)", icons)):
+        icon = QIconPickable()
+        icon.fromB64(icons)
+        return icon
     else:
         raise EInvalidType("Given `icons` must be a <str> or a <list> of <tuples>")
 

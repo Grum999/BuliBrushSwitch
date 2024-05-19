@@ -59,7 +59,7 @@
          <bool>false</bool>
         </property>
         <property name="toolTip">
-         <string>Create a new setup</string>
+         <string>Create a new setup pool</string>
         </property>
         <property name="styleSheet">
          <string notr="true">QToolButton::menu-indicator { image: none; }</string>
@@ -89,7 +89,7 @@
          <bool>false</bool>
         </property>
         <property name="toolTip">
-         <string>Load setups from an external file</string>
+         <string>Load setup pool from an external file</string>
         </property>
         <property name="styleSheet">
          <string notr="true">QToolButton::menu-indicator { image: none; }</string>
@@ -119,7 +119,7 @@
          <bool>false</bool>
         </property>
         <property name="toolTip">
-         <string>Save setups to an external file</string>
+         <string>Save setup pool to an external file</string>
         </property>
         <property name="text">
          <string>...</string>
@@ -429,7 +429,7 @@
          <string>Icon size</string>
         </property>
         <property name="maximum">
-         <number>6</number>
+         <number>4</number>
         </property>
         <property name="pageStep">
          <number>1</number>

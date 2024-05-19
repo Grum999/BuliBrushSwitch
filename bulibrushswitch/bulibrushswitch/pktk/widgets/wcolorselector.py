@@ -1811,7 +1811,7 @@ class WColorCssEdit(QWidget):
 
     def alphaButtonChecked(self):
         """Return if button alpha is checked"""
-        return self.__tbAlpha.isChecked() and self.__tbAlpha.isVisible()
+        return self.__tbAlpha.isChecked()
 
     def setAlphaButtonChecked(self, value):
         """Set if button alpha is visible"""
@@ -2258,22 +2258,22 @@ class WColorPicker(QWidget):
     __COLOR_PALETTE = 30
     __COLOR_CSSRGB = 40
 
-    OPTION_MENU_RGB =        0b0000000000000001
-    OPTION_MENU_CMYK =       0b0000000000000010
-    OPTION_MENU_HSV =        0b0000000000000100
-    OPTION_MENU_HSL =        0b0000000000001000
-    OPTION_MENU_ALPHA =      0b0000000000010000
-    OPTION_MENU_CSSRGB =     0b0000000000100000
-    OPTION_MENU_COLCOMP =    0b0000000001000000
+    OPTION_MENU_RGB =         0b0000000000000001
+    OPTION_MENU_CMYK =        0b0000000000000010
+    OPTION_MENU_HSV =         0b0000000000000100
+    OPTION_MENU_HSL =         0b0000000000001000
+    OPTION_MENU_ALPHA =       0b0000000000010000
+    OPTION_MENU_CSSRGB =      0b0000000000100000
+    OPTION_MENU_COLCOMP =     0b0000000001000000
 
     OPTION_MENU_ORIENTATION = 0b0000100000000000
 
-    OPTION_MENU_COLWHEEL =   0b0001000000000000
-    OPTION_MENU_PALETTE =    0b0010000000000000
-    OPTION_MENU_UICOMPACT =  0b0100000000000000
-    OPTION_MENU_COLPREVIEW = 0b1000000000000000
+    OPTION_MENU_COLWHEEL =    0b0001000000000000
+    OPTION_MENU_PALETTE =     0b0010000000000000
+    OPTION_MENU_UICOMPACT =   0b0100000000000000
+    OPTION_MENU_COLPREVIEW =  0b1000000000000000
 
-    OPTION_MENU_ALL =        0b1111111111111111  # All
+    OPTION_MENU_ALL =         0b1111111111111111  # All
 
     OPTION_ORIENTATION_VERTICAL =   1
     OPTION_ORIENTATION_HORIZONTAL = 2
@@ -2882,6 +2882,10 @@ class WColorPicker(QWidget):
         """Return if option 'show colorCssRGB entry' is active or not"""
         return self.__optionShowColorCssRGB
 
+    def optionShowCssRgbAlphaChecked(self):
+        """Return if option 'show colorCssRgbAlpha entry' is checked or not"""
+        return self.__colorCssEdit.alphaButtonChecked()
+
     def optionShowColorCombination(self):
         """Return current option 'show color combination' value"""
         return self.__optionShowColorCombination
@@ -3009,7 +3013,7 @@ class WColorPicker(QWidget):
         self.__updateSize()
 
     def setOptionShowCssRgbAlphaChecked(self, value):
-        """Set option 'css color code - alpha button checked' is active or not"""
+        """Set option 'css color code - alpha button' is checked or not"""
         if not isinstance(value, bool):
             return
 
@@ -3348,29 +3352,28 @@ class WColorPicker(QWidget):
         of an interface with on function call
 
         Each item in list provide one option layout:
-            'colorRGB'              Display RGB sliders in UI
-            'colorCMYK'             Display CMYK sliders in UI
-            'colorHSV'              Display HSV sliders in UI
-            'colorHSL'              Display HSL sliders in UI
-            'colorAlpha'            Display Alpha slider in UI
-            'colorCssRGB'           Display color css input field in UI
-            'colorPalette'          Display color palette in UI
-            'colorWheel'            Display color wheel in UI
-            'colorPreview'          Display color preview on color wheel
+            'colorRGB'                  Display RGB sliders in UI
+            'colorCMYK'                 Display CMYK sliders in UI
+            'colorHSV'                  Display HSV sliders in UI
+            'colorHSL'                  Display HSL sliders in UI
+            'colorAlpha'                Display Alpha slider in UI
+            'colorCssRGB'               Display color css input field in UI
+            'colorCssRGBAlphaChecked'   Display Alpha button for color css input
+            'colorPalette'              Display color palette in UI
+            'colorWheel'                Display color wheel in UI
+            'colorPreview'              Display color preview on color wheel
 
-            'colorRGB%'             Set RGB sliders value in percentage
-            'colorCMYK%'            Set CMYK sliders value in percentage
-            'colorHSV%'             Set HSV sliders value in percentage
-            'colorHSL%'             Set HSL sliders value in percentage
-            'colorAlpha%'           Set Alpha slider value in percentage
+            'colorRGB%'                 Set RGB sliders value in percentage
+            'colorCMYK%'                Set CMYK sliders value in percentage
+            'colorHSV%'                 Set HSV sliders value in percentage
+            'colorHSL%'                 Set HSL sliders value in percentage
+            'colorAlpha%'               Set Alpha slider value in percentage
 
-            'compactUi'             Set compact UI
+            'compactUi'                 Set compact UI
 
-            'colorPalette:XXX'      Define palette 'XXX' as active palette
-            'colorCombination:N'    Display complementary color combination (number: see WColorComplementary COLOR_COMBINATION_xxx values)
-            'layoutOrientation:N'   Define orientation horizontal/vertical (number: see WColorPicker OPTION_ORIENTATION_xxx values)
-
-
+            'colorPalette:XXX'          Define palette 'XXX' as active palette
+            'colorCombination:N'        Display complementary color combination (number: see WColorComplementary COLOR_COMBINATION_xxx values)
+            'layoutOrientation:N'       Define orientation horizontal/vertical (number: see WColorPicker OPTION_ORIENTATION_xxx values)
         """
         if not (isinstance(layout, list) or isinstance(layout, tuple)):
             raise EInvalidType('Given `layout` must be a <list> or <tuple>')

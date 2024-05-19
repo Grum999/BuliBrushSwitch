@@ -37,7 +37,6 @@
 from enum import Enum
 import xml.etree.ElementTree as ETree
 import re
-import base64
 
 from ..pktk import *
 from krita import (
@@ -1289,10 +1288,10 @@ class EKritaNode:
 
         Method return a list of shapes (shape inserted into layer)
         """
-        if isinstance(svgContent, str):
-            svgContent = svgContent.encode()
+        if isinstance(svgContent, bytes):
+            svgContent = svgContent.decode()
 
-        if not isinstance(svgContent, bytes):
+        if not isinstance(svgContent, str):
             raise EInvalidType("Given `svgContent` must be a valid <str> or <bytes> SVG document")
 
         if not isinstance(layerNode, Node) or layerNode.type() != 'vectorlayer':
@@ -1302,33 +1301,9 @@ class EKritaNode:
             document = Krita.instance().activeDocument()
 
         if not isinstance(document, Document):
-            raise EInvalidType("Given `layerNode` must be a valid <Document > ")
+            raise EInvalidType("Given `layerNode` must be a valid <Document>")
 
-        shapes = [shape for shape in layerNode.shapes()]
-
-        activeNode = document.activeNode()
-        document.setActiveNode(layerNode)
-        document.waitForDone()
-
-        # Note: following sleep() is here because waitForDone() doesn't seems to
-        #       wait for active node changed...
-        #       set an arbitrary sleep() delay allows to ensure that node is active
-        #       at the end of method execution
-        #       hope current delay is not too short (works for me... but can't put
-        #       a too long delay)
-        #
-        #       Problem occurs with krita 4.4.2 & and tested Krita plus/next tested [2020-01-05]
-        EKritaNode.__sleep(100)
-
-        mimeContent = QMimeData()
-        mimeContent.setData('image/svg', svgContent)
-        mimeContent.setData('BCIGNORE', b'')
-        QGuiApplication.clipboard().setMimeData(mimeContent)
-        Krita.instance().action('edit_paste').trigger()
-
-        newShapes = [shape for shape in layerNode.shapes() if shape not in shapes]
-
-        return newShapes
+        return layerNode.addShapesFromSvg(svgContent)
 
     @staticmethod
     def above(layerNode):

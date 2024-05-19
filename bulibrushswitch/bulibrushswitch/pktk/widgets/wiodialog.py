@@ -98,6 +98,7 @@ class WDialogMessage(QDialog):
 
         self.setSizeGripEnabled(True)
         self.setModal(True)
+        self.setWindowFlags(Qt.Dialog | Qt.WindowTitleHint | Qt.WindowStaysOnTopHint)
 
         self.setWindowTitle(title)
 
@@ -1549,6 +1550,8 @@ class WDialogFile(QFileDialog):
     OPTION_PREVIEW_WIDTH =          0b00000010
     OPTION_PREVIEW_WIDGET =         0b00000011
     OPTION_SETTINGS_WIDGET =        0b00000100
+    OPTION_SETTINGS_VIEWMODE =      0b00000101
+    OPTION_SETTINGS_DEFSUFFIX =     0b00000110
 
     OPTION_ACCEPT_MODE =            0b01000000
     OPTION_FILE_SELECTION_MODE =    0b01000001
@@ -1609,7 +1612,7 @@ class WDialogFile(QFileDialog):
 
     @staticmethod
     def openDirectory(caption=None, directory=None, filter=None, options=None):
-        """A predefined function to open a DIERCTORY
+        """A predefined function to open a DIRECTORY
 
         If action is cancelled, return None
         Otherwise return a <dict> with following keys:
@@ -1662,10 +1665,8 @@ class WDialogFile(QFileDialog):
     def __init__(self, caption=None, directory=None, filter=None, options=None):
         super(WDialogFile, self).__init__(None, caption, directory, filter)
 
-        self.__originalDlgBoxLayout = self.layout()
-
-        self.setOption(QFileDialog.DontUseNativeDialog, True)
         self.setMaximumSize(0xffffff, 0xffffff)
+        self.setWindowFlags(Qt.Dialog | Qt.WindowTitleHint | Qt.WindowStaysOnTopHint)
 
         self.__selectedFile = ''
         self.__selectedFiles = []
@@ -1675,6 +1676,8 @@ class WDialogFile(QFileDialog):
                           WDialogFile.OPTION_PREVIEW_WIDTH: WDialogFile.PREVIEW_WIDTH,
                           WDialogFile.OPTION_PREVIEW_WIDGET: None,
                           WDialogFile.OPTION_SETTINGS_WIDGET: None,
+                          WDialogFile.OPTION_SETTINGS_DEFSUFFIX: '',
+                          WDialogFile.OPTION_SETTINGS_VIEWMODE: QFileDialog.Detail,
 
                           WDialogFile.OPTION_ACCEPT_MODE: WDialogFile.AcceptOpen,
                           WDialogFile.OPTION_FILE_SELECTION_MODE: WDialogFile.ExistingFile
@@ -1682,7 +1685,7 @@ class WDialogFile(QFileDialog):
 
         # check and apply provided options
         if isinstance(options, dict):
-            # checking validty of given given options and  initialise self.__options
+            # checking validity of given given options and  initialise self.__options
             if WDialogFile.OPTION_PREVIEW_WIDGET in options:
                 if options[WDialogFile.OPTION_PREVIEW_WIDGET] == 'image':
                     # if image preview is required, initialise internal image preview widget
@@ -1715,14 +1718,24 @@ class WDialogFile(QFileDialog):
             if WDialogFile.OPTION_ACCEPT_MODE in options and options[WDialogFile.OPTION_ACCEPT_MODE] in (WDialogFile.AcceptOpen, WDialogFile.AcceptSave):
                 self.__options[WDialogFile.OPTION_ACCEPT_MODE] = options[WDialogFile.OPTION_ACCEPT_MODE]
 
+            if WDialogFile.OPTION_SETTINGS_VIEWMODE in options and options[WDialogFile.OPTION_SETTINGS_VIEWMODE] in (QFileDialog.Detail, QFileDialog.List):
+                self.__options[WDialogFile.OPTION_SETTINGS_VIEWMODE] = options[WDialogFile.OPTION_SETTINGS_VIEWMODE]
+
+            if WDialogFile.OPTION_SETTINGS_DEFSUFFIX in options and isinstance(options[WDialogFile.OPTION_SETTINGS_DEFSUFFIX], str):
+                self.__options[WDialogFile.OPTION_SETTINGS_DEFSUFFIX] = options[WDialogFile.OPTION_SETTINGS_DEFSUFFIX]
+
         # --------------------------------------
         # start to reorganize file dialog layout
         # --------------------------------------
+        # need to use Qt file dialog
+        self.setOption(QFileDialog.DontUseNativeDialog, True)
+        self.__originalDlgBoxLayout = self.layout()
 
         # add preview if needed
         if self.__options[WDialogFile.OPTION_PREVIEW_WIDGET] is not None:
             self.__newDlgBoxWidget = QWidget()
-            self.__newDlgBoxWidget.setLayout(self.__originalDlgBoxLayout)
+            if self.__originalDlgBoxLayout:
+                self.__newDlgBoxWidget.setLayout(self.__originalDlgBoxLayout)
 
             self.__newDlgBoxLayout = QVBoxLayout()
             self.__newDlgBoxLayout.setContentsMargins(0, 0, 0, 0)
@@ -1770,6 +1783,10 @@ class WDialogFile(QFileDialog):
         # apply accept mode and selection mode according to option
         self.setAcceptMode(self.__options[WDialogFile.OPTION_ACCEPT_MODE])
         self.setFileMode(self.__options[WDialogFile.OPTION_FILE_SELECTION_MODE])
+        self.setViewMode(self.__options[WDialogFile.OPTION_SETTINGS_VIEWMODE])
+
+        if self.__options[WDialogFile.OPTION_SETTINGS_DEFSUFFIX] != '':
+            self.setDefaultSuffix(self.__options[WDialogFile.OPTION_SETTINGS_DEFSUFFIX])
 
     def __insertRowGridLayout(self, insertWidget, gridLayout, insertAtRow=0, rowSpan=1, columnSpan=1):
         """Insert a row in a grid layout"""
@@ -1828,7 +1845,10 @@ class WDialogFile(QFileDialog):
             # calculate QDialog size according to content
             self.adjustSize()
 
-        self.resize(self.width() + self.__options[WDialogFile.OPTION_PREVIEW_WIDTH], self.height())
+        screen = self.window().windowHandle().screen()
+        newSizeW = min(self.width() + self.__options[WDialogFile.OPTION_PREVIEW_WIDTH], screen.size().width() - 20)
+        newSizeH = min(self.height(), screen.size().height() - 20)
+        self.resize(newSizeW, newSizeH)
 
     def __applyMessageIdealSize(self, message):
         """Try to calculate and apply ideal size for dialog box"""

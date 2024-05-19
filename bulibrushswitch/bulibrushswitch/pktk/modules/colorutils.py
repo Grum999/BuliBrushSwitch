@@ -205,7 +205,12 @@ def colorSpaceNfo(colorSpace):
 
 class QEColor(QColor):
     def __init__(self, value=None):
-        super(QEColor, self).__init__(value)
+        if isinstance(value, (QColor, QEColor)):
+            super(QEColor, self).__init__(value)
+        elif isinstance(value, str):
+            super(QEColor, self).__init__(QColor(value))
+        else:
+            super(QEColor, self).__init__(QColor(Qt.transparent))
 
         self.__isNone = (value is None)
 

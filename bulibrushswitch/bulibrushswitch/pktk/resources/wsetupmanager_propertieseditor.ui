@@ -282,10 +282,7 @@
           </size>
          </property>
          <property name="toolTip">
-          <string>Free comments!
-Use it to keep in mind why the brush has been defined.
-
-Also, first line is used to define action name in Krita's shortcut settings dialog.</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Free comments!&lt;/p&gt;&lt;p&gt;Use it to keep in mind why the settings has been defined.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>

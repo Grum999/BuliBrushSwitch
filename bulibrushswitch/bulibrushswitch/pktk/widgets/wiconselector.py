@@ -382,6 +382,7 @@ class WIconSelectorDialog(QDialog):
     def __init__(self, options, parent=None):
         super(WIconSelectorDialog, self).__init__(parent)
 
+        self.setWindowFlags(Qt.Dialog | Qt.WindowTitleHint | Qt.WindowStaysOnTopHint)
         self.setSizeGripEnabled(True)
         self.setModal(True)
         self.resize(800, 600)
