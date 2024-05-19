@@ -60,13 +60,25 @@ from bulibrushswitch.pktk.modules.imgutils import buildIcon
 
 from bulibrushswitch.pktk.widgets.wedialog import WEDialog
 from bulibrushswitch.pktk.widgets.wstandardcolorselector import WStandardColorSelector
-from bulibrushswitch.pktk.widgets.wmenuitem import (WMenuBrushesPresetSelector, WMenuColorPicker)
+from bulibrushswitch.pktk.widgets.wmenuitem import (
+    WMenuBrushesPresetSelector,
+    WMenuColorPicker
+    )
 from bulibrushswitch.pktk.widgets.wcolorselector import WColorPicker
-from bulibrushswitch.pktk.widgets.wiodialog import (WDialogBooleanInput, WDialogRadioButtonChoiceInput, WDialogMessage)
-from bulibrushswitch.pktk.widgets.wsetupmanager import WSetupManager
+from bulibrushswitch.pktk.widgets.wiodialog import (
+    WDialogBooleanInput,
+    WDialogRadioButtonChoiceInput,
+    WDialogMessage
+    )
+from bulibrushswitch.pktk.widgets.wsetupmanager import (
+    WSetupManager,
+    SetupManagerSetup
+    )
 
 from bulibrushswitch.pktk.modules.ekrita import EKritaBrushPreset
 from bulibrushswitch.pktk.modules.ekrita_tools import EKritaTools
+
+from bulibrushswitch.pktk import *
 
 
 # -----------------------------------------------------------------------------
@@ -313,12 +325,19 @@ class BBSMainWindow(WEDialog):
         self.wsmSetups.setColumnSetupWidth(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SETUPMANAGER_COLWIDTH))
         self.wsmSetups.setPropertiesEditorIconSelectorViewMode(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SETUPMANAGER_PROPERTIES_DLGBOX_ICON_VIEWMODE))
         self.wsmSetups.setPropertiesEditorIconSelectorIconSizeIndex(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SETUPMANAGER_PROPERTIES_DLGBOX_ICON_ZOOMLEVEL))
-        self.wsmSetups.openSetup(BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SETUPMANAGER_LASTFILE), False)
         self.wsmSetups.setupPropertiesEditorOpen.connect(setupPropertiesEditorOpen)
         self.wsmSetups.setupPropertiesEditorClose.connect(setupPropertiesEditorClose)
         self.wsmSetups.setupFileOpened.connect(updateLastSetupFileName)
         self.wsmSetups.setupFileSaved.connect(updateLastSetupFileName)
         self.wsmSetups.setupFileNew.connect(updateLastSetupFileName)
+
+        lastSetupFileName = BBSSettings.get(BBSSettingsKey.CONFIG_EDITOR_SETUPMANAGER_LASTFILE)
+        if lastSetupFileName != '' and os.path.exists(lastSetupFileName):
+            self.wsmSetups.openSetup(lastSetupFileName, False)
+        else:
+            lastSetupFileName = os.path.join(QStandardPaths.writableLocation(QStandardPaths.GenericConfigLocation), f'krita-plugin-{PkTk.packageName()}-default.bbssetups')
+            self.wsmSetups.newSetups(True)
+            self.wsmSetups.saveSetup(lastSetupFileName, 'Default BuliBrushSwitch Setups')
 
         # -- dialog box bottom buttons
         self.pbOk.clicked.connect(self.__acceptChange)
@@ -350,7 +369,10 @@ class BBSMainWindow(WEDialog):
 
         if page == BBSMainWindow.PAGE_SETUP_MANAGER:
             # if going to setup manager page, update setup manager data
-            self.wsmSetups.setCurrentSetupData(self.__bbsModel.exportData(True))
+            currentSetup = self.wsmSetups.currentSetup()
+            currentSetup.setData(self.__bbsModel.exportData(True))
+
+            #self.wsmSetups.setCurrentSetupData(self.__bbsModel.exportData(True))
 
         # activate page
         self.swPages.setCurrentIndex(page)
@@ -704,18 +726,19 @@ class BBSMainWindow(WEDialog):
             self.pbOk.setEnabled(False)
             self.pbOk.setToolTip(i18n("At least, one brush is mandatory!"))
 
-    def __applySetupFromManager(self, setup):
+    def __applySetupFromManager(self, setupManagerSetup, fromColumnIndex):
         """A setup is applied from setup manager"""
-        choice = WDialogRadioButtonChoiceInput.display(f'{self.__bbsName}  - {i18n("Loading setup")}',
-                                                       f'<b>{i18n("How to load setup?")}</b>',
-                                                       choicesValue=[i18n("Overrides current setup"), i18n("Merge to current setup")],
-                                                       minSize=QSize(950, 200))
-        if choice is None:
-            # cancel
-            return
+        if isinstance(setupManagerSetup, SetupManagerSetup):
+            choice = WDialogRadioButtonChoiceInput.display(f'{self.__bbsName}  - {i18n("Loading setup")}',
+                                                        f'<b>{i18n("How to load setup?")}</b>',
+                                                        choicesValue=[i18n("Overrides current setup"), i18n("Merge to current setup")],
+                                                        minSize=QSize(950, 200))
+            if choice is None:
+                # cancel
+                return
 
-        self.__bbsModel.importData(setup.data(), choice == 1)
-        self.__groupsAndBrushesModified = False
+            self.__bbsModel.importData(setupManagerSetup.data(), choice == 1)
+            self.__groupsAndBrushesModified = False
 
     def __saveSettings(self):
         """Save current settings"""
