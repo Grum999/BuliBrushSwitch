@@ -1,5 +1,9 @@
 # Buli Brush Switch
 
+> Note: has been moved on Codeberg
+> 
+> https://codeberg.org/Grum999/BuliBrushSwitch
+
 A plugin for [Krita](https://krita.org).
 
 
